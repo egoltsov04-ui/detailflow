@@ -1,6 +1,6 @@
 export type Status = 'Підтверджено' | 'В роботі' | 'Завершено' | 'Скасовано' | 'Не прийшов'
 export type PaymentMethod = 'Картка' | 'Готівка' | 'Переказ'
-export type Booking = { id: number | string; date: string; time: string; client: string; car: string; service: string; tech: string; price: number; discount: number; paymentMethod: PaymentMethod; durationMinutes: number; status: Status; phone: string }
+export type Booking = { id: number | string; clientId?:number|string; date: string; time: string; client: string; car: string; service: string; tech: string; price: number; discount: number; paymentMethod: PaymentMethod; durationMinutes: number; status: Status; phone: string }
 export const technicians = [
   { name: 'Андрій Коваль', role: 'Детейлер', color: '#4378f4', load: 78, speciality: 'Полірування, кераміка' },
   { name: 'Олена Мельник', role: 'Майстер мийки', color: '#a1d930', load: 61, speciality: 'Мийка, хімчистка' },
