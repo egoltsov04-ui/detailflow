@@ -25,3 +25,19 @@ button.avatar{border:0;cursor:pointer}
 .calendar-filters{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:18px}
 .calendar-filters label{display:grid;gap:6px;font-size:13px}
 .calendar-filters input,.calendar-filters select{font:inherit;border:1px solid #dfe0dc;border-radius:8px;background:white;padding:10px}
+.analytics-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:16px}
+.analytics-filters label{display:grid;gap:6px;font-size:13px;min-width:0}
+.analytics-filters input,.analytics-filters select{width:100%;min-width:0;border:1px solid #dfe0dc;border-radius:8px;font:inherit;padding:10px;background:white}
+.filter-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.report-note{color:#686b75;font-size:13px;line-height:1.6;margin:18px 0}
+.report-section{margin-top:20px}
+.report-scroll{overflow:auto}
+.report-scroll table{border-collapse:collapse;width:100%;min-width:650px;font-size:13px}
+.report-scroll th,.report-scroll td{padding:14px 12px;text-align:left;border-bottom:1px solid #eee}
+.report-scroll th{color:#777982}
+.report-pair{display:flex;justify-content:space-between;gap:20px;padding:14px 0;border-bottom:1px solid #eee}
+.request-list{display:grid;gap:16px}
+.request-card{display:flex;flex-wrap:wrap;justify-content:space-between;gap:20px}
+.request-card p{font-size:13px;color:#686b75}
+.primary:disabled,.text-btn:disabled{opacity:.55;cursor:wait}
+.analytics-page .metric small{color:#686b75}
