@@ -11,4 +11,8 @@
 
 ## Email reminders
 
-`api/send-reminders.ts` is ready but is intentionally not scheduled on Vercel Hobby: that plan permits only one cron run per day and is not for commercial use. On Vercel Pro, add SMTP and server-only Supabase secrets from `.env.example`, then add a cron schedule for `/api/send-reminders`.
+`api/send-reminders.ts` sends messages through the SendPulse REST API. Add the server-only Supabase and SendPulse variables from `.env.example` in Vercel; never prefix them with `VITE_`.
+
+On the SendPulse SMTP Test plan, `devtest@sendpulseemail.com` can be used for a temporary test. SendPulse may replace the sender with its test sender and label the subject as a development message. After you verify your own domain, replace `SENDPULSE_API_FROM_EMAIL` with that verified address.
+
+The reminder endpoint is intentionally not scheduled on Vercel Hobby: that plan permits only one cron run per day and is not for commercial use. On Vercel Pro, add a cron schedule for `/api/send-reminders`.

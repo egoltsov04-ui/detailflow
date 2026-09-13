@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import nodemailer from 'nodemailer'
+import { sendEmail } from './lib/sendpulse.js'
 
 type Request = { headers: Record<string, string | string[] | undefined>; method?: string }
 type Response = { status: (code: number) => Response; json: (body: unknown) => void }
@@ -16,7 +16,6 @@ export default async function handler(request: Request, response: Response) {
 
   try {
     const supabase = createClient(required('VITE_SUPABASE_URL'), required('SUPABASE_SERVICE_ROLE_KEY'))
-    const transporter = nodemailer.createTransport({ host: required('SENDPULSE_SMTP_HOST'), port: Number(process.env.SENDPULSE_SMTP_PORT || 465), secure: true, auth: { user: required('SENDPULSE_SMTP_USER'), pass: required('SENDPULSE_SMTP_PASSWORD') } })
     const now = new Date()
     const inTwentyFiveHours = new Date(now.getTime() + 25 * 60 * 60 * 1000).toISOString()
     const { data: appointments, error } = await supabase.from('appointments').select('id,tenant_id,starts_at,clients(full_name,email),services:appointment_services(service_name),tenants(name),reminder_settings(email_enabled,reminder_24h_enabled)').eq('status', 'confirmed').gte('starts_at', now.toISOString()).lte('starts_at', inTwentyFiveHours)
@@ -36,8 +35,11 @@ export default async function handler(request: Request, response: Response) {
       const existing = await supabase.from('reminders').select('id').eq('appointment_id', appointment.id).eq('channel', 'email').eq('scheduled_for', scheduledFor).maybeSingle()
       if (existing.data) continue
 
-      const result = await transporter.sendMail({ from: { address: required('SENDPULSE_FROM_EMAIL'), name: process.env.SENDPULSE_FROM_NAME || tenant?.name || 'Detailflow' }, to: client.email, subject: `Нагадування про запис — ${tenant?.name || 'ваша студія'}`, text: `Вітаємо, ${client.full_name}! Нагадуємо про запис ${start.toLocaleString('uk-UA')}. Послуга: ${service?.service_name || 'детейлінг'}.` })
-      await supabase.from('reminders').insert({ tenant_id: appointment.tenant_id, appointment_id: appointment.id, channel: 'email', scheduled_for: scheduledFor, sent_at: new Date().toISOString(), provider_message_id: result.messageId })
+      const subject = `Нагадування про запис — ${tenant?.name || 'ваша студія'}`
+      const text = `Вітаємо, ${client.full_name}! Нагадуємо про запис ${start.toLocaleString('uk-UA')}. Послуга: ${service?.service_name || 'детейлінг'}.`
+      const result = await sendEmail({ to: [{ email: client.email }], subject, text, html: `<p>${text}</p>`, fromName: tenant?.name || 'Detailflow' })
+      const providerMessageId = typeof result.id === 'string' ? result.id : null
+      await supabase.from('reminders').insert({ tenant_id: appointment.tenant_id, appointment_id: appointment.id, channel: 'email', scheduled_for: scheduledFor, sent_at: new Date().toISOString(), provider_message_id: providerMessageId })
       sent += 1
     }
     return response.status(200).json({ sent })
