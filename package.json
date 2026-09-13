@@ -1,0 +1,27 @@
+{
+  "name": "detailflow-mvp",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.116.0",
+    "@types/nodemailer": "^8.0.1",
+    "@vitejs/plugin-react": "latest",
+    "lucide-react": "latest",
+    "nodemailer": "^10.0.9",
+    "react": "latest",
+    "react-dom": "latest",
+    "typescript": "latest",
+    "vite": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest"
+  }
+}
