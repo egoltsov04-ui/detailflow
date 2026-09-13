@@ -29,7 +29,7 @@ export default async function handler(request: Request, response: Response) {
       merchantAccount: merchantAccount(), merchantDomainName: merchantDomain(), merchantSignature: signature,
       merchantTransactionType: 'AUTO', merchantTransactionSecureType: 'AUTO', apiVersion: 1, language: 'UA',
       orderReference, orderDate, amount, currency: 'UAH', productName: [product.label], productCount: [1], productPrice: [amount],
-      returnUrl: `${appUrl()}/?payment=return`, serviceUrl: `${appUrl()}/api/wayforpay/callback`,
+      returnUrl: `${appUrl()}/api/wayforpay/return`, serviceUrl: `${appUrl()}/api/wayforpay/callback`,
     } })
   } catch (error) { return response.status(500).json({ error: error instanceof Error ? error.message : 'Unable to create payment' }) }
 }

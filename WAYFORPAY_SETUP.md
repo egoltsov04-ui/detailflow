@@ -21,7 +21,7 @@ Never share or put `WAYFORPAY_SECRET_KEY` in a `VITE_` variable. The API uses it
 
 Redeploy after adding the variables. In WayForPay, use these addresses for the current Vercel deployment:
 
-- return URL: `https://detailflow-xi.vercel.app/?payment=return`
+- return URL: `https://detailflow-xi.vercel.app/api/wayforpay/return`
 - service/callback URL: `https://detailflow-xi.vercel.app/api/wayforpay/callback`
 
 WayForPay signs checkout parameters and notifications with HMAC-MD5. It may resend a callback until it receives the signed `accept` response, which the callback endpoint returns after processing a valid request.
