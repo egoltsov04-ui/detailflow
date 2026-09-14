@@ -6,6 +6,7 @@ import type { User } from '@supabase/supabase-js'
 
 const Analytics = lazy(()=>import('./Analytics'))
 const BookingRequests = lazy(()=>import('./BookingRequests'))
+const PublicBookingPage = lazy(()=>import('./PublicBookingPage'))
 const nav = [['Огляд', LayoutDashboard], ['Календар', CalendarDays], ['Клієнти', Users], ['Послуги', Sparkles], ['Команда', CarFront], ['Оплати', CircleDollarSign], ['Витрати', WalletCards], ['Склад', Package], ['Аналітика', BarChart3], ['Онлайн-запис', Globe2], ['Тариф', CreditCard]] as const
 const money = (n: number) => new Intl.NumberFormat('uk-UA').format(n) + ' ₴'
 const formatDuration = (minutes:number) => minutes % 1440 === 0 ? `${minutes / 1440} дні` : minutes % 60 === 0 ? `${minutes / 60} год` : `${minutes} хв`
@@ -27,6 +28,8 @@ const seedExpenses: Expense[] = [
 ]
 
 export default function App() {
+  const publicSlug = new URLSearchParams(window.location.search).get('book')
+  if (publicSlug) return <Suspense fallback={<main className="public-page"><div className="public-card">Завантаження запису…</div></main>}><PublicBookingPage slug={publicSlug}/></Suspense>
   const [page, setPage] = useState('Огляд'), [bookings, setBookings] = useState<Booking[]>(supabase?[]:seedBookings)
   const [serviceList, setServiceList] = useState<typeof services>(supabase?[]:services)
   const [staffList, setStaffList] = useState<Staff[]>(() => supabase?[]:technicians.map((item,index) => ({...item,id:index + 1})))
@@ -34,7 +37,7 @@ export default function App() {
   const [selectedTech, setSelectedTech] = useState(technicians[0].name)
   const [plan, setPlan] = useState('Start')
   const [studioMenu,setStudioMenu]=useState(false), [profileMenu,setProfileMenu]=useState(false)
-  const [studioProfile,setStudioProfile]=useState({name:'Студія',address:''})
+  const [studioProfile,setStudioProfile]=useState({name:'Студія',address:'',slug:''})
 
   const [expenses, setExpenses] = useState<Expense[]>(supabase?[]:seedExpenses)
   const [inventory, setInventory] = useState<InventoryItem[]>([])
@@ -44,8 +47,8 @@ export default function App() {
   useEffect(()=>{
     if(!supabase || !tenantId) return
     let active=true
-    void supabase.from('tenants').select('name,address').eq('id',tenantId).single().then(({data})=>{
-      if(active && data) setStudioProfile({name:data.name,address:data.address || ''})
+    void supabase.from('tenants').select('name,address,slug').eq('id',tenantId).single().then(({data})=>{
+      if(active && data) setStudioProfile({name:data.name,address:data.address || '',slug:data.slug || ''})
     })
     return ()=>{active=false}
   },[tenantId,page])
@@ -56,7 +59,7 @@ export default function App() {
     return () => listener.subscription.unsubscribe()
   }, [])
   useEffect(() => {
-    if (!supabase || !user) { if(supabase){setBookings([]);setClients([]);setServiceList([]);setStaffList([]);setExpenses([]);setInventory([]);setInventoryMovements([]);setStudioProfile({name:'Студія',address:''})} setTenantId(null); setConnection(supabase ? 'checking' : 'local'); return }
+    if (!supabase || !user) { if(supabase){setBookings([]);setClients([]);setServiceList([]);setStaffList([]);setExpenses([]);setInventory([]);setInventoryMovements([]);setStudioProfile({name:'Студія',address:'',slug:''})} setTenantId(null); setConnection(supabase ? 'checking' : 'local'); return }
     void supabase.from('tenant_memberships').select('tenant_id').limit(1).maybeSingle().then(({ data, error }) => { setTenantId(data?.tenant_id ?? null); setTenantOpen(!error && !data); setConnection(error ? 'error' : 'connected') })
   }, [user])
   useEffect(() => {
@@ -69,21 +72,21 @@ export default function App() {
   useEffect(() => {
     if (!supabase || !tenantId) return
     void supabase.from('appointments').select('id,client_id,source,starts_at,ends_at,status,clients(full_name,phone),staff_profiles(full_name),appointment_services(service_name,unit_price,duration_minutes),receipts(subtotal,discount,payment_method),vehicles(notes,make,model,plate_number)').eq('tenant_id', tenantId).order('starts_at').then(({ data, error }) => {
-      if (error || !data?.length) return
+      if (error || !data) return
       setBookings(data.map((item: any) => { const start=new Date(item.starts_at), end=new Date(item.ends_at), service=item.appointment_services?.[0], receipt=Array.isArray(item.receipts) ? item.receipts[0] : item.receipts; return {id:item.id,clientId:item.client_id,source:item.source,date:new Date(start.getTime()-start.getTimezoneOffset()*60000).toISOString().slice(0,10),time:start.toLocaleTimeString('uk-UA',{hour:'2-digit',minute:'2-digit',hour12:false}),client:item.clients?.full_name || 'Клієнт',phone:item.clients?.phone || 'Не вказано',car:item.vehicles?.notes || [item.vehicles?.make,item.vehicles?.model,item.vehicles?.plate_number].filter(Boolean).join(' ') || 'Авто не вказано',service:service?.service_name || 'Послуга',tech:item.staff_profiles?.full_name || 'Не призначено',price:Number(receipt?.subtotal ?? service?.unit_price ?? 0),durationMinutes:Math.round((end.getTime()-start.getTime())/60000),discount:Number(receipt?.discount || 0),paymentMethod:paymentLabel(receipt?.payment_method),status:statusLabel(item.status)} }))
     })
   }, [tenantId])
   useEffect(() => {
     if (!supabase || !tenantId) return
     void supabase.from('staff_profiles').select('id,full_name,specialty,color,active').eq('tenant_id', tenantId).eq('active', true).order('created_at').then(({ data, error }) => {
-      if (error || !data?.length) return
+      if (error || !data) return
       setStaffList(data.map((item: {id:string;full_name:string;specialty:string | null;color:string}) => ({id:item.id,name:item.full_name,role:'Майстер',color:item.color || '#3869e9',load:0,speciality:item.specialty || 'Спеціалізація не вказана'})))
     })
   }, [tenantId])
   useEffect(() => {
     if (!supabase || !tenantId) return
     void supabase.from('expenses').select('id,expense_date,category,title,amount,payment_method,note').eq('tenant_id', tenantId).order('expense_date', { ascending: false }).then(({ data, error }) => {
-      if (error || !data?.length) return
+      if (error || !data) return
       setExpenses(data.map((item: { id:string; expense_date:string; category:string; title:string; amount:number; payment_method:string | null; note:string | null }) => ({id:item.id as unknown as number,date:item.expense_date,category:item.category,title:item.title,amount:Number(item.amount),method:paymentLabel(item.payment_method),note:item.note || ''})))
     })
   }, [tenantId])
@@ -101,7 +104,7 @@ export default function App() {
   useEffect(() => {
     if (!supabase || !tenantId) return
     void supabase.from('clients').select('id,full_name,phone,vehicles(make,model,plate_number,notes)').eq('tenant_id', tenantId).order('created_at', { ascending: false }).then(({ data, error }) => {
-      if (error || !data?.length) return
+      if (error || !data) return
       setClients(data.map((item: { id:string; full_name:string; phone:string | null; vehicles:{make:string | null; model:string | null; plate_number:string | null; notes:string | null}[] | null }) => ({ id:item.id, name:item.full_name, phone:item.phone || 'Не вказано', car:item.vehicles?.map(car => car.notes || [car.make,car.model,car.plate_number].filter(Boolean).join(' ')).filter(Boolean).join(', ') || 'Авто не вказано', visits:0, total:0 })))
     })
   }, [tenantId])
@@ -192,7 +195,7 @@ export default function App() {
     <main><header><button className="hamburger" onClick={() => setMenuOpen(true)}><Menu/></button><div className="search"><Search size={18}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Пошук клієнтів, авто, записів…"/></div><div className="header-actions"><small title={connection === 'local' ? supabaseSetupMessage : undefined} style={{color:connection === 'connected' ? '#26754c' : '#777982'}}>{connection === 'connected' ? 'БД підключена' : connection === 'checking' ? 'Перевірка БД…' : connection === 'error' ? 'Потрібно увійти' : 'Локальний режим'}</small>{user ? <button className="locale" onClick={() => void supabase?.auth.signOut()}>Вийти</button> : <button className="locale" onClick={() => setAuthOpen(true)}>Увійти</button>}<span className="locale" title="Мова інтерфейсу — українська">UA</span><div className="profile-control"><button className="avatar" aria-label="Меню профілю" aria-expanded={profileMenu} onClick={()=>setProfileMenu(v=>!v)}>{user?.email?.slice(0,2).toUpperCase() || 'Г'}</button>{profileMenu && <div className="profile-options"><b>{user?.user_metadata?.full_name || 'Ваш профіль'}</b><small>{user?.email || 'Ви не увійшли'}</small><button className="text-btn" onClick={()=>{setPage('Налаштування');setProfileMenu(false)}}>Налаштування студії</button><button className="text-btn" onClick={()=>{setProfileMenu(false);if(user) void supabase?.auth.signOut();else setAuthOpen(true)}}>{user?'Вийти з акаунта':'Увійти'}</button></div>}</div></div></header>
       {page === 'Огляд' && <Dashboard name={user?.user_metadata?.full_name || "колего"} calendar={()=>setPage("Календар")} bookings={filtered.filter(b=>b.date===new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10))} revenue={revenue} onCreate={() => setModal(true)} onStatus={(id,status)=>{void updateStatus(id,status).then(error=>{if(error)window.alert(error)})}}/>}
       {page === 'Календар' && <Calendar bookings={filtered} onCreate={date => {setBookingDate(date);setModal(true)}} onStatus={(id,status)=>{void updateStatus(id,status).then(error=>{if(error)window.alert(error)})}}/>}
-      {page === 'Клієнти' && <Clients items={clients.filter(client => `${client.name} ${client.phone} ${client.car}`.toLowerCase().includes(query.toLowerCase()))} add={addClient} remove={removeClient} bookings={bookings} edit={editClient}/>} {page === 'Послуги' && <Services items={serviceList} add={addService} remove={removeService}/>} {page === 'Команда' && <Team items={staffList} selected={selectedTech} select={setSelectedTech} bookings={bookings} onStatus={(id,status)=>{void updateStatus(id,status).then(error=>{if(error)window.alert(error)})}} add={addStaff} remove={removeStaff}/>} {page === 'Оплати' && <Payments bookings={filtered} updatePayment={updatePayment}/>} {page === 'Витрати' && <Expenses items={expenses} add={addExpense} remove={removeExpense}/>} {page === 'Склад' && <Inventory items={inventory} movements={inventoryMovements} add={addInventory} writeOff={writeOffInventory} updateMinimum={updateInventoryMinimum}/>} {page === 'Аналітика' && <Suspense fallback={<p className="content">Завантаження аналітики…</p>}><Analytics bookings={bookings} expenses={expenses}/></Suspense>} {page === 'Онлайн-запис' && <Suspense fallback={<p className="content">Завантаження заявок…</p>}><BookingRequests bookings={bookings} update={updateStatus}/></Suspense>} {page === 'Тариф' && <Billing plan={plan} select={setPlan}/>} {page === 'Налаштування' && <SettingsPage/>}
+      {page === 'Клієнти' && <Clients items={clients.filter(client => `${client.name} ${client.phone} ${client.car}`.toLowerCase().includes(query.toLowerCase()))} add={addClient} remove={removeClient} bookings={bookings} edit={editClient}/>} {page === 'Послуги' && <Services items={serviceList} add={addService} remove={removeService}/>} {page === 'Команда' && <Team items={staffList} selected={selectedTech} select={setSelectedTech} bookings={bookings} onStatus={(id,status)=>{void updateStatus(id,status).then(error=>{if(error)window.alert(error)})}} add={addStaff} remove={removeStaff}/>} {page === 'Оплати' && <Payments bookings={filtered} updatePayment={updatePayment}/>} {page === 'Витрати' && <Expenses items={expenses} add={addExpense} remove={removeExpense}/>} {page === 'Склад' && <Inventory items={inventory} movements={inventoryMovements} add={addInventory} writeOff={writeOffInventory} updateMinimum={updateInventoryMinimum}/>} {page === 'Аналітика' && <Suspense fallback={<p className="content">Завантаження аналітики…</p>}><Analytics bookings={bookings} expenses={expenses}/></Suspense>} {page === 'Онлайн-запис' && <Suspense fallback={<p className="content">Завантаження заявок…</p>}><BookingRequests bookings={bookings} update={updateStatus} link={studioProfile.slug ? `${window.location.origin}/?book=${studioProfile.slug}` : ''}/></Suspense>} {page === 'Тариф' && <Billing plan={plan} select={setPlan}/>} {page === 'Налаштування' && <SettingsPage/>}
     </main>{modal && <BookingModal initialDate={bookingDate} bookings={bookings} clients={clients} services={serviceList} staff={staffList} close={() => setModal(false)} save={createBooking}/>} {authOpen && <AuthModal close={() => setAuthOpen(false)}/>} {tenantOpen && <TenantModal close={() => setTenantOpen(false)} created={id => {setTenantId(id);setConnection('connected')}}/>}
   </div>
 }
@@ -280,7 +283,7 @@ function Expenses({items,add,remove}:{items:Expense[],add:(item:Expense)=>void,r
 function SettingsPage(){
   const [setupCounts,setSetupCounts]=useState({services:0,staff:0,clients:0})
   const [saved,setSaved] = useState(false), [importStatus,setImportStatus] = useState(''), [profileStatus,setProfileStatus] = useState('')
-  const [studioName,setStudioName] = useState(''), [address,setAddress] = useState(''), [timezone,setTimezone] = useState('Europe/Kyiv'), [phone,setPhone] = useState(''), [email,setProfileEmail] = useState('')
+  const [studioName,setStudioName] = useState(''), [address,setAddress] = useState(''), [timezone,setTimezone] = useState('Europe/Kyiv'), [phone,setPhone] = useState(''), [email,setProfileEmail] = useState(''), [slug,setSlug] = useState('')
   const [sms,setSms] = useState(true), [emailReminders,setEmailReminders] = useState(false), [reminder24,setReminder24] = useState(true), [reminder2,setReminder2] = useState(true), [repeat,setRepeat] = useState('6')
   const [tenantId,setTenantId] = useState<string | null>(null), [remindersLoaded,setRemindersLoaded] = useState(false), [savingProfile,setSavingProfile] = useState(false)
   useEffect(() => {
@@ -297,8 +300,8 @@ function SettingsPage(){
         client.from('clients').select('id',{count:'exact',head:true}).eq('tenant_id',membership.data.tenant_id)
       ])
       setSetupCounts({services:serviceCount.count||0,staff:staffCount.count||0,clients:clientCount.count||0})
-      const tenant = await client.from('tenants').select('name,address,timezone,phone,email').eq('id',membership.data.tenant_id).maybeSingle()
-      if (tenant.data) { setStudioName(tenant.data.name || ''); setAddress(tenant.data.address || ''); setTimezone(tenant.data.timezone || 'Europe/Kyiv'); setPhone(tenant.data.phone || ''); setProfileEmail(tenant.data.email || '') }
+      const tenant = await client.from('tenants').select('name,address,timezone,phone,email,slug').eq('id',membership.data.tenant_id).maybeSingle()
+      if (tenant.data) { setStudioName(tenant.data.name || ''); setAddress(tenant.data.address || ''); setTimezone(tenant.data.timezone || 'Europe/Kyiv'); setPhone(tenant.data.phone || ''); setProfileEmail(tenant.data.email || ''); setSlug(tenant.data.slug || '') }
       const settings = await client.from('reminder_settings').select('sms_enabled,email_enabled,reminder_24h_enabled,reminder_2h_enabled').eq('tenant_id',membership.data.tenant_id).maybeSingle()
       if (settings.data) { setSms(settings.data.sms_enabled); setEmailReminders(settings.data.email_enabled); setReminder24(settings.data.reminder_24h_enabled); setReminder2(settings.data.reminder_2h_enabled) }
       setRemindersLoaded(true)
@@ -323,6 +326,7 @@ function SettingsPage(){
     const rows = (await file.text()).trim().split(/\r?\n/).filter(Boolean)
     setImportStatus(rows.length > 1 ? `Готово до імпорту: ${rows.length - 1} клієнтів. Колонки зіставлено: ім’я, телефон, авто.` : 'CSV не містить рядків для імпорту.')
   }
+  const bookingLink = slug ? `${window.location.origin}/?book=${slug}` : ''
   return <section className="content"><div className="page-title"><div><p>Студія</p><h1>Налаштування та онбординг</h1></div></div><div className="dashboard-grid"><form className="panel settings studio-settings" onSubmit={saveProfile}><h2>Профіль студії</h2><label>Назва студії<input required value={studioName} onChange={e=>setStudioName(e.target.value)} placeholder="Назва вашої студії"/></label><label>Адреса<input value={address} onChange={e=>setAddress(e.target.value)} placeholder="Місто, вулиця, номер"/></label><label>Телефон студії<input value={phone} onChange={e=>setPhone(e.target.value)} placeholder="+380…"/></label><label>Email студії<input type="email" value={email} onChange={e=>setProfileEmail(e.target.value)} placeholder="studio@example.com"/></label><label>Часовий пояс<select value={timezone} onChange={e=>setTimezone(e.target.value)}><option>Europe/Kyiv</option><option>Europe/Warsaw</option></select></label>{profileStatus&&<small style={{color:profileStatus.includes('збережено')?'#26754c':'#c14b62',fontWeight:650}}>{profileStatus}</small>}<button className="primary" disabled={savingProfile} type="submit">{savingProfile?'Зберігаємо…':saved?'Збережено':'Зберегти зміни'}</button></form><div className="right-stack"><div className="panel"><div className="panel-head"><div><h2>Запуск студії</h2><span>Послуг: {setupCounts.services} · Майстрів: {setupCounts.staff} · Клієнтів: {setupCounts.clients}</span></div></div><div className="schedule-list"><div className="booking"><time>•</time><span className="booking-line"/><div className="booking-main"><b>Профіль студії</b><span>Назва, адреса та часовий пояс</span></div></div><div className="booking"><time>•</time><span className="booking-line"/><div className="booking-main"><b>Каталог послуг</b><span>Послуг у каталозі: {setupCounts.services}</span></div></div><div className="booking"><time>•</time><span className="booking-line"/><div className="booking-main"><b>Команда</b><span>Майстрів у команді: {setupCounts.staff}</span></div></div><div className="booking"><time>4</time><span className="booking-line"/><div className="booking-main"><b>Імпорт клієнтів</b><span>Необов’язково — можна зробити пізніше</span></div></div></div></div><div className="panel settings"><h2>Перевірка CSV</h2><p style={{margin:0,color:'#777982',fontSize:13}}>Завантажте файл із заголовками: ім’я, телефон, авто. Це лише попередня перевірка файлу; клієнти поки не імпортуються.</p><input type="file" accept=".csv,text/csv" onChange={e => void importClients(e.target.files?.[0])}/>{importStatus && <small style={{color:'#26754c',fontWeight:650}}>{importStatus}</small>}</div></div></div><div className="panel settings" style={{marginTop:20,maxWidth:760}}><h2>Нагадування клієнтам</h2><label><span>SMS-нагадування</span><input type="checkbox" checked={sms} onChange={e => setSms(e.target.checked)}/></label><label><span>Email-нагадування</span><input type="checkbox" checked={emailReminders} onChange={e => setEmailReminders(e.target.checked)}/></label><label><span>За 24 години до запису</span><input type="checkbox" checked={reminder24} onChange={e => setReminder24(e.target.checked)}/></label><label><span>За 2 години до запису</span><input type="checkbox" checked={reminder2} onChange={e => setReminder2(e.target.checked)}/></label><label>Повторний візит для кераміки, місяців (ще не підключено)<input disabled title="Автоматичні повторні візити ще не підключено" type="number" min="1" max="24" value={repeat} onChange={e => setRepeat(e.target.value)}/></label><small style={{color:'#777982'}}>Активно: {[sms && 'SMS',emailReminders && 'email'].filter(Boolean).join(' та ') || 'канали вимкнені'} · {[reminder24 && 'за 24 год',reminder2 && 'за 2 год'].filter(Boolean).join(', ') || 'час не вибрано'}.</small></div></section>
 }
 function BookingModal({initialDate,bookings,clients,services,staff,close,save}:{initialDate:string,bookings:Booking[],clients:Client[],services:typeof import('./data').services,staff:Staff[],close:()=>void,save:(b:Booking)=>void}) {
