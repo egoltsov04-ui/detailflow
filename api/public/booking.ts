@@ -33,9 +33,9 @@ export default async function handler(request: Request, response: Response) {
 
     if (request.method !== 'POST') return response.status(405).json({ error: 'Method not allowed' })
     const body = request.body as Record<string, unknown> | undefined
-    const clientName = cleanText(body?.clientName, 120), phone = cleanText(body?.phone, 32), car = cleanText(body?.car, 180)
+    const clientName = cleanText(body?.clientName, 120), phone = cleanText(body?.phone, 32), email = cleanText(body?.email, 254).toLowerCase(), car = cleanText(body?.car, 180)
     const serviceId = cleanText(body?.serviceId, 80), staffId = cleanText(body?.staffId, 80), startsAtValue = cleanText(body?.startsAt, 64)
-    if (!clientName || !phone || !serviceId || !staffId || !startsAtValue) return response.status(400).json({ error: 'Fill in name, phone, service, staff, and time' })
+    if (!clientName || !phone || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !serviceId || !staffId || !startsAtValue) return response.status(400).json({ error: 'Fill in a valid name, phone, email, service, staff, and time' })
     const startsAt = new Date(startsAtValue)
     if (Number.isNaN(startsAt.getTime()) || startsAt.getTime() < Date.now() - 5 * 60_000) return response.status(400).json({ error: 'Choose a future time' })
     const [serviceResult, staffResult] = await Promise.all([
@@ -47,7 +47,7 @@ export default async function handler(request: Request, response: Response) {
     const { data: active, error: activeError } = await supabase.from('appointments').select('starts_at,ends_at').eq('tenant_id', tenant.id).eq('staff_id', staffId).in('status', ['confirmed', 'in_progress']).gte('ends_at', startsAt.toISOString())
     if (activeError) throw activeError
     if ((active ?? []).some(item => overlap(startsAt, endsAt, new Date(item.starts_at), new Date(item.ends_at)))) return response.status(409).json({ error: 'This time is no longer available. Choose another slot.' })
-    const { data: client, error: clientError } = await supabase.from('clients').upsert({ tenant_id: tenant.id, full_name: clientName, phone }, { onConflict: 'tenant_id,phone' }).select('id').single()
+    const { data: client, error: clientError } = await supabase.from('clients').upsert({ tenant_id: tenant.id, full_name: clientName, phone, email }, { onConflict: 'tenant_id,phone' }).select('id').single()
     if (clientError || !client) throw clientError || new Error('Unable to save client')
     let vehicleId: string | null = null
     if (car) {

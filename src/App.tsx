@@ -116,6 +116,19 @@ export default function App() {
     const current=bookings.find(b=>b.id===id)
     if(!current)return 'Запис не знайдено.'
     if(supabase && tenantId && typeof id==='string'){
+      if(current.source === 'public' && current.status === 'Очікує підтвердження' && (status === 'Підтверджено' || status === 'Скасовано')) {
+        const { data: { session } } = await supabase.auth.getSession()
+        if(!session?.access_token) return 'Потрібно увійти повторно, щоб обробити заявку.'
+        const response = await fetch('/api/booking-requests/update', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', authorization: `Bearer ${session.access_token}` },
+          body: JSON.stringify({ appointmentId: id, status: status === 'Підтверджено' ? 'confirmed' : 'cancelled' })
+        })
+        const result = await response.json().catch(() => ({})) as { error?: string; notification?: string }
+        if(!response.ok) return result.error || 'Не вдалося обробити заявку. Спробуйте ще раз.'
+        setBookings(items=>items.map(b=>b.id===id?{...b,status}:b))
+        return result.notification === 'failed' ? 'Запис підтверджено, але лист клієнту не вдалося надіслати.' : ''
+      }
       const {error}=await supabase.from('appointments').update({status:statusValue(status)}).eq('tenant_id',tenantId).eq('id',id).eq('status',statusValue(current.status)).select('id').single()
       if(error){setConnection('error');return error.code==='23P01'?'У майстра вже є запис на цей час. Перенесіть запис перед підтвердженням.':'Не вдалося змінити статус. Оновіть сторінку та спробуйте ще раз.'}
     }
