@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState, lazy, Suspense } from 'react'
-import { CalendarDays, CarFront, ChevronDown, CircleDollarSign, Clock3, LayoutDashboard, Menu, Plus, Search, Settings, Sparkles, Users, X, Globe2, CreditCard, BarChart3, WalletCards, Package, ListTodo, ClipboardList, MessageSquare, ShoppingCart } from 'lucide-react'
+import { CalendarDays, CarFront, ChevronDown, CircleDollarSign, Clock3, LayoutDashboard, Menu, Plus, Search, Settings, Sparkles, Users, X, Globe2, CreditCard, BarChart3, WalletCards, Package, ListTodo, ClipboardList, MessageSquare, ShoppingCart, ReceiptText } from 'lucide-react'
 import { Booking, seedBookings, services, technicians, Status, PaymentMethod } from './data'
 import { supabase, supabaseSetupMessage } from './lib/supabase'
 import type { User } from '@supabase/supabase-js'
@@ -12,7 +12,8 @@ const WorkOrders = lazy(()=>import('./WorkOrders'))
 const Leads = lazy(()=>import('./Leads'))
 const Catalog = lazy(()=>import('./Catalog'))
 const Sales = lazy(()=>import('./Sales'))
-const nav = [['Огляд', LayoutDashboard], ['Календар', CalendarDays], ['Клієнти', Users], ['Послуги', Sparkles], ['Команда', CarFront], ['Завдання', ListTodo], ['Звернення', MessageSquare], ['Замовлення', ClipboardList], ['Продажі', ShoppingCart], ['Оплати', CircleDollarSign], ['Витрати', WalletCards], ['Склад', Package], ['Аналітика', BarChart3], ['Онлайн-запис', Globe2], ['Тариф', CreditCard]] as const
+const Invoices = lazy(()=>import('./Invoices'))
+const nav = [['Огляд', LayoutDashboard], ['Календар', CalendarDays], ['Клієнти', Users], ['Послуги', Sparkles], ['Команда', CarFront], ['Завдання', ListTodo], ['Звернення', MessageSquare], ['Замовлення', ClipboardList], ['Продажі', ShoppingCart], ['Рахунки', ReceiptText], ['Оплати', CircleDollarSign], ['Витрати', WalletCards], ['Склад', Package], ['Аналітика', BarChart3], ['Онлайн-запис', Globe2], ['Тариф', CreditCard]] as const
 const money = (n: number) => new Intl.NumberFormat('uk-UA').format(n) + ' ₴'
 const formatDuration = (minutes:number) => minutes % 1440 === 0 ? `${minutes / 1440} дні` : minutes % 60 === 0 ? `${minutes / 60} год` : `${minutes} хв`
 const parseDuration = (value:string) => value.includes('дні') ? Number.parseInt(value, 10) * 1440 : value.includes('год') ? Number.parseInt(value, 10) * 60 : Number.parseInt(value, 10) || 60
@@ -35,6 +36,8 @@ type Lead = import('./Leads').Lead
 type LeadStatus = import('./Leads').LeadStatus
 type ServicePackage = import('./Catalog').ServicePackage
 type Sale = import('./Sales').Sale
+type Invoice = import('./Invoices').Invoice
+type InvoiceStatus = import('./Invoices').InvoiceStatus
 const seedExpenses: Expense[] = [
   {id:1,date:'2026-09-13',category:'Матеріали',title:'Кераміка та автохімія',amount:4680,method:'Картка',note:'Запас на тиждень'},
   {id:2,date:'2026-09-12',category:'Оренда',title:'Оренда студії',amount:24000,method:'Переказ',note:'Вересень'},
@@ -61,6 +64,7 @@ export default function App() {
   const [leads, setLeads] = useState<Lead[]>([])
   const [servicePackages, setServicePackages] = useState<ServicePackage[]>([])
   const [sales, setSales] = useState<Sale[]>([])
+  const [invoices, setInvoices] = useState<Invoice[]>([])
   const [connection, setConnection] = useState<'local' | 'checking' | 'connected' | 'error'>(supabase ? 'checking' : 'local')
   const [user,setUser] = useState<User | null>(null), [authOpen,setAuthOpen] = useState(false), [tenantId,setTenantId] = useState<string | null>(null), [tenantOpen,setTenantOpen] = useState(false)
   useEffect(()=>{
@@ -78,7 +82,7 @@ export default function App() {
     return () => listener.subscription.unsubscribe()
   }, [])
   useEffect(() => {
-    if (!supabase || !user) { if(supabase){setBookings([]);setClients([]);setServiceList([]);setStaffList([]);setExpenses([]);setInventory([]);setInventoryMovements([]);setTasks([]);setWorkOrders([]);setLeads([]);setServicePackages([]);setSales([]);setStudioProfile({name:'Студія',address:'',slug:''})} setTenantId(null); setConnection(supabase ? 'checking' : 'local'); return }
+    if (!supabase || !user) { if(supabase){setBookings([]);setClients([]);setServiceList([]);setStaffList([]);setExpenses([]);setInventory([]);setInventoryMovements([]);setTasks([]);setWorkOrders([]);setLeads([]);setServicePackages([]);setSales([]);setInvoices([]);setStudioProfile({name:'Студія',address:'',slug:''})} setTenantId(null); setConnection(supabase ? 'checking' : 'local'); return }
     void supabase.from('tenant_memberships').select('tenant_id').limit(1).maybeSingle().then(({ data, error }) => { setTenantId(data?.tenant_id ?? null); setTenantOpen(!error && !data); setConnection(error ? 'error' : 'connected') })
   }, [user])
   useEffect(() => {
@@ -160,6 +164,13 @@ export default function App() {
     void supabase.from('sales').select('id,client_id,items,total,payment_method,note,created_at,clients(full_name)').eq('tenant_id',tenantId).order('created_at',{ascending:false}).then(({data,error})=>{
       if(error || !data) return
       setSales(data.map((item:any)=>({id:item.id,clientId:item.client_id,clientName:item.clients?.full_name || '',items:Array.isArray(item.items)?item.items:[],total:Number(item.total),paymentMethod:paymentLabel(item.payment_method),note:item.note || '',createdAt:item.created_at})))
+    })
+  },[tenantId])
+  useEffect(() => {
+    if (!supabase || !tenantId) return
+    void supabase.from('invoices').select('id,number,client_id,title,line_items,total,status,due_at,note,created_at,clients(full_name)').eq('tenant_id',tenantId).order('created_at',{ascending:false}).then(({data,error})=>{
+      if(error || !data) return
+      setInvoices(data.map((item:any)=>({id:item.id,number:item.number,clientId:item.client_id,clientName:item.clients?.full_name || '',title:item.title,lineItems:Array.isArray(item.line_items)?item.line_items:[],total:Number(item.total),status:item.status as InvoiceStatus,dueAt:item.due_at || '',note:item.note || '',createdAt:item.created_at})))
     })
   },[tenantId])
   const [bookingDate,setBookingDate]=useState('')
@@ -351,6 +362,21 @@ export default function App() {
     for(const line of item.items){const written=await writeOffInventory(line.itemId,line.quantity,`Продаж #${String(data.id).slice(0,8)}`);if(!written){setConnection('error');return 'Продаж створено, але не вдалося списати один із товарів. Перевірте склад.'}}
     return ''
   }
+  async function addInvoice(item:Invoice):Promise<string> {
+    setInvoices(list=>[item,...list])
+    if(!supabase || !tenantId) return ''
+    const {data,error}=await supabase.from('invoices').insert({tenant_id:tenantId,number:item.number,client_id:typeof item.clientId==='string'?item.clientId:null,title:item.title,line_items:item.lineItems,total:item.total,status:item.status,due_at:item.dueAt || null,note:item.note || null,created_by:user?.id || null}).select('id,created_at').single()
+    if(error || !data){setInvoices(list=>list.filter(invoice=>invoice.id!==item.id));setConnection('error');return error?.code==='23505'?'Такий номер рахунку вже існує. Створіть рахунок ще раз.':'Не вдалося створити рахунок.'}
+    setInvoices(list=>list.map(invoice=>invoice.id===item.id?{...invoice,id:data.id,createdAt:data.created_at}:invoice));return ''
+  }
+  async function updateInvoice(id:Invoice['id'],patch:Partial<Pick<Invoice,'status'|'dueAt'|'note'>>):Promise<string> {
+    const current=invoices.find(item=>item.id===id);if(!current)return 'Рахунок не знайдено.'
+    const next={...current,...patch};setInvoices(list=>list.map(item=>item.id===id?next:item))
+    if(!supabase || !tenantId || typeof id!=='string')return ''
+    const {error}=await supabase.from('invoices').update({status:patch.status,due_at:patch.dueAt === undefined ? undefined : patch.dueAt || null,note:patch.note,updated_at:new Date().toISOString()}).eq('tenant_id',tenantId).eq('id',id)
+    if(error){setInvoices(list=>list.map(item=>item.id===id?current:item));setConnection('error');return 'Не вдалося оновити рахунок.'}
+    return ''
+  }
   return <div className="app-shell">
     <aside className={menuOpen ? 'sidebar open' : 'sidebar'}>
       <div className="brand"><span className="brand-dot"/> detailflow</div><button className="mobile-close" onClick={() => setMenuOpen(false)}><X size={20}/></button>
@@ -361,7 +387,7 @@ export default function App() {
     <main><header><button className="hamburger" onClick={() => setMenuOpen(true)}><Menu/></button><div className="search"><Search size={18}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Пошук клієнтів, авто, записів…"/></div><div className="header-actions"><small title={connection === 'local' ? supabaseSetupMessage : undefined} style={{color:connection === 'connected' ? '#26754c' : '#777982'}}>{connection === 'connected' ? 'БД підключена' : connection === 'checking' ? 'Перевірка БД…' : connection === 'error' ? 'Потрібно увійти' : 'Локальний режим'}</small>{user ? <button className="locale" onClick={() => void supabase?.auth.signOut()}>Вийти</button> : <button className="locale" onClick={() => setAuthOpen(true)}>Увійти</button>}<span className="locale" title="Мова інтерфейсу — українська">UA</span><div className="profile-control"><button className="avatar" aria-label="Меню профілю" aria-expanded={profileMenu} onClick={()=>setProfileMenu(v=>!v)}>{user?.email?.slice(0,2).toUpperCase() || 'Г'}</button>{profileMenu && <div className="profile-options"><b>{user?.user_metadata?.full_name || 'Ваш профіль'}</b><small>{user?.email || 'Ви не увійшли'}</small><button className="text-btn" onClick={()=>{setPage('Налаштування');setProfileMenu(false)}}>Налаштування студії</button><button className="text-btn" onClick={()=>{setProfileMenu(false);if(user) void supabase?.auth.signOut();else setAuthOpen(true)}}>{user?'Вийти з акаунта':'Увійти'}</button></div>}</div></div></header>
       {page === 'Огляд' && <Dashboard name={user?.user_metadata?.full_name || "колего"} calendar={()=>setPage("Календар")} bookings={filtered.filter(b=>b.date===new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10))} revenue={revenue} onCreate={() => setModal(true)} onStatus={(id,status)=>{void updateStatus(id,status).then(error=>{if(error)window.alert(error)})}}/>}
       {page === 'Календар' && <Calendar bookings={filtered} onCreate={date => {setBookingDate(date);setModal(true)}} onStatus={(id,status)=>{void updateStatus(id,status).then(error=>{if(error)window.alert(error)})}}/>}
-      {page === 'Клієнти' && <Clients items={clients.filter(client => `${client.name} ${client.phone} ${client.car}`.toLowerCase().includes(query.toLowerCase()))} add={addClient} remove={removeClient} bookings={bookings} edit={editClient}/>} {page === 'Послуги' && <Suspense fallback={<p className="content">Завантаження каталогу…</p>}><Catalog services={serviceList} products={inventory.map(item=>({id:item.id,name:item.name,unit:item.unit,quantity:item.quantity,price:item.lastUnitCost}))} packages={servicePackages} addService={addService} removeService={removeService} addPackage={addServicePackage} removePackage={removeServicePackage}/></Suspense>} {page === 'Команда' && <Team items={staffList} selected={selectedTech} select={setSelectedTech} bookings={bookings} onStatus={(id,status)=>{void updateStatus(id,status).then(error=>{if(error)window.alert(error)})}} add={addStaff} remove={removeStaff}/>} {page === 'Завдання' && <Suspense fallback={<p className="content">Завантаження завдань…</p>}><Tasks tasks={tasks} staff={staffList.map(item=>({id:item.id,name:item.name}))} clients={clients.map(item=>({id:item.id,name:item.name}))} add={addTask} update={updateTask} remove={removeTask}/></Suspense>} {page === 'Звернення' && <Suspense fallback={<p className="content">Завантаження звернень…</p>}><Leads items={leads} clients={clients.map(item=>({id:item.id,name:item.name,phone:item.phone}))} staff={staffList.map(item=>({id:item.id,name:item.name}))} add={addLead} update={updateLead} remove={removeLead}/></Suspense>} {page === 'Замовлення' && <Suspense fallback={<p className="content">Завантаження замовлень…</p>}><WorkOrders items={workOrders} clients={clients.map(item=>({id:item.id,name:item.name,car:item.car}))} staff={staffList.map(item=>({id:item.id,name:item.name}))} add={addWorkOrder} update={updateWorkOrder} remove={removeWorkOrder}/></Suspense>} {page === 'Продажі' && <Suspense fallback={<p className="content">Завантаження продажів…</p>}><Sales items={sales} clients={clients.map(item=>({id:item.id,name:item.name}))} products={inventory.map(item=>({id:item.id,name:item.name,unit:item.unit,quantity:item.quantity,price:item.lastUnitCost}))} add={addSale}/></Suspense>} {page === 'Оплати' && <Payments bookings={filtered} updatePayment={updatePayment}/>} {page === 'Витрати' && <Expenses items={expenses} add={addExpense} remove={removeExpense}/>} {page === 'Склад' && <Inventory items={inventory} movements={inventoryMovements} add={addInventory} writeOff={writeOffInventory} updateMinimum={updateInventoryMinimum}/>} {page === 'Аналітика' && <Suspense fallback={<p className="content">Завантаження аналітики…</p>}><Analytics bookings={bookings} expenses={expenses}/></Suspense>} {page === 'Онлайн-запис' && <Suspense fallback={<p className="content">Завантаження заявок…</p>}><BookingRequests bookings={bookings} update={updateStatus} link={studioProfile.slug ? `${window.location.origin}/?book=${studioProfile.slug}` : ''}/></Suspense>} {page === 'Тариф' && <Billing plan={plan} select={setPlan}/>} {page === 'Налаштування' && <SettingsPage/>}
+      {page === 'Клієнти' && <Clients items={clients.filter(client => `${client.name} ${client.phone} ${client.car}`.toLowerCase().includes(query.toLowerCase()))} add={addClient} remove={removeClient} bookings={bookings} edit={editClient}/>} {page === 'Послуги' && <Suspense fallback={<p className="content">Завантаження каталогу…</p>}><Catalog services={serviceList} products={inventory.map(item=>({id:item.id,name:item.name,unit:item.unit,quantity:item.quantity,price:item.lastUnitCost}))} packages={servicePackages} addService={addService} removeService={removeService} addPackage={addServicePackage} removePackage={removeServicePackage}/></Suspense>} {page === 'Команда' && <Team items={staffList} selected={selectedTech} select={setSelectedTech} bookings={bookings} onStatus={(id,status)=>{void updateStatus(id,status).then(error=>{if(error)window.alert(error)})}} add={addStaff} remove={removeStaff}/>} {page === 'Завдання' && <Suspense fallback={<p className="content">Завантаження завдань…</p>}><Tasks tasks={tasks} staff={staffList.map(item=>({id:item.id,name:item.name}))} clients={clients.map(item=>({id:item.id,name:item.name}))} add={addTask} update={updateTask} remove={removeTask}/></Suspense>} {page === 'Звернення' && <Suspense fallback={<p className="content">Завантаження звернень…</p>}><Leads items={leads} clients={clients.map(item=>({id:item.id,name:item.name,phone:item.phone}))} staff={staffList.map(item=>({id:item.id,name:item.name}))} add={addLead} update={updateLead} remove={removeLead}/></Suspense>} {page === 'Замовлення' && <Suspense fallback={<p className="content">Завантаження замовлень…</p>}><WorkOrders items={workOrders} clients={clients.map(item=>({id:item.id,name:item.name,car:item.car}))} staff={staffList.map(item=>({id:item.id,name:item.name}))} add={addWorkOrder} update={updateWorkOrder} remove={removeWorkOrder}/></Suspense>} {page === 'Продажі' && <Suspense fallback={<p className="content">Завантаження продажів…</p>}><Sales items={sales} clients={clients.map(item=>({id:item.id,name:item.name}))} products={inventory.map(item=>({id:item.id,name:item.name,unit:item.unit,quantity:item.quantity,price:item.lastUnitCost}))} add={addSale}/></Suspense>} {page === 'Рахунки' && <Suspense fallback={<p className="content">Завантаження рахунків…</p>}><Invoices items={invoices} clients={clients.map(item=>({id:item.id,name:item.name}))} add={addInvoice} update={updateInvoice}/></Suspense>} {page === 'Оплати' && <Payments bookings={filtered} updatePayment={updatePayment}/>} {page === 'Витрати' && <Expenses items={expenses} add={addExpense} remove={removeExpense}/>} {page === 'Склад' && <Inventory items={inventory} movements={inventoryMovements} add={addInventory} writeOff={writeOffInventory} updateMinimum={updateInventoryMinimum}/>} {page === 'Аналітика' && <Suspense fallback={<p className="content">Завантаження аналітики…</p>}><Analytics bookings={bookings} expenses={expenses}/></Suspense>} {page === 'Онлайн-запис' && <Suspense fallback={<p className="content">Завантаження заявок…</p>}><BookingRequests bookings={bookings} update={updateStatus} link={studioProfile.slug ? `${window.location.origin}/?book=${studioProfile.slug}` : ''}/></Suspense>} {page === 'Тариф' && <Billing plan={plan} select={setPlan}/>} {page === 'Налаштування' && <SettingsPage/>}
     </main>{modal && <BookingModal initialDate={bookingDate} bookings={bookings} clients={clients} services={serviceList} staff={staffList} close={() => setModal(false)} save={createBooking}/>} {authOpen && <AuthModal close={() => setAuthOpen(false)}/>} {tenantOpen && <TenantModal close={() => setTenantOpen(false)} created={id => {setTenantId(id);setConnection('connected')}}/>}
   </div>
 }
