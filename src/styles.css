@@ -18,6 +18,7 @@ button.avatar{border:0;cursor:pointer}
 .modal{max-height:90vh;overflow:auto}
 .overlay{z-index:20}
 .client-detail{width:min(680px,100%)}
+.client-detail textarea{min-height:78px;resize:vertical;border:1px solid #dfe0dc;border-radius:8px;padding:11px;font:inherit}
 .client-history{display:grid;gap:5px;padding:12px 0;border-top:1px solid #eee;font-size:13px}
 .client-history span{color:#777982}
 .empty-state{padding:20px;color:#777982}
