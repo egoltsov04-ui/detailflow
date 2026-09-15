@@ -12,6 +12,8 @@ const required = (name: string) => {
 const db = () => createClient(required('VITE_SUPABASE_URL'), required('SUPABASE_SERVICE_ROLE_KEY'))
 const cleanText = (value: unknown, max: number) => typeof value === 'string' ? value.trim().slice(0, max) : ''
 const overlap = (startA: Date, endA: Date, startB: Date, endB: Date) => startA < endB && endA > startB
+const weekdayIn = (value:Date, timezone:string) => ({Sun:0,Mon:1,Tue:2,Wed:3,Thu:4,Fri:5,Sat:6}[new Intl.DateTimeFormat('en-US',{timeZone:timezone,weekday:'short'}).format(value)] ?? -1)
+const minutes = (value:string) => { const [hour,minute]=value.slice(0,5).split(':').map(Number); return hour*60+minute }
 
 export default async function handler(request: Request, response: Response) {
   try {
@@ -22,13 +24,14 @@ export default async function handler(request: Request, response: Response) {
     if (tenantError || !tenant) return response.status(404).json({ error: 'Studio not found' })
 
     if (request.method === 'GET') {
-      const [services, staff, appointments] = await Promise.all([
+      const [services, staff, appointments, schedules] = await Promise.all([
         supabase.from('services').select('id,name,price,duration_minutes').eq('tenant_id', tenant.id).eq('active', true).order('created_at'),
         supabase.from('staff_profiles').select('id,full_name,specialty').eq('tenant_id', tenant.id).eq('active', true).order('created_at'),
-        supabase.from('appointments').select('staff_id,starts_at,ends_at').eq('tenant_id', tenant.id).in('status', ['confirmed', 'in_progress']).gte('starts_at', new Date().toISOString())
+        supabase.from('appointments').select('staff_id,starts_at,ends_at').eq('tenant_id', tenant.id).in('status', ['confirmed', 'in_progress']).gte('starts_at', new Date().toISOString()),
+        supabase.from('work_schedules').select('staff_id,weekday,starts_at,ends_at').eq('tenant_id',tenant.id)
       ])
-      if (services.error || staff.error || appointments.error) throw services.error || staff.error || appointments.error
-      return response.status(200).json({ studio: { name: tenant.name, address: tenant.address, timezone: tenant.timezone }, services: services.data, staff: staff.data, appointments: appointments.data })
+      if (services.error || staff.error || appointments.error || schedules.error) throw services.error || staff.error || appointments.error || schedules.error
+      return response.status(200).json({ studio: { name: tenant.name, address: tenant.address, timezone: tenant.timezone }, services: services.data, staff: staff.data, appointments: appointments.data, schedules:schedules.data })
     }
 
     if (request.method !== 'POST') return response.status(405).json({ error: 'Method not allowed' })
@@ -44,6 +47,9 @@ export default async function handler(request: Request, response: Response) {
     ])
     if (!serviceResult.data || !staffResult.data) return response.status(400).json({ error: 'Service or specialist is unavailable' })
     const endsAt = new Date(startsAt.getTime() + Number(serviceResult.data.duration_minutes) * 60_000)
+    const {data:schedules,error:scheduleError}=await supabase.from('work_schedules').select('weekday,starts_at,ends_at').eq('tenant_id',tenant.id).eq('staff_id',staffId)
+    if(scheduleError) throw scheduleError
+    if((schedules ?? []).length){const shift=schedules?.find(item=>item.weekday===weekdayIn(startsAt,tenant.timezone));const startTime=new Intl.DateTimeFormat('en-GB',{timeZone:tenant.timezone,hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(startsAt);const endTime=new Intl.DateTimeFormat('en-GB',{timeZone:tenant.timezone,hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(endsAt);if(!shift || minutes(startTime)<minutes(shift.starts_at) || minutes(endTime)>minutes(shift.ends_at)) return response.status(400).json({error:'Обраний час поза графіком майстра. Оберіть інший слот.'})}
     const { data: active, error: activeError } = await supabase.from('appointments').select('starts_at,ends_at').eq('tenant_id', tenant.id).eq('staff_id', staffId).in('status', ['confirmed', 'in_progress']).gte('ends_at', startsAt.toISOString())
     if (activeError) throw activeError
     if ((active ?? []).some(item => overlap(startsAt, endsAt, new Date(item.starts_at), new Date(item.ends_at)))) return response.status(409).json({ error: 'This time is no longer available. Choose another slot.' })
