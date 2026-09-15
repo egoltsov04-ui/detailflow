@@ -17,7 +17,8 @@ const WarehouseControls = lazy(()=>import('./WarehouseControls'))
 const Reports = lazy(()=>import('./Reports'))
 const TeamSchedules = lazy(()=>import('./TeamSchedules'))
 const AttentionCenter = lazy(()=>import('./AttentionCenter'))
-const nav = [['Огляд', LayoutDashboard], ['Календар', CalendarDays], ['Клієнти', Users], ['Послуги', Sparkles], ['Команда', CarFront], ['Завдання', ListTodo], ['Звернення', MessageSquare], ['Замовлення', ClipboardList], ['Продажі', ShoppingCart], ['Рахунки', ReceiptText], ['Оплати', CircleDollarSign], ['Витрати', WalletCards], ['Склад', Package], ['Аналітика', BarChart3], ['Звіти', Files], ['Онлайн-запис', Globe2], ['Тариф', CreditCard]] as const
+const CashFlow = lazy(()=>import('./CashFlow'))
+const nav = [['Огляд', LayoutDashboard], ['Календар', CalendarDays], ['Клієнти', Users], ['Послуги', Sparkles], ['Команда', CarFront], ['Завдання', ListTodo], ['Звернення', MessageSquare], ['Замовлення', ClipboardList], ['Продажі', ShoppingCart], ['Рахунки', ReceiptText], ['Фінанси', CircleDollarSign], ['Оплати', CircleDollarSign], ['Витрати', WalletCards], ['Склад', Package], ['Аналітика', BarChart3], ['Звіти', Files], ['Онлайн-запис', Globe2], ['Тариф', CreditCard]] as const
 const money = (n: number) => new Intl.NumberFormat('uk-UA').format(n) + ' ₴'
 const formatDuration = (minutes:number) => minutes % 1440 === 0 ? `${minutes / 1440} дні` : minutes % 60 === 0 ? `${minutes / 60} год` : `${minutes} хв`
 const parseDuration = (value:string) => value.includes('дні') ? Number.parseInt(value, 10) * 1440 : value.includes('год') ? Number.parseInt(value, 10) * 60 : Number.parseInt(value, 10) || 60
@@ -43,6 +44,7 @@ type ServicePackage = import('./Catalog').ServicePackage
 type Sale = import('./Sales').Sale
 type Invoice = import('./Invoices').Invoice
 type InvoiceStatus = import('./Invoices').InvoiceStatus
+type CashTransaction = import('./CashFlow').CashTransaction
 const seedExpenses: Expense[] = [
   {id:1,date:'2026-09-13',category:'Матеріали',title:'Кераміка та автохімія',amount:4680,method:'Картка',note:'Запас на тиждень'},
   {id:2,date:'2026-09-12',category:'Оренда',title:'Оренда студії',amount:24000,method:'Переказ',note:'Вересень'},
@@ -71,6 +73,7 @@ export default function App() {
   const [sales, setSales] = useState<Sale[]>([])
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [workSchedules, setWorkSchedules] = useState<WorkSchedule[]>([])
+  const [cashTransactions,setCashTransactions]=useState<CashTransaction[]>([])
   const [connection, setConnection] = useState<'local' | 'checking' | 'connected' | 'error'>(supabase ? 'checking' : 'local')
   const [user,setUser] = useState<User | null>(null), [authOpen,setAuthOpen] = useState(false), [tenantId,setTenantId] = useState<string | null>(null), [tenantOpen,setTenantOpen] = useState(false)
   useEffect(()=>{
@@ -88,7 +91,7 @@ export default function App() {
     return () => listener.subscription.unsubscribe()
   }, [])
   useEffect(() => {
-    if (!supabase || !user) { if(supabase){setBookings([]);setClients([]);setServiceList([]);setStaffList([]);setExpenses([]);setInventory([]);setInventoryMovements([]);setTasks([]);setWorkOrders([]);setLeads([]);setServicePackages([]);setSales([]);setInvoices([]);setWorkSchedules([]);setStudioProfile({name:'Студія',address:'',slug:''})} setTenantId(null); setConnection(supabase ? 'checking' : 'local'); return }
+    if (!supabase || !user) { if(supabase){setBookings([]);setClients([]);setServiceList([]);setStaffList([]);setExpenses([]);setInventory([]);setInventoryMovements([]);setTasks([]);setWorkOrders([]);setLeads([]);setServicePackages([]);setSales([]);setInvoices([]);setWorkSchedules([]);setCashTransactions([]);setStudioProfile({name:'Студія',address:'',slug:''})} setTenantId(null); setConnection(supabase ? 'checking' : 'local'); return }
     void supabase.from('tenant_memberships').select('tenant_id').limit(1).maybeSingle().then(({ data, error }) => { setTenantId(data?.tenant_id ?? null); setTenantOpen(!error && !data); setConnection(error ? 'error' : 'connected') })
   }, [user])
   useEffect(() => {
@@ -184,6 +187,13 @@ export default function App() {
     void supabase.from('invoices').select('id,number,client_id,title,line_items,total,status,due_at,note,created_at,clients(full_name)').eq('tenant_id',tenantId).order('created_at',{ascending:false}).then(({data,error})=>{
       if(error || !data) return
       setInvoices(data.map((item:any)=>({id:item.id,number:item.number,clientId:item.client_id,clientName:item.clients?.full_name || '',title:item.title,lineItems:Array.isArray(item.line_items)?item.line_items:[],total:Number(item.total),status:item.status as InvoiceStatus,dueAt:item.due_at || '',note:item.note || '',createdAt:item.created_at})))
+    })
+  },[tenantId])
+  useEffect(()=>{
+    if(!supabase || !tenantId)return
+    void supabase.from('cash_transactions').select('id,transaction_date,direction,amount,payment_method,category,title,note,client_id,created_at,clients(full_name)').eq('tenant_id',tenantId).order('transaction_date',{ascending:false}).then(({data,error})=>{
+      if(error || !data)return
+      setCashTransactions(data.map((item:any)=>({id:item.id,date:item.transaction_date,direction:item.direction==='expense'?'expense':'income',amount:Number(item.amount),method:paymentLabel(item.payment_method),category:item.category,title:item.title,note:item.note || '',clientId:item.client_id,clientName:item.clients?.full_name || ''})))
     })
   },[tenantId])
   const [bookingDate,setBookingDate]=useState('')
@@ -392,6 +402,21 @@ export default function App() {
     if(error){setInvoices(list=>list.map(item=>item.id===id?current:item));setConnection('error');return 'Не вдалося оновити рахунок.'}
     return ''
   }
+  async function addCashTransaction(item:CashTransaction):Promise<string>{
+    setCashTransactions(list=>[item,...list])
+    if(!supabase || !tenantId)return ''
+    const {data,error}=await supabase.from('cash_transactions').insert({tenant_id:tenantId,transaction_date:item.date,direction:item.direction,amount:item.amount,payment_method:paymentValue(item.method),category:item.category,title:item.title,note:item.note || null,client_id:typeof item.clientId==='string'?item.clientId:null,created_by:user?.id || null}).select('id').single()
+    if(error || !data){setCashTransactions(list=>list.filter(entry=>entry.id!==item.id));setConnection('error');return 'Не вдалося зберегти операцію.'}
+    setCashTransactions(list=>list.map(entry=>entry.id===item.id?{...entry,id:data.id}:entry));return ''
+  }
+  async function removeCashTransaction(id:CashTransaction['id']):Promise<string>{
+    const current=cashTransactions.find(item=>item.id===id);if(!current)return ''
+    setCashTransactions(list=>list.filter(item=>item.id!==id))
+    if(!supabase || !tenantId || typeof id!=='string')return ''
+    const {error}=await supabase.from('cash_transactions').delete().eq('tenant_id',tenantId).eq('id',id)
+    if(error){setCashTransactions(list=>[current,...list]);setConnection('error');return 'Не вдалося видалити операцію.'}
+    return ''
+  }
   async function saveWorkSchedule(item:Omit<WorkSchedule,'id'>):Promise<string> {
     if(item.startsAt >= item.endsAt) return 'Час завершення має бути пізніше за початок.'
     const current=workSchedules.find(schedule=>String(schedule.staffId)===String(item.staffId)&&schedule.weekday===item.weekday)
@@ -424,7 +449,7 @@ export default function App() {
       {page === 'Календар' && <Calendar bookings={filtered} onCreate={date => {setBookingDate(date);setModal(true)}} onStatus={(id,status)=>{void updateStatus(id,status).then(error=>{if(error)window.alert(error)})}}/>}
       {page === 'Склад' && <Suspense fallback={null}><WarehouseControls items={inventory} receive={receiveInventory} adjust={adjustInventory}/></Suspense>}
       {page === 'Звіти' && <Suspense fallback={<p className="content">Завантаження звітів…</p>}><Reports bookings={bookings} expenses={expenses} sales={sales} invoices={invoices}/></Suspense>}
-      {page === 'Клієнти' && <Clients items={clients.filter(client => `${client.name} ${client.phone} ${client.car}`.toLowerCase().includes(query.toLowerCase()))} add={addClient} remove={removeClient} bookings={bookings} edit={editClient}/>} {page === 'Послуги' && <Suspense fallback={<p className="content">Завантаження каталогу…</p>}><Catalog services={serviceList} products={inventory.map(item=>({id:item.id,name:item.name,unit:item.unit,quantity:item.quantity,price:item.lastUnitCost}))} packages={servicePackages} addService={addService} removeService={removeService} addPackage={addServicePackage} removePackage={removeServicePackage}/></Suspense>} {page === 'Команда' && <><Team items={staffList} selected={selectedTech} select={setSelectedTech} bookings={bookings} onStatus={(id,status)=>{void updateStatus(id,status).then(error=>{if(error)window.alert(error)})}} add={addStaff} remove={removeStaff}/><Suspense fallback={null}><TeamSchedules staff={staffList.map(item=>({id:item.id,name:item.name,color:item.color}))} schedules={workSchedules} save={saveWorkSchedule} remove={removeWorkSchedule}/></Suspense></>} {page === 'Завдання' && <Suspense fallback={<p className="content">Завантаження завдань…</p>}><Tasks tasks={tasks} staff={staffList.map(item=>({id:item.id,name:item.name}))} clients={clients.map(item=>({id:item.id,name:item.name}))} add={addTask} update={updateTask} remove={removeTask}/></Suspense>} {page === 'Звернення' && <Suspense fallback={<p className="content">Завантаження звернень…</p>}><Leads items={leads} clients={clients.map(item=>({id:item.id,name:item.name,phone:item.phone}))} staff={staffList.map(item=>({id:item.id,name:item.name}))} add={addLead} update={updateLead} remove={removeLead}/></Suspense>} {page === 'Замовлення' && <Suspense fallback={<p className="content">Завантаження замовлень…</p>}><WorkOrders items={workOrders} clients={clients.map(item=>({id:item.id,name:item.name,car:item.car}))} staff={staffList.map(item=>({id:item.id,name:item.name}))} add={addWorkOrder} update={updateWorkOrder} remove={removeWorkOrder}/></Suspense>} {page === 'Продажі' && <Suspense fallback={<p className="content">Завантаження продажів…</p>}><Sales items={sales} clients={clients.map(item=>({id:item.id,name:item.name}))} products={inventory.map(item=>({id:item.id,name:item.name,unit:item.unit,quantity:item.quantity,price:item.lastUnitCost}))} add={addSale}/></Suspense>} {page === 'Рахунки' && <Suspense fallback={<p className="content">Завантаження рахунків…</p>}><Invoices items={invoices} clients={clients.map(item=>({id:item.id,name:item.name}))} add={addInvoice} update={updateInvoice}/></Suspense>} {page === 'Оплати' && <Payments bookings={filtered} updatePayment={updatePayment}/>} {page === 'Витрати' && <Expenses items={expenses} add={addExpense} remove={removeExpense}/>} {page === 'Склад' && <Inventory items={inventory} movements={inventoryMovements} add={addInventory} writeOff={writeOffInventory} updateMinimum={updateInventoryMinimum}/>} {page === 'Аналітика' && <Suspense fallback={<p className="content">Завантаження аналітики…</p>}><Analytics bookings={bookings} expenses={expenses}/></Suspense>} {page === 'Онлайн-запис' && <Suspense fallback={<p className="content">Завантаження заявок…</p>}><BookingRequests bookings={bookings} update={updateStatus} link={studioProfile.slug ? `${window.location.origin}/?book=${studioProfile.slug}` : ''}/></Suspense>} {page === 'Тариф' && <Billing plan={plan} select={setPlan}/>} {page === 'Налаштування' && <SettingsPage/>}
+      {page === 'Клієнти' && <Clients items={clients.filter(client => `${client.name} ${client.phone} ${client.car}`.toLowerCase().includes(query.toLowerCase()))} add={addClient} remove={removeClient} bookings={bookings} edit={editClient}/>} {page === 'Послуги' && <Suspense fallback={<p className="content">Завантаження каталогу…</p>}><Catalog services={serviceList} products={inventory.map(item=>({id:item.id,name:item.name,unit:item.unit,quantity:item.quantity,price:item.lastUnitCost}))} packages={servicePackages} addService={addService} removeService={removeService} addPackage={addServicePackage} removePackage={removeServicePackage}/></Suspense>} {page === 'Команда' && <><Team items={staffList} selected={selectedTech} select={setSelectedTech} bookings={bookings} onStatus={(id,status)=>{void updateStatus(id,status).then(error=>{if(error)window.alert(error)})}} add={addStaff} remove={removeStaff}/><Suspense fallback={null}><TeamSchedules staff={staffList.map(item=>({id:item.id,name:item.name,color:item.color}))} schedules={workSchedules} save={saveWorkSchedule} remove={removeWorkSchedule}/></Suspense></>} {page === 'Завдання' && <Suspense fallback={<p className="content">Завантаження завдань…</p>}><Tasks tasks={tasks} staff={staffList.map(item=>({id:item.id,name:item.name}))} clients={clients.map(item=>({id:item.id,name:item.name}))} add={addTask} update={updateTask} remove={removeTask}/></Suspense>} {page === 'Звернення' && <Suspense fallback={<p className="content">Завантаження звернень…</p>}><Leads items={leads} clients={clients.map(item=>({id:item.id,name:item.name,phone:item.phone}))} staff={staffList.map(item=>({id:item.id,name:item.name}))} add={addLead} update={updateLead} remove={removeLead}/></Suspense>} {page === 'Замовлення' && <Suspense fallback={<p className="content">Завантаження замовлень…</p>}><WorkOrders items={workOrders} clients={clients.map(item=>({id:item.id,name:item.name,car:item.car}))} staff={staffList.map(item=>({id:item.id,name:item.name}))} add={addWorkOrder} update={updateWorkOrder} remove={removeWorkOrder}/></Suspense>} {page === 'Продажі' && <Suspense fallback={<p className="content">Завантаження продажів…</p>}><Sales items={sales} clients={clients.map(item=>({id:item.id,name:item.name}))} products={inventory.map(item=>({id:item.id,name:item.name,unit:item.unit,quantity:item.quantity,price:item.lastUnitCost}))} add={addSale}/></Suspense>} {page === 'Рахунки' && <Suspense fallback={<p className="content">Завантаження рахунків…</p>}><Invoices items={invoices} clients={clients.map(item=>({id:item.id,name:item.name}))} add={addInvoice} update={updateInvoice}/></Suspense>} {page === 'Фінанси' && <Suspense fallback={<p className="content">Завантаження фінансів…</p>}><CashFlow items={cashTransactions} clients={clients.map(item=>({id:item.id,name:item.name}))} add={addCashTransaction} remove={removeCashTransaction}/></Suspense>} {page === 'Оплати' && <Payments bookings={filtered} updatePayment={updatePayment}/>} {page === 'Витрати' && <Expenses items={expenses} add={addExpense} remove={removeExpense}/>} {page === 'Склад' && <Inventory items={inventory} movements={inventoryMovements} add={addInventory} writeOff={writeOffInventory} updateMinimum={updateInventoryMinimum}/>} {page === 'Аналітика' && <Suspense fallback={<p className="content">Завантаження аналітики…</p>}><Analytics bookings={bookings} expenses={expenses}/></Suspense>} {page === 'Онлайн-запис' && <Suspense fallback={<p className="content">Завантаження заявок…</p>}><BookingRequests bookings={bookings} update={updateStatus} link={studioProfile.slug ? `${window.location.origin}/?book=${studioProfile.slug}` : ''}/></Suspense>} {page === 'Тариф' && <Billing plan={plan} select={setPlan}/>} {page === 'Налаштування' && <SettingsPage/>}
     </main>{modal && <BookingModal initialDate={bookingDate} bookings={bookings} clients={clients} services={serviceList} staff={staffList} close={() => setModal(false)} save={createBooking}/>} {authOpen && <AuthModal close={() => setAuthOpen(false)}/>} {tenantOpen && <TenantModal close={() => setTenantOpen(false)} created={id => {setTenantId(id);setConnection('connected')}}/>}
   </div>
 }
