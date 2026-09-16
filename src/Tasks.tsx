@@ -17,18 +17,20 @@ const priorityClass:Record<TaskPriority,string> = {low:'low',normal:'normal',hig
 const statusLabel:Record<TaskStatus,string> = {todo:'Нові',in_progress:'У роботі',blocked:'Потребують уваги',done:'Виконано'}
 
 export default function Tasks({tasks,staff,clients,add,update,remove}:{tasks:Task[];staff:Person[];clients:Person[];add:(task:Task)=>Promise<string>;update:(id:Task['id'],patch:Partial<Pick<Task,'status'|'priority'|'dueDate'|'staffId'|'clientId'|'title'|'description'>>)=>Promise<string>;remove:(id:Task['id'])=>Promise<string>}) {
-  const [open,setOpen]=useState(false),[filter,setFilter]=useState<'all'|'mine'|'overdue'>('all'),[query,setQuery]=useState(''),[message,setMessage]=useState('')
+  const [open,setOpen]=useState(false),[filter,setFilter]=useState<'all'|'assigned'|'overdue'>('all'),[staffFilter,setStaffFilter]=useState(''),[query,setQuery]=useState(''),[message,setMessage]=useState('')
   const today=new Date().toISOString().slice(0,10)
   const visible=useMemo(()=>tasks.filter(task=>{
     const matchesQuery=[task.title,task.description,task.staffName,task.clientName].join(' ').toLowerCase().includes(query.toLowerCase())
     if(!matchesQuery)return false
+    if(staffFilter&&String(task.staffId)!==staffFilter)return false
+    if(filter==='assigned')return Boolean(task.staffId)
     if(filter==='overdue')return task.status!=='done'&&Boolean(task.dueDate)&&task.dueDate<today
     return true
   }),[tasks,filter,query,today])
   async function setStatus(task:Task,status:TaskStatus){const error=await update(task.id,{status});setMessage(error||'Статус завдання оновлено.')}
   async function deleteTask(id:Task['id']){if(!window.confirm('Видалити це завдання?'))return;const error=await remove(id);setMessage(error||'Завдання видалено.')}
   return <section className="content tasks-page"><div className="page-title"><div><p>Операційна робота студії</p><h1>Завдання команди</h1></div><button className="primary" onClick={()=>setOpen(true)}><Plus size={18}/> Створити завдання</button></div>
-    <div className="panel task-toolbar"><div className="filter-actions"><button className={filter==='all'?'primary':'text-btn'} onClick={()=>setFilter('all')}>Усі · {tasks.length}</button><button className={filter==='mine'?'primary':'text-btn'} onClick={()=>setFilter('mine')}>За майстрами</button><button className={filter==='overdue'?'primary':'text-btn'} onClick={()=>setFilter('overdue')}>Прострочені · {tasks.filter(task=>task.status!=='done'&&Boolean(task.dueDate)&&task.dueDate<today).length}</button></div><input value={query} onChange={event=>setQuery(event.target.value)} placeholder="Пошук завдань, клієнта або майстра"/></div>
+    <div className="panel task-toolbar"><div className="filter-actions"><button className={filter==='all'?'primary':'text-btn'} onClick={()=>setFilter('all')}>Усі · {tasks.length}</button><button className={filter==='assigned'?'primary':'text-btn'} onClick={()=>setFilter('assigned')}>Призначені · {tasks.filter(task=>Boolean(task.staffId)).length}</button><button className={filter==='overdue'?'primary':'text-btn'} onClick={()=>setFilter('overdue')}>Прострочені · {tasks.filter(task=>task.status!=='done'&&Boolean(task.dueDate)&&task.dueDate<today).length}</button><label>Відповідальний<select value={staffFilter} onChange={event=>setStaffFilter(event.target.value)}><option value="">Усі майстри</option>{staff.map(item=><option key={item.id} value={String(item.id)}>{item.name}</option>)}</select></label></div><input value={query} onChange={event=>setQuery(event.target.value)} placeholder="Пошук завдань, клієнта або майстра"/></div>
     {message&&<p role="status" className="task-message">{message}</p>}
     <div className="task-board">{columns.map(column=>{const rows=visible.filter(task=>task.status===column.status);return <section className={'task-column '+column.status} key={column.status}><div className="task-column-head"><div><h2>{column.title}</h2><small>{column.hint}</small></div><b>{rows.length}</b></div><div className="task-list">{rows.map(task=><TaskCard key={task.id} task={task} updateStatus={setStatus} remove={deleteTask}/>)}</div>{!rows.length&&<p className="task-empty">Немає завдань</p>}</section>})}</div>
     {open&&<TaskModal staff={staff} clients={clients} close={()=>setOpen(false)} add={async task=>{const error=await add(task);if(!error)setOpen(false);return error}}/>}
