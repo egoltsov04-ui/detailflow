@@ -110,3 +110,6 @@ main select,main input[type="date"],main input[type="time"],main input[type="dat
 
 /* Chromium uses the page colour scheme for its date-picker popover. */
 html{color-scheme:dark}input[type="date"]::-webkit-calendar-picker-indicator,input[type="time"]::-webkit-calendar-picker-indicator,input[type="datetime-local"]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.8}
+
+/* Order cards: override the remaining legacy light action controls. */
+.order-card select{width:100%;background:#171A22!important;color:#fff!important;border:1px solid #2C303C!important;border-radius:8px;padding:9px 10px;color-scheme:dark}.order-card select:hover{background:#2C303C!important;border-color:#A7D65C!important}.order-payment{width:100%;display:flex;justify-content:center;align-items:center;background:#2C303C!important;color:#A7D65C!important;border:1px solid #456144!important;border-radius:8px;padding:9px 10px;font-weight:800}.order-payment:hover{background:#263429!important;color:#fff!important;border-color:#A7D65C!important}.order-card-details strong{color:#fff!important;line-height:1.45}.order-board{grid-template-columns:repeat(5,minmax(280px,1fr))}.order-column{min-width:280px}
