@@ -161,9 +161,9 @@ export default function App() {
   },[tenantId])
   useEffect(() => {
     if (!supabase || !tenantId) return
-    void supabase.from('work_orders').select('id,client_id,staff_id,title,vehicle_label,service_summary,status,total,deposit,due_at,notes,created_at,checklist,compensation_percent,compensation_fixed,submitted_for_review_at,review_note,staff_profiles(full_name),clients(full_name)').eq('tenant_id',tenantId).order('created_at',{ascending:false}).then(({data,error})=>{
+    void supabase.from('work_orders').select('id,client_id,staff_id,title,vehicle_label,service_summary,status,total,deposit,due_at,notes,created_at,status_changed_at,checklist,compensation_percent,compensation_fixed,submitted_for_review_at,review_note,staff_profiles(full_name),clients(full_name)').eq('tenant_id',tenantId).order('created_at',{ascending:false}).then(({data,error})=>{
       if(error || !data) return
-      setWorkOrders(data.map((item:any)=>({id:item.id,clientId:item.client_id,clientName:item.clients?.full_name || 'Клієнт',staffId:item.staff_id,staffName:item.staff_profiles?.full_name || '',title:item.title,vehicle:item.vehicle_label || '',serviceSummary:item.service_summary || '',status:item.status as WorkOrderStatus,total:Number(item.total),deposit:Number(item.deposit),dueAt:item.due_at || '',notes:item.notes || '',createdAt:item.created_at,checklist:Array.isArray(item.checklist)?item.checklist:[],compensationPercent:item.compensation_percent===null?null:Number(item.compensation_percent),compensationFixed:item.compensation_fixed===null?null:Number(item.compensation_fixed),submittedForReviewAt:item.submitted_for_review_at || '',reviewNote:item.review_note || ''})))
+      setWorkOrders(data.map((item:any)=>({id:item.id,clientId:item.client_id,clientName:item.clients?.full_name || 'Клієнт',staffId:item.staff_id,staffName:item.staff_profiles?.full_name || '',title:item.title,vehicle:item.vehicle_label || '',serviceSummary:item.service_summary || '',status:item.status as WorkOrderStatus,total:Number(item.total),deposit:Number(item.deposit),dueAt:item.due_at || '',notes:item.notes || '',createdAt:item.created_at,statusChangedAt:item.status_changed_at || item.created_at,checklist:Array.isArray(item.checklist)?item.checklist:[],compensationPercent:item.compensation_percent===null?null:Number(item.compensation_percent),compensationFixed:item.compensation_fixed===null?null:Number(item.compensation_fixed),submittedForReviewAt:item.submitted_for_review_at || '',reviewNote:item.review_note || ''})))
     })
   },[tenantId])
   useEffect(()=>{
@@ -338,7 +338,7 @@ export default function App() {
   }
   async function updateWorkOrder(id:WorkOrder['id'],patch:Partial<Pick<WorkOrder,'status'|'total'|'deposit'|'dueAt'|'staffId'|'title'|'serviceSummary'|'notes'|'checklist'|'submittedForReviewAt'>>):Promise<string> {
     const current=workOrders.find(order=>order.id===id);if(!current)return 'Замовлення не знайдено.'
-    const next={...current,...patch};setWorkOrders(list=>list.map(order=>order.id===id?next:order))
+    const next={...current,...patch,statusChangedAt:patch.status && patch.status!==current.status ? new Date().toISOString() : current.statusChangedAt};setWorkOrders(list=>list.map(order=>order.id===id?next:order))
     if(!supabase || !tenantId || typeof id!=='string')return ''
     const {error}=await supabase.from('work_orders').update({status:patch.status,total:patch.total,deposit:patch.deposit,due_at:patch.dueAt === undefined ? undefined : patch.dueAt || null,staff_id:patch.staffId === undefined ? undefined : typeof patch.staffId==='string'?patch.staffId:null,title:patch.title,service_summary:patch.serviceSummary,notes:patch.notes,checklist:patch.checklist,submitted_for_review_at:patch.submittedForReviewAt === undefined ? undefined : patch.submittedForReviewAt || null,updated_at:new Date().toISOString()}).eq('tenant_id',tenantId).eq('id',id)
     if(error){setWorkOrders(list=>list.map(order=>order.id===id?current:order));setConnection('error');return 'Не вдалося оновити замовлення.'}
