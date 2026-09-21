@@ -19,6 +19,7 @@ const TeamSchedules = lazy(()=>import('./TeamSchedules'))
 const AttentionCenter = lazy(()=>import('./AttentionCenter'))
 const CashFlow = lazy(()=>import('./CashFlow'))
 const MasterCabinet = lazy(()=>import('./MasterCabinet'))
+const TeamCompensation = lazy(()=>import('./TeamCompensation'))
 const nav = [['Огляд', LayoutDashboard], ['Календар', CalendarDays], ['Замовлення', ClipboardList], ['Клієнти', Users], ['Команда', CarFront], ['Кабінет майстра', Users], ['Послуги', Sparkles], ['Фінанси', CircleDollarSign], ['Звіти', Files], ['Онлайн-запис', Globe2]] as const
 const money = (n: number) => new Intl.NumberFormat('uk-UA').format(n) + ' ₴'
 const formatDuration = (minutes:number) => minutes % 1440 === 0 ? `${minutes / 1440} дні` : minutes % 60 === 0 ? `${minutes / 60} год` : `${minutes} хв`
@@ -32,7 +33,7 @@ type Expense = { id:number | string; date:string; category:string; title:string;
 type InventoryItem = { id:number|string; name:string; unit:string; quantity:number; minQuantity:number; lastUnitCost:number|null; sellingPrice:number|null }
 type InventoryMovement = { id:string; itemId:string; itemName:string; unit:string; type:'purchase'|'write_off'|'adjustment'; quantity:number; unitCost:number|null; note:string; createdAt:string }
 type ServiceRow = { id:string; name:string; category:string; price:number; duration_minutes:number }
-type Staff = { id:number | string; name:string; role:string; color:string; load:number; speciality:string; userId?:string|null }
+type Staff = { id:number | string; name:string; role:string; color:string; load:number; speciality:string; userId?:string|null; compensationPercent?:number|null; hourlyRate?:number }
 type WorkSchedule = { id:string|number; staffId:string|number; weekday:number; startsAt:string; endsAt:string }
 type Task = import('./Tasks').Task
 type TaskStatus = import('./Tasks').TaskStatus
@@ -115,9 +116,9 @@ export default function App() {
   }, [tenantId])
   useEffect(() => {
     if (!supabase || !tenantId) return
-    void supabase.from('staff_profiles').select('id,full_name,specialty,color,active,user_id').eq('tenant_id', tenantId).eq('active', true).order('created_at').then(({ data, error }) => {
+    void supabase.from('staff_profiles').select('id,full_name,specialty,color,active,user_id,compensation_percent,hourly_rate').eq('tenant_id', tenantId).eq('active', true).order('created_at').then(({ data, error }) => {
       if (error || !data) return
-      setStaffList(data.map((item: {id:string;full_name:string;specialty:string | null;color:string;user_id:string|null}) => ({id:item.id,name:item.full_name,role:'Майстер',color:item.color || '#3869e9',load:0,speciality:item.specialty || 'Спеціалізація не вказана',userId:item.user_id})))
+      setStaffList(data.map((item: {id:string;full_name:string;specialty:string | null;color:string;user_id:string|null;compensation_percent:number|null;hourly_rate:number|null}) => ({id:item.id,name:item.full_name,role:'Майстер',color:item.color || '#3869e9',load:0,speciality:item.specialty || 'Спеціалізація не вказана',userId:item.user_id,compensationPercent:item.compensation_percent===null?null:Number(item.compensation_percent),hourlyRate:Number(item.hourly_rate||0)})))
     })
   }, [tenantId])
   useEffect(() => {
