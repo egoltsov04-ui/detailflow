@@ -104,3 +104,9 @@ main select,main input[type="date"],main input[type="time"],main input[type="dat
 
 /* Summary tables fit their cards; wide analytical tables retain their own scrolling. */
 .report-table .report-scroll{overflow:hidden}.report-table .report-scroll table{min-width:0;table-layout:fixed}.report-table .report-scroll th,.report-table .report-scroll td{overflow-wrap:anywhere;padding:10px 6px}
+
+/* Fix controls that are flex items and must never collapse into a vertical label. */
+.mobile-close{position:absolute;right:17px;top:25px;width:32px;height:32px;padding:0;display:grid!important;place-items:center;border:1px solid #2C303C!important;border-radius:8px;background:#22262F!important;color:#fff!important;z-index:1}.mobile-close:hover{background:#2C303C!important;border-color:#A7D65C!important}.order-toolbar{align-items:center}.order-toolbar input{width:auto!important;min-width:0!important;flex:1}.order-toolbar label{flex:none;white-space:nowrap;overflow-wrap:normal}.order-toolbar label input{width:16px!important;flex:none}.crm-filters select{width:100%;min-width:0;background:#171A22!important;color:#fff!important;border-color:#2C303C!important;color-scheme:dark}.crm-filters label{min-width:192px}.catalog-toolbar input{width:min(100%,420px);min-width:0!important;background:#171A22!important;color:#fff!important;border-color:#2C303C!important}.catalog-tabs small{background:#2C303C;color:#C7CAD1}.catalog-tabs button.active small{background:#A7D65C;color:#171A22}
+
+/* Chromium uses the page colour scheme for its date-picker popover. */
+html{color-scheme:dark}input[type="date"]::-webkit-calendar-picker-indicator,input[type="time"]::-webkit-calendar-picker-indicator,input[type="datetime-local"]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.8}
