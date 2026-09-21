@@ -92,3 +92,6 @@ button,a,[role="button"],select,input[type="checkbox"],input[type="radio"],input
 
 /* Strong, visible hover feedback for every control. */
 button:not(:disabled):hover,[role="button"]:hover,a:hover,select:hover{filter:none;background-color:#2C303C!important;color:#fff!important;border-color:#A7D65C!important;box-shadow:0 0 0 1px #A7D65C,0 8px 20px #00000035}.primary:not(:disabled):hover,.sidebar .upgrade:not(:disabled):hover{background:#b7e870!important;color:#171A22!important;box-shadow:0 0 0 1px #d6ff9b,0 8px 22px #a7d65c33}.sidebar nav button:not(:disabled):hover{background:#2C303C!important;color:#fff!important;box-shadow:inset 3px 0 #A7D65C,0 0 0 1px #3b424d}.header-actions .locale:hover{border-radius:8px;padding:7px 9px;margin:-7px -9px}.avatar:hover{background:#b7e870!important;color:#171A22!important;transform:translateY(-1px)}
+
+/* The locale/sign-in controls keep their geometry before hover, preventing a square flash. */
+.header-actions .locale{border-radius:8px;padding:7px 9px;transition:background-color .18s ease,color .18s ease,box-shadow .18s ease}.header-actions .locale:hover{margin:0}
