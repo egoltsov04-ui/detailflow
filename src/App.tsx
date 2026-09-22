@@ -20,7 +20,7 @@ const AttentionCenter = lazy(()=>import('./AttentionCenter'))
 const CashFlow = lazy(()=>import('./CashFlow'))
 const MasterCabinet = lazy(()=>import('./MasterCabinet'))
 const TeamCompensation = lazy(()=>import('./TeamCompensation'))
-const nav = [['Огляд', LayoutDashboard], ['Календар', CalendarDays], ['Замовлення', ClipboardList], ['Клієнти', Users], ['Команда', CarFront], ['Кабінет майстра', Users], ['Послуги', Sparkles], ['Фінанси', CircleDollarSign], ['Звіти', Files], ['Онлайн-запис', Globe2]] as const
+const nav = [['Огляд', LayoutDashboard], ['Календар', CalendarDays], ['Замовлення', ClipboardList], ['Клієнти', Users], ['Команда', CarFront], ['Кабінет майстра', Users], ['Послуги', Sparkles], ['Фінанси', CircleDollarSign], ['Склад', Package], ['Звіти', Files], ['Онлайн-запис', Globe2]] as const
 const money = (n: number) => new Intl.NumberFormat('uk-UA').format(n) + ' ₴'
 const formatDuration = (minutes:number) => minutes % 1440 === 0 ? `${minutes / 1440} дні` : minutes % 60 === 0 ? `${minutes / 60} год` : `${minutes} хв`
 const parseDuration = (value:string) => value.includes('дні') ? Number.parseInt(value, 10) * 1440 : value.includes('год') ? Number.parseInt(value, 10) * 60 : Number.parseInt(value, 10) || 60
