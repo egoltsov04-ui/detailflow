@@ -1,0 +1,7 @@
+import { FormEvent, useState } from 'react'
+import { supabase } from './lib/supabase'
+export default function MasterProfileForm({initialName,complete}:{initialName:string;complete:()=>void}) {
+  const [name,setName]=useState(initialName),[phone,setPhone]=useState(''),[specialty,setSpecialty]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('')
+  async function submit(e:FormEvent){e.preventDefault();if(!supabase||busy)return;setBusy(true);setError('');try{const result=await supabase.rpc('complete_master_profile',{full_name_input:name,phone_input:phone,specialty_input:specialty});if(result.error){setError(result.error.message);return}complete()}catch{setError('Не вдалося зберегти профіль. Спробуйте ще раз.')}finally{setBusy(false)}}
+  return <main className="access-portal"><form className="access-form panel" onSubmit={submit}><p>Кабінет майстра</p><h1>Заповніть профіль</h1><label>Ім’я та прізвище<input required minLength={2} autoComplete="name" value={name} onChange={e=>setName(e.target.value)}/></label><label>Телефон<input required minLength={5} type="tel" autoComplete="tel" value={phone} onChange={e=>setPhone(e.target.value)}/></label><label>Спеціалізація<input value={specialty} onChange={e=>setSpecialty(e.target.value)} placeholder="Мийка, полірування, хімчистка"/></label>{error&&<p role="alert">{error}</p>}<button className="primary" disabled={busy}>{busy?'Зберігаємо…':'Зберегти та відкрити кабінет'}</button><button type="button" className="text-btn" onClick={()=>void supabase?.auth.signOut()}>Вийти</button></form></main>
+}
