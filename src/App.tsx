@@ -3,6 +3,8 @@ import { CalendarDays, CarFront, ChevronDown, CircleDollarSign, Clock3, LayoutDa
 import { Booking, seedBookings, services, technicians, Status, PaymentMethod } from './data'
 import { supabase, supabaseSetupMessage } from './lib/supabase'
 import AccessPortal, { OwnerPending, SupportPortal } from './AccessPortal'
+import { AccessNotice, InvitationPassword } from './AccountAccess'
+import './account-access.css'
 import type { User } from '@supabase/supabase-js'
 
 const Analytics = lazy(()=>import('./Analytics'))
@@ -83,6 +85,12 @@ export default function App() {
   const [staffShifts,setStaffShifts]=useState<{id:string;staffId:string;startedAt:string;endedAt:string|null}[]>([])
   const [staffEarnings,setStaffEarnings]=useState<{id:string;staffId:string;workOrderId:string;amount:number;status:string;accruedAt:string}[]>([])
   const [connection, setConnection] = useState<'local' | 'checking' | 'connected' | 'error'>(supabase ? 'checking' : 'local')
+  const adminEntry = /^\/admin(?:\/|$)/.test(window.location.pathname)
+  const [sessionReady,setSessionReady]=useState(!supabase)
+  const [resolvedUser,setResolvedUser]=useState<string|null>(null)
+  const [accessError,setAccessError]=useState('')
+  const [accessRetry,setAccessRetry]=useState(0)
+  const [invitation,setInvitation]=useState(()=>['invite','recovery'].includes(new URLSearchParams(window.location.hash.slice(1)).get('type')||'') || new URLSearchParams(window.location.search).get('activate')==='master')
   const [user,setUser] = useState<User | null>(null), [authOpen,setAuthOpen] = useState(false), [tenantId,setTenantId] = useState<string | null>(null), [tenantOpen,setTenantOpen] = useState(false), [userRole,setUserRole] = useState<string | null>(null)
   useEffect(()=>{
     if(!supabase || !tenantId) return
@@ -94,14 +102,28 @@ export default function App() {
   },[tenantId,page])
   useEffect(() => {
     if (!supabase) return
-    void supabase.auth.getSession().then(({ data }) => setUser(data.session?.user ?? null))
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => setUser(session?.user ?? null))
+    void supabase.auth.getSession().then(({ data }) => {setUser(data.session?.user ?? null);setSessionReady(true)})
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {setUser(session?.user ?? null);setSessionReady(true);if(event==='PASSWORD_RECOVERY')setInvitation(true)})
     return () => listener.subscription.unsubscribe()
   }, [])
   useEffect(() => {
     if (!supabase || !user) { if(supabase){setBookings([]);setClients([]);setServiceList([]);setStaffList([]);setExpenses([]);setInventory([]);setInventoryMovements([]);setTasks([]);setWorkOrders([]);setLeads([]);setServicePackages([]);setSales([]);setInvoices([]);setWorkSchedules([]);setCashTransactions([]);setStudioProfile({name:'Студія',address:'',slug:''})} setTenantId(null);setUserRole(null); setConnection(supabase ? 'checking' : 'local'); return }
-    void supabase.from('tenant_memberships').select('tenant_id,role').limit(1).maybeSingle().then(({ data, error }) => { setTenantId(data?.tenant_id ?? null);setUserRole(data?.role ?? null); setTenantOpen(false); setConnection(error ? 'error' : 'connected') })
-  }, [user])
+    let cancelled=false
+    setResolvedUser(null);setAccessError('');setTenantId(null);setUserRole(null)
+    void (async()=>{
+      try {
+        const {data,error}=await supabase!.rpc('resolve_my_access')
+        if(cancelled)return
+        if(error)throw error
+        setUserRole(data?.role||'unlinked')
+        if(data?.needs_password)setInvitation(true)
+        setTenantId(data?.tenant_id||null)
+        setTenantOpen(false);setConnection('connected')
+      } catch {if(!cancelled)setAccessError('Не вдалося перевірити доступ. Спробуйте ще раз або зверніться до адміністратора студії.')}
+      finally {if(!cancelled)setResolvedUser(user.id)}
+    })()
+    return ()=>{cancelled=true}
+  }, [user?.id,accessRetry])
   useEffect(() => {
     if (!supabase || !tenantId) return
     void supabase.from('services').select('id,name,category,price,duration_minutes').eq('tenant_id', tenantId).eq('active', true).order('created_at').then(({ data, error }) => {
@@ -478,10 +500,20 @@ export default function App() {
     if(error){setWorkSchedules(list=>[...list,current]);setConnection('error');return 'Не вдалося видалити зміну.'}
     return ''
   }
-  if(!user)return <AccessPortal/>
-  if(userRole==='master')return <Suspense fallback={<p className="content">Завантаження кабінету…</p>}><MasterCabinet staff={staffList.find(item=>item.userId===user.id) || null} orders={workOrders} shifts={staffShifts} earnings={staffEarnings} toggleShift={toggleShift} updateOrder={updateWorkOrder}/></Suspense>
-  if(userRole==='super_admin')return <SupportPortal/>
-  if(!tenantId)return <OwnerPending/>
+  if(!sessionReady)return <main className="access-portal">Перевіряємо сесію…</main>
+  if(!user)return <AccessPortal admin={adminEntry}/>
+  if(resolvedUser!==user.id)return <main className="access-portal">Перевіряємо доступ…</main>
+  if(accessError)return <AccessNotice title="Не вдалося увійти" description={accessError} retry={()=>setAccessRetry(value=>value+1)}/>
+  if(adminEntry){
+    if(userRole!=='super_admin')return <AccessNotice title="Службовий доступ" description="Цей акаунт не має прав підтримки. Увійдіть службовим акаунтом або поверніться на головну сторінку."/>
+    return <SupportPortal/>
+  }
+  if(userRole==='blocked')return <AccessNotice title="Доступ призупинено" description="Власник студії заблокував ваш профіль. Зверніться до нього для відновлення доступу."/>
+  if(userRole==='super_admin')return <AccessNotice title="Кабінет підтримки" description="Відкрийте /admin на цьому сайті для службового входу."/>
+  if(userRole==='owner_request')return <OwnerPending/>
+  if(!tenantId)return <AccessNotice title="Профіль не прив’язано" description="Для майстра потрібне запрошення від власника. Якщо ви вже перейшли з листа, попросіть власника перевірити прив’язку акаунта." retry={()=>setAccessRetry(value=>value+1)}/>
+  if(invitation)return <InvitationPassword complete={()=>{setInvitation(false);window.history.replaceState({},'',window.location.pathname)}}/>
+  if(userRole==='master')return <div className="master-workspace"><header className="master-workspace-header"><b>detailflow · Кабінет майстра</b><button className="text-btn" onClick={()=>void supabase?.auth.signOut()}>Вийти</button></header><Suspense fallback={<p className="content">Завантаження кабінету…</p>}><MasterCabinet staff={staffList.find(item=>item.userId===user.id) || null} orders={workOrders} shifts={staffShifts} earnings={staffEarnings} toggleShift={toggleShift} updateOrder={updateWorkOrder}/></Suspense></div>
   return <div className="app-shell">
     <aside className={menuOpen ? 'sidebar open' : 'sidebar'}>
       <div className="brand"><span className="brand-dot"/> detailflow</div><button className="mobile-close" onClick={() => setMenuOpen(false)}><X size={20}/></button>

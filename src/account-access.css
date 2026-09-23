@@ -1,0 +1,9 @@
+.access-roles{grid-template-columns:repeat(2,minmax(190px,1fr))}
+.master-workspace{min-height:100vh;background:#171a22;color:#fff}
+.master-workspace-header{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:18px 24px;border-bottom:1px solid #2c303c;flex-wrap:wrap}
+.master-workspace .master-cabinet{margin:0 auto;width:100%;box-sizing:border-box}
+.master-workspace .master-order,.master-workspace .master-metrics>div,.master-workspace .master-earned{background:#22262f;border-color:#2c303c;color:#fff}
+.master-workspace .master-order small,.master-workspace .master-order p,.master-workspace .master-metrics span,.master-workspace .master-earned small{color:#c7cad1}
+.master-workspace .master-shift{background:#a7d65c;color:#171a22}
+.master-workspace .master-shift.active{background:#2c303c;color:#fff;border:1px solid #a7d65c}
+@media(max-width:680px){.access-roles{grid-template-columns:1fr}.master-workspace .master-metrics{grid-template-columns:1fr}.master-workspace-header{padding:14px 18px}}
