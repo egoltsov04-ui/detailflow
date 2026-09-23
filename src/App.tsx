@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useMemo, useState, lazy, Suspense } from 'react'
 import { CalendarDays, CarFront, ChevronDown, CircleDollarSign, Clock3, LayoutDashboard, Menu, Plus, Search, Settings, Sparkles, Users, X, Globe2, CreditCard, BarChart3, WalletCards, Package, ListTodo, ClipboardList, MessageSquare, ShoppingCart, ReceiptText, Files } from 'lucide-react'
 import { Booking, seedBookings, services, technicians, Status, PaymentMethod } from './data'
 import { supabase, supabaseSetupMessage } from './lib/supabase'
+import AccessPortal, { OwnerPending, SupportPortal } from './AccessPortal'
 import type { User } from '@supabase/supabase-js'
 
 const Analytics = lazy(()=>import('./Analytics'))
@@ -82,7 +83,7 @@ export default function App() {
   const [staffShifts,setStaffShifts]=useState<{id:string;staffId:string;startedAt:string;endedAt:string|null}[]>([])
   const [staffEarnings,setStaffEarnings]=useState<{id:string;staffId:string;workOrderId:string;amount:number;status:string;accruedAt:string}[]>([])
   const [connection, setConnection] = useState<'local' | 'checking' | 'connected' | 'error'>(supabase ? 'checking' : 'local')
-  const [user,setUser] = useState<User | null>(null), [authOpen,setAuthOpen] = useState(false), [tenantId,setTenantId] = useState<string | null>(null), [tenantOpen,setTenantOpen] = useState(false)
+  const [user,setUser] = useState<User | null>(null), [authOpen,setAuthOpen] = useState(false), [tenantId,setTenantId] = useState<string | null>(null), [tenantOpen,setTenantOpen] = useState(false), [userRole,setUserRole] = useState<string | null>(null)
   useEffect(()=>{
     if(!supabase || !tenantId) return
     let active=true
@@ -98,8 +99,8 @@ export default function App() {
     return () => listener.subscription.unsubscribe()
   }, [])
   useEffect(() => {
-    if (!supabase || !user) { if(supabase){setBookings([]);setClients([]);setServiceList([]);setStaffList([]);setExpenses([]);setInventory([]);setInventoryMovements([]);setTasks([]);setWorkOrders([]);setLeads([]);setServicePackages([]);setSales([]);setInvoices([]);setWorkSchedules([]);setCashTransactions([]);setStudioProfile({name:'Студія',address:'',slug:''})} setTenantId(null); setConnection(supabase ? 'checking' : 'local'); return }
-    void supabase.from('tenant_memberships').select('tenant_id').limit(1).maybeSingle().then(({ data, error }) => { setTenantId(data?.tenant_id ?? null); setTenantOpen(!error && !data); setConnection(error ? 'error' : 'connected') })
+    if (!supabase || !user) { if(supabase){setBookings([]);setClients([]);setServiceList([]);setStaffList([]);setExpenses([]);setInventory([]);setInventoryMovements([]);setTasks([]);setWorkOrders([]);setLeads([]);setServicePackages([]);setSales([]);setInvoices([]);setWorkSchedules([]);setCashTransactions([]);setStudioProfile({name:'Студія',address:'',slug:''})} setTenantId(null);setUserRole(null); setConnection(supabase ? 'checking' : 'local'); return }
+    void supabase.from('tenant_memberships').select('tenant_id,role').limit(1).maybeSingle().then(({ data, error }) => { setTenantId(data?.tenant_id ?? null);setUserRole(data?.role ?? null); setTenantOpen(false); setConnection(error ? 'error' : 'connected') })
   }, [user])
   useEffect(() => {
     if (!supabase || !tenantId) return
@@ -477,6 +478,10 @@ export default function App() {
     if(error){setWorkSchedules(list=>[...list,current]);setConnection('error');return 'Не вдалося видалити зміну.'}
     return ''
   }
+  if(!user)return <AccessPortal/>
+  if(userRole==='master')return <Suspense fallback={<p className="content">Завантаження кабінету…</p>}><MasterCabinet staff={staffList.find(item=>item.userId===user.id) || null} orders={workOrders} shifts={staffShifts} earnings={staffEarnings} toggleShift={toggleShift} updateOrder={updateWorkOrder}/></Suspense>
+  if(userRole==='super_admin')return <SupportPortal/>
+  if(!tenantId)return <OwnerPending/>
   return <div className="app-shell">
     <aside className={menuOpen ? 'sidebar open' : 'sidebar'}>
       <div className="brand"><span className="brand-dot"/> detailflow</div><button className="mobile-close" onClick={() => setMenuOpen(false)}><X size={20}/></button>

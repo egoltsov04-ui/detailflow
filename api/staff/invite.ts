@@ -27,6 +27,7 @@ export default async function handler(request:Request,response:Response){
     if(error||!data.user)return response.status(400).json({error:error?.message||'Invite was not sent'})
     const {error:bindError}=await db.from('staff_profiles').update({user_id:data.user.id,active:true,invite_email:email,invite_sent_at:new Date().toISOString(),invite_accepted_at:null}).eq('id',staff.id)
     if(bindError)return response.status(500).json({error:'Invite sent, but profile could not be linked'})
+    await db.from('tenant_memberships').upsert({tenant_id:staff.tenant_id,user_id:data.user.id,role:'master'},{onConflict:'tenant_id,user_id'})
     return response.status(200).json({ok:true})
   }catch(error){return response.status(500).json({error:error instanceof Error?error.message:'Unable to invite master'})}
 }
