@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { CheckCircle2, Clock3, Play, WalletCards } from 'lucide-react'
+import { supabase } from './lib/supabase'
 import type { ChecklistItem, WorkOrder, WorkOrderStatus } from './WorkOrders'
 
 type Staff={id:string|number;name:string;color:string;speciality:string}
@@ -9,6 +10,7 @@ const money=(value:number)=>new Intl.NumberFormat('uk-UA',{maximumFractionDigits
 
 export default function MasterCabinet({staff,orders,shifts,earnings,toggleShift,updateOrder}:{staff:Staff|null;orders:WorkOrder[];shifts:Shift[];earnings:Earning[];toggleShift:(staffId:string,shift:Shift|undefined)=>Promise<string>;updateOrder:(id:WorkOrder['id'],patch:Partial<Pick<WorkOrder,'status'|'checklist'|'submittedForReviewAt'>>)=>Promise<string>}){
   const [message,setMessage]=useState('')
+  useEffect(()=>{if(staff&&supabase)void supabase.rpc('mark_master_invite_accepted')},[staff?.id])
   const mine=useMemo(()=>staff?orders.filter(order=>String(order.staffId)===String(staff.id)&&!['ready','issued','cancelled'].includes(order.status)):[],[staff,orders])
   const mineEarnings=useMemo(()=>staff?earnings.filter(item=>String(item.staffId)===String(staff.id)&&item.status==='accrued'):[],[staff,earnings])
   const openShift=staff?shifts.find(item=>String(item.staffId)===String(staff.id)&&!item.endedAt):undefined
