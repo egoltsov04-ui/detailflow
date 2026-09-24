@@ -1,3 +1,4 @@
+import { DateInput } from './components/FormInputs'
 import { useState } from 'react'
 import type { Booking } from './data'
 
@@ -35,7 +36,7 @@ export default function Analytics({bookings,expenses,cashTransactions}:{bookings
   const options=(values:string[])=>[...new Set(values)].sort().map(value=><option key={value}>{value}</option>)
   return <section className="content analytics-page"><div className="page-title"><div><p>Показники за вибраний період</p><h1>Аналітика студії</h1></div><div className="filter-actions">{(['today','week','month','all'] as const).map((value,i)=><button className="text-btn" key={value} onClick={()=>preset(value)}>{['Сьогодні','7 днів','Цей місяць','Увесь час'][i]}</button>)}</div>
     </div><div className="panel analytics-filters">
-      <label>Від<input type="date" value={from} onChange={e=>setFrom(e.target.value)}/></label><label>До<input type="date" value={to} onChange={e=>setTo(e.target.value)}/></label>
+      <label>Від<DateInput type="date" max={to||undefined} value={from} onChange={e=>setFrom(e.target.value)}/></label><label>До<DateInput type="date" min={from||undefined} value={to} onChange={e=>setTo(e.target.value)}/></label>
       <label>Майстер<select value={tech} onChange={e=>setTech(e.target.value)}><option value="">Усі</option>{options(bookings.map(b=>b.tech))}</select></label>
       <label>Послуга<select value={service} onChange={e=>setService(e.target.value)}><option value="">Усі</option>{options(bookings.map(b=>b.service))}</select></label>
       <label>Статус запису<select value={status} onChange={e=>setStatus(e.target.value)}><option value="">Усі</option>{options(bookings.map(b=>b.status))}</select></label>

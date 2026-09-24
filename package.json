@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit && tsc --noEmit -p tsconfig.api.json",
+    "test": "node --experimental-strip-types --test --test-isolation=none scripts/regression.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",

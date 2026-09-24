@@ -4,6 +4,7 @@ import { sendEmail } from '../lib/sendpulse.js'
 type Request = { method?: string; headers: Record<string, string | string[] | undefined>; body?: unknown }
 type Response = { status: (code: number) => Response; json: (body: unknown) => void }
 const required = (name: string) => { const value = process.env[name]; if (!value) throw new Error(`Missing ${name}`); return value }
+const escapeHtml=(value:string)=>value.replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]!))
 
 export default async function handler(request: Request, response: Response) {
   if (request.method !== 'POST') return response.status(405).json({ error: 'Method not allowed' })
@@ -32,7 +33,7 @@ export default async function handler(request: Request, response: Response) {
     const start = new Date(appointment.starts_at).toLocaleString('uk-UA', { dateStyle: 'long', timeStyle: 'short' })
     const text = `Вітаємо, ${client.full_name}! Ваш запис підтверджено. Студія: ${tenant?.name || 'Detailflow'}. Послуга: ${service?.service_name || 'детейлінг'}. Час: ${start}.`
     try {
-      await sendEmail({ to: [{ email: client.email }], subject: `Запис підтверджено — ${tenant?.name || 'Detailflow'}`, text, html: `<p>${text}</p>`, fromName: tenant?.name || 'Detailflow' })
+      await sendEmail({ to: [{ email: client.email }], subject: `Запис підтверджено — ${tenant?.name || 'Detailflow'}`, text, html: `<p>${escapeHtml(text)}</p>`, fromName: tenant?.name || 'Detailflow' })
       return response.status(200).json({ ok: true, notification: 'sent' })
     } catch {
       return response.status(200).json({ ok: true, notification: 'failed' })

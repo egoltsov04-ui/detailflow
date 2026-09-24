@@ -1,3 +1,4 @@
+import { confirmAction } from './components/Dialogs'
 import { useState } from 'react'
 import type { Booking, Status } from './data'
 
@@ -7,7 +8,7 @@ export default function BookingRequests({bookings,update,link}:{bookings:Booking
   const rows=publicRows.filter(b=>(!filter||b.status===filter)&&[b.client,b.phone,b.email,b.car,b.service].join(' ').toLowerCase().includes(query.toLowerCase())).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time))
   async function act(booking:Booking,status:Status){
     if(busy!==null)return
-    if(status==='Скасовано'&&!window.confirm('Відхилити заявку цього клієнта?'))return
+    if(status==='Скасовано'&&!await confirmAction('Відхилити заявку цього клієнта?'))return
     setBusy(booking.id);setMessage('')
     try{const error=await update(booking.id,status);setMessage(error||(status==='Підтверджено'?'Запис підтверджено.':'Заявку відхилено.'))}catch{setMessage('Не вдалося зберегти зміни. Спробуйте знову.')}finally{setBusy(null)}
   }

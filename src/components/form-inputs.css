@@ -1,0 +1,22 @@
+.date-control,.number-control{display:grid;gap:5px;min-width:0;width:100%;font-weight:inherit}
+.date-field,.number-field{position:relative;display:flex;align-items:center;min-width:0;width:100%}
+body .date-field>input,body .number-field>input{width:100%;min-width:0;margin:0;background:#171a22;color:#fff;border:1px solid #2c303c;border-radius:10px;font:inherit;min-height:44px;padding:11px 46px 11px 12px;font-variant-numeric:tabular-nums}
+body .number-field>input{padding-right:78px}
+body .date-field>button,body .number-steps>button{display:grid;place-items:center;border:0;border-radius:7px;background:transparent;color:#c7cad1;width:32px;height:32px;min-width:32px;padding:0;cursor:pointer;transition:background .15s,color .15s}
+.date-field>button{position:absolute;right:6px;top:6px}.number-steps{position:absolute;right:5px;top:6px;display:flex;gap:2px}
+body .date-field>button:hover,body .number-steps>button:hover{background:#35402a;color:#a7d65c}
+body .number-steps>button:disabled{opacity:.3;cursor:not-allowed}
+body .field-error{color:#ff9a9a;font-size:12px;font-weight:400;line-height:1.4}
+body input[aria-invalid=true]{border-color:#ff9a9a}
+.date-popover{position:fixed;z-index:1000;width:min(328px,calc(100vw - 16px));max-height:calc(100dvh - 16px);overflow:auto;background:#22262f;border:1px solid #444c3b;border-radius:16px;padding:16px;box-shadow:0 18px 60px #0008;font:500 13px Manrope,system-ui,sans-serif;color:#fff;animation:picker-in .12s ease-out;color-scheme:dark}
+.date-popover button,.date-popover select,.date-popover input{font:inherit;border:1px solid transparent;background:transparent;color:#c7cad1;border-radius:8px;cursor:pointer;min-width:0;transition:background .15s,color .15s,border-color .15s}
+.date-popover button:hover{background:#35402a;color:#a7d65c}.date-popover button:disabled{opacity:.25;cursor:not-allowed}
+.date-popover button:focus-visible,.date-popover select:focus-visible{outline:2px solid #a7d65c;outline-offset:1px}
+.date-popover-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}.date-popover-title button{display:grid;place-items:center;width:30px;height:30px;padding:0}.date-popover-title b{font-size:15px}
+.calendar-navigation{display:grid;grid-template-columns:30px 1fr 76px 30px;gap:3px;align-items:center;margin-bottom:12px}.calendar-navigation button{padding:5px;display:grid;place-items:center}.calendar-navigation select{padding:7px 3px;background:#171a22;border-color:#2c303c;color:#fff}
+.calendar-weekdays,.calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}.calendar-weekdays{text-align:center;color:#9da3b0;margin-bottom:7px;font-size:11px}.calendar-day{aspect-ratio:1;padding:0;display:grid;place-items:center;font-variant-numeric:tabular-nums}.calendar-day.outside{color:#858b99}.calendar-day[aria-current=date]{border-color:#a7d65c}
+body .date-popover .selected{background:#a7d65c;color:#171a22;font-weight:800}.date-shortcuts{display:flex;gap:8px;margin-top:12px}.date-shortcuts button,.calendar-clear{padding:8px 12px;border-color:#3b414e}.calendar-clear{width:100%;margin-top:10px}
+.calendar-time{display:flex;align-items:end;gap:8px;margin-top:12px}.calendar-time label{display:grid;gap:6px;flex:1;min-width:0}.calendar-time input{background:#171a22;border-color:#2c303c;padding:10px;width:100%;cursor:text}.calendar-time .primary{background:#a7d65c;color:#171a22;padding:10px}
+.time-options{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;max-height:240px;overflow:auto}.time-option{padding:10px 0;border-color:#2c303c!important}
+@keyframes picker-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){.date-popover{animation:none}}
