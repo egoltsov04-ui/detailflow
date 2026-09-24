@@ -3,6 +3,15 @@ import assert from 'node:assert/strict'
 import { localDate, validDate, parseDate, dateError, normalizeNumber, numberError, stepNumber, studioDateTime } from '../src/lib/formValues.ts'
 import { transitionError } from '../src/lib/workOrderFlow.ts'
 import { readAllPages } from '../src/lib/pagination.ts'
+import { entryRoute } from '../src/lib/entryRoute.ts'
+
+test('landing preserves booking, invitation and authentication entry points',()=>{
+ assert.equal(entryRoute('/','',''),'landing')
+ assert.equal(entryRoute('/','','#features'),'landing')
+ for(const path of ['/register','/login','/app','/admin','/admin/studios'])assert.equal(entryRoute(path,'',''),'app')
+ for(const query of ['?book=studio','?activate=master','?code=example','?error=access_denied','?token_hash=example&type=invite'])assert.equal(entryRoute('/',query,''),'app')
+ for(const hash of ['#access_token=example&type=invite','#type=recovery','#error=access_denied'])assert.equal(entryRoute('/','',hash),'app')
+})
 
 test('calendar rejects impossible dates and accepts leap years',()=>{
  assert.equal(validDate('2026-02-29'),false);assert.equal(validDate('2028-02-29'),true)
