@@ -16,14 +16,14 @@ export function Dialogs(){
 export function ModalAccessibility(){
  useEffect(()=>{
   let current:HTMLElement|null=null,previous:HTMLElement|null=null,overflow=''
-  const selector='button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]'
+  const selector='button:not(:disabled), input:not(:disabled):not([aria-hidden="true"]), select:not(:disabled):not([aria-hidden="true"]), textarea:not(:disabled), [tabindex="0"]'
   const update=()=>{const modals=document.querySelectorAll<HTMLElement>('.overlay .modal'),next=modals[modals.length-1]||null;if(current===next)return
    if(!current&&next){previous=document.activeElement as HTMLElement;overflow=document.body.style.overflow;document.body.style.overflow='hidden'}
    current=next
-   if(next){next.setAttribute('role','dialog');next.setAttribute('aria-modal','true');next.setAttribute('aria-label',next.querySelector('h2')?.textContent||'Форма');const close=next.querySelector('.modal-close');if(close&&!close.getAttribute('aria-label'))close.setAttribute('aria-label','Закрити вікно');const initial=next.querySelector<HTMLElement>('input:not(:disabled),select:not(:disabled)')||next.querySelector<HTMLElement>('.modal-close-action,button');initial?.focus()}
+   if(next){next.setAttribute('role','dialog');next.setAttribute('aria-modal','true');next.setAttribute('aria-label',next.querySelector('h2')?.textContent||'Форма');const close=next.querySelector('.modal-close');if(close&&!close.getAttribute('aria-label'))close.setAttribute('aria-label','Закрити вікно');const initial=next.querySelector<HTMLElement>('input:not(:disabled):not([aria-hidden="true"]),button[role="combobox"]:not(:disabled),select:not(:disabled):not([aria-hidden="true"])')||next.querySelector<HTMLElement>('.modal-close-action,button');initial?.focus()}
    else{document.body.style.overflow=overflow;previous?.isConnected&&previous.focus()}
   }
-  const keys=(e:KeyboardEvent)=>{if(!current||document.querySelector('.date-popover'))return
+  const keys=(e:KeyboardEvent)=>{if(e.defaultPrevented||!current||document.querySelector('.date-popover,.select-popover'))return
    if(e.key==='Escape'){const close=current.querySelector<HTMLElement>('.modal-close,.modal-close-action');if(close){e.preventDefault();close.click()}}
    if(e.key==='Tab'){const nodes=Array.from(current.querySelectorAll<HTMLElement>(selector)).filter(node=>node.getClientRects().length),first=nodes[0],last=nodes[nodes.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus()}}
   }

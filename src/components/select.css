@@ -1,0 +1,14 @@
+.select-control{position:relative;display:block;width:100%;min-width:0;font-weight:inherit}
+body .select-control>.select-trigger{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:44px;padding:11px 12px;border:1px solid #2c303c;border-radius:10px;background:#171a22;color:#fff;font:inherit;text-align:left;transition:border-color .15s,background-color .15s;cursor:pointer}
+.select-trigger>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.select-trigger>svg{flex-shrink:0;color:#c7cad1}
+body .select-trigger:hover,body .select-trigger[aria-expanded=true]{border-color:#a7d65c;background:#22262f}
+body .select-trigger:focus-visible{outline:2px solid #a7d65c;outline-offset:2px}
+body .select-trigger:disabled{opacity:.5;cursor:not-allowed}
+body .select-control>.select-native{position:absolute!important;width:1px!important;height:1px!important;min-height:0!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip-path:inset(50%)!important;border:0!important;white-space:nowrap!important;pointer-events:none}
+.select-popover{position:fixed;z-index:1100;display:flex;flex-direction:column;overflow:hidden;padding:6px;border:1px solid #414838;border-radius:13px;background:#22262f;color:#fff;box-shadow:0 16px 48px #0008;font:500 14px Manrope,system-ui,sans-serif;animation:select-in .12s ease-out}
+.select-options{overflow:auto;min-height:0;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#6d7280 #22262f}
+.select-option{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 12px;min-height:44px;border-radius:8px;cursor:pointer;transition:background-color .12s,color .12s;overflow-wrap:anywhere}
+.select-option>svg{flex-shrink:0}.select-option[aria-selected=true]{color:#a7d65c;background:#a7d65c12}.select-option[data-active=true]{background:#35402a;color:#fff}.select-option[aria-disabled=true]{opacity:.4;cursor:not-allowed}
+.select-search{display:flex;align-items:center;gap:8px;padding:2px 8px 8px;flex-shrink:0;color:#c7cad1}body .select-search>input{width:100%;min-width:0;font:inherit}.select-empty{padding:10px;color:#c7cad1}
+@keyframes select-in{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){.select-popover{animation:none}.select-option,.select-trigger{transition:none!important}}
