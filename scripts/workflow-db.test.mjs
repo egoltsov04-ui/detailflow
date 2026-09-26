@@ -162,4 +162,13 @@ test('workflow migration, tenant isolation, review, payroll and attendance',asyn
  assert.equal((await db.query('select status from work_orders where id=$1',[carOrder.id])).rows[0].status,'issued')
  assert.equal((await db.query('select job_workflow_version() as v')).rows[0].v,30)
 
+ // A repeat must preserve exact financial links, multiple jobs and their history.
+ await db.exec('reset role')
+ const tables=['work_orders','work_order_jobs','work_job_events','staff_earnings','staff_payouts','cash_transactions','staff_shifts','appointments','appointment_services']
+ const snapshot=async()=>Object.fromEntries(await Promise.all(tables.map(async table=>[table,(await db.query(`select * from ${table} order by id`)).rows])))
+ const before=await snapshot()
+ await db.exec(await sqlFile('supabase/deploy/workflow_resume_028_030.sql'))
+ await db.exec(await sqlFile('supabase/deploy/workflow_resume_028_030.sql'))
+ assert.deepEqual(await snapshot(),before)
+
 })
