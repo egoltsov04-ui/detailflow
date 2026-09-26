@@ -1,3 +1,4 @@
+import ClientImportPreview from './ClientImportPreview'
 import CompensationPreview from './CompensationPreview'
 import { useState } from 'react'
 import { DateInput, NumberInput } from '../components/FormInputs'
@@ -44,6 +45,7 @@ export default function ServicePreview(){
   'Каталог':<Catalog services={[[initial.title,'Полірування','4 год',2000]]} products={[]} packages={[]} addService={()=>{}} updateService={ok} removeService={()=>{}} addPackage={ok} removePackage={ok}/>,
   'Склад':<section className="content"><WarehouseControls items={[{id:1,name:'Автошампунь',unit:'л',quantity:10,lastUnitCost:100}]} receive={yes} adjust={yes}/></section>,
   'Проценти':<CompensationPreview/>,
+  'Імпорт':<ClientImportPreview/>,
   'Графік':<TeamSchedules staff={staff} schedules={[]} save={ok} remove={ok}/>,
   'Завдання':<Tasks tasks={[]} clients={clients} staff={staff} add={ok} update={ok} remove={ok}/>,
   'Звернення':<Leads items={[]} clients={clients} staff={staff} add={ok} update={ok} remove={ok}/>,

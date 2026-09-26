@@ -1,9 +1,56 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
 import { localDate, validDate, parseDate, dateError, normalizeNumber, numberError, stepNumber, studioDateTime } from '../src/lib/formValues.ts'
 import { transitionError } from '../src/lib/workOrderFlow.ts'
 import { readAllPages } from '../src/lib/pagination.ts'
 import { entryRoute } from '../src/lib/entryRoute.ts'
+import { parseClientCsv, suggestMapping, validateClientRows, normalizePhone, importClientRows } from '../src/lib/clientImport.ts'
+
+test('downloadable template is empty and completed rows map without manual setup',async()=>{
+ const template=await readFile(new URL('../public/templates/detailflow-clients.csv',import.meta.url),'utf8')
+ assert.equal(template.replace(/^\uFEFF/,'').trim(),'Ім’я;Телефон;Авто')
+ assert.throws(()=>parseClientCsv(template),/хоча б одного клієнта/)
+ const table=parseClientCsv(template+'Тестовий клієнт;+380671234567;BMW X5\r\n')
+ const checked=validateClientRows(table,suggestMapping(table.headers))
+ assert.equal(checked.errors.length,0);assert.equal(checked.rows.length,1)
+ assert.throws(()=>parseClientCsv('Name;Phone\n\uFFFD;+380671234567'),/UTF-8/)
+})
+
+test('client CSV supports exports, quoting, BOM, semicolons and pasted tabular data',()=>{
+ const csv=parseClientCsv('\uFEFFІм’я;Телефон;Авто\r\n"Іван; Петренко";+380671234567;"BMW ""X5""\nAA1234"\r\n')
+ assert.deepEqual(suggestMapping(csv.headers),{name:0,phone:1,vehicle:2})
+ assert.equal(csv.rows[0][0],'Іван; Петренко');assert.equal(csv.rows[0][2],'BMW "X5"\nAA1234')
+ assert.equal(parseClientCsv('name\tphone\nTest\t0671234567').rows[0][1],'0671234567')
+ assert.equal(normalizePhone('067 123-45-67'),'380671234567')
+ assert.equal(normalizePhone('00380671234567'),'380671234567')
+ assert.throws(()=>parseClientCsv('name,phone\n"unfinished,123'))
+ assert.throws(()=>parseClientCsv('name,phone\nTest,123,extra'))
+ assert.throws(()=>parseClientCsv('name,phone\n'+Array(1001).fill('Test,0671234567').join('\n')))
+})
+test('client import validates mappings and reports bad rows before writes',()=>{
+ const table=parseClientCsv('name,phone,car\nTest,0671234567,BMW\nMissing,wrong,Audi')
+ assert.equal(validateClientRows(table,{name:0,phone:1,vehicle:2}).errors.length,1)
+ assert.equal(validateClientRows(table,{name:0,phone:1,vehicle:2}).rows[0].phone,'+380671234567')
+ assert.ok(validateClientRows(table,{name:0,phone:0,vehicle:2}).errors.length)
+ assert.ok(validateClientRows(table,{name:-1,phone:1,vehicle:2}).errors.length)
+})
+test('client import recovers partial writes, deduplicates phones and keeps existing records',async()=>{
+ const clients=[],vehicles=[];let fail=true
+ const store={load:async()=>({clients,vehicles}),clients:async rows=>{const fresh=rows.filter(r=>!clients.some(c=>c.id===r.id));clients.push(...fresh);return fresh.length},vehicles:async rows=>{const fresh=rows.filter(r=>!vehicles.some(c=>c.id===r.id));vehicles.push(...fresh);if(fail){fail=false;throw new Error('Response lost after commit')}return fresh.length}}
+ const rows=[{name:'First',phone:'+380671234567',vehicle:'BMW X5'},{name:'Duplicate',phone:'067 123 45 67',vehicle:'BMW X5'}]
+ const partial=await importClientRows('tenant',rows,store)
+ assert.ok(partial.error);assert.equal(clients.length,1);assert.equal(vehicles.length,1)
+ const retry=await importClientRows('tenant',rows,store)
+ assert.equal(retry.error,'');assert.equal(retry.clients,0);assert.equal(retry.vehicles,0)
+ assert.equal(clients[0].full_name,'First');assert.equal(clients.length,1);assert.equal(vehicles.length,1)
+ const otherClients=[]
+ await importClientRows('other-tenant',rows,{load:async()=>({clients:[],vehicles:[]}),clients:async r=>{otherClients.push(...r);return r.length},vehicles:async r=>r.length})
+ assert.notEqual(clients[0].id,otherClients[0].id)
+ let wrote=false
+ const blocked=await importClientRows('tenant',rows,{...store,load:async()=>{throw new Error('Cannot read')},clients:async()=>{wrote=true;return 0}})
+ assert.ok(blocked.error);assert.equal(wrote,false)
+})
 
 test('landing preserves booking, invitation and authentication entry points',()=>{
  assert.equal(entryRoute('/','',''),'landing')
