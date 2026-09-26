@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "tsc --noEmit && tsc --noEmit -p tsconfig.api.json",
-    "test": "node --experimental-strip-types --test --test-isolation=none scripts/regression.test.mjs"
+    "pretest": "node scripts/build-workflow-migration.mjs",
+    "test": "node --experimental-strip-types --test --test-isolation=none scripts/regression.test.mjs scripts/workflow-db.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",
@@ -21,6 +22,7 @@
     "vite": "latest"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest"

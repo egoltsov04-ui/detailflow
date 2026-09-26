@@ -1,3 +1,4 @@
+import WorkflowPreview from './WorkflowPreview'
 import ClientImportPreview from './ClientImportPreview'
 import CompensationPreview from './CompensationPreview'
 import { useState } from 'react'
@@ -46,6 +47,7 @@ export default function ServicePreview(){
   'Склад':<section className="content"><WarehouseControls items={[{id:1,name:'Автошампунь',unit:'л',quantity:10,lastUnitCost:100}]} receive={yes} adjust={yes}/></section>,
   'Проценти':<CompensationPreview/>,
   'Імпорт':<ClientImportPreview/>,
+  'Процес':<WorkflowPreview/>,
   'Графік':<TeamSchedules staff={staff} schedules={[]} save={ok} remove={ok}/>,
   'Завдання':<Tasks tasks={[]} clients={clients} staff={staff} add={ok} update={ok} remove={ok}/>,
   'Звернення':<Leads items={[]} clients={clients} staff={staff} add={ok} update={ok} remove={ok}/>,
