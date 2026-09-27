@@ -1,3 +1,4 @@
+import { bookingEmail } from '../lib/bookingContact.js'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail } from '../lib/sendpulse.js'
 
@@ -19,21 +20,23 @@ export default async function handler(request: Request, response: Response) {
     const status = body?.status === 'confirmed' || body?.status === 'cancelled' ? body.status : ''
     if (!appointmentId || !status) return response.status(400).json({ error: 'Invalid request' })
     const db = createClient(required('VITE_SUPABASE_URL'), required('SUPABASE_SERVICE_ROLE_KEY'))
-    const { data: appointment, error: appointmentError } = await db.from('appointments').select('id,tenant_id,starts_at,clients(full_name,email),appointment_services(service_name),tenants(name)').eq('id', appointmentId).eq('status', 'pending').maybeSingle()
+    const { data: appointment, error: appointmentError } = await db.from('appointments').select('id,tenant_id,starts_at,notes,source,clients(full_name,email),appointment_services(service_name),tenants(name,timezone)').eq('id', appointmentId).eq('status', 'pending').maybeSingle()
     if (appointmentError || !appointment) return response.status(404).json({ error: 'Pending request not found' })
     const { data: membership } = await db.from('tenant_memberships').select('tenant_id').eq('tenant_id', appointment.tenant_id).eq('user_id', authData.user.id).in('role', ['owner', 'admin']).maybeSingle()
     if (!membership) return response.status(403).json({ error: 'Only an owner or admin can process requests' })
     const { data: updated, error: updateError } = await db.from('appointments').update({ status }).eq('id', appointmentId).eq('status', 'pending').select('id').maybeSingle()
-    if (updateError || !updated) return response.status(409).json({ error: 'This request was already processed' })
+    if (updateError?.code === '23P01') return response.status(409).json({error:'Цей час уже зайнятий. Узгодьте з клієнтом інший час у календарі.'})
+    if (updateError || !updated) return response.status(409).json({ error: 'Не вдалося підтвердити заявку. Оновіть список і спробуйте ще раз.' })
     if (status === 'cancelled') return response.status(200).json({ ok: true, notification: 'not_sent' })
     const client = Array.isArray(appointment.clients) ? appointment.clients[0] : appointment.clients
-    const service = Array.isArray(appointment.appointment_services) ? appointment.appointment_services[0] : appointment.appointment_services
+    const services = (Array.isArray(appointment.appointment_services) ? appointment.appointment_services : [appointment.appointment_services]).map(s=>s?.service_name).filter(Boolean).join(' + ')
     const tenant = Array.isArray(appointment.tenants) ? appointment.tenants[0] : appointment.tenants
-    if (!client?.email) return response.status(200).json({ ok: true, notification: 'not_sent' })
-    const start = new Date(appointment.starts_at).toLocaleString('uk-UA', { dateStyle: 'long', timeStyle: 'short' })
-    const text = `Вітаємо, ${client.full_name}! Ваш запис підтверджено. Студія: ${tenant?.name || 'Detailflow'}. Послуга: ${service?.service_name || 'детейлінг'}. Час: ${start}.`
+    const email=bookingEmail(appointment.notes,appointment.source,client?.email)
+    if (!email) return response.status(200).json({ ok: true, notification: 'not_sent' })
+    const start = new Date(appointment.starts_at).toLocaleString('uk-UA', { dateStyle: 'long', timeStyle: 'short', timeZone:tenant?.timezone||'Europe/Kyiv' })
+    const text = `Вітаємо, ${client.full_name}! Ваш запис підтверджено. Студія: ${tenant?.name || 'Detailflow'}. Послуга: ${services || 'детейлінг'}. Час: ${start}.`
     try {
-      await sendEmail({ to: [{ email: client.email }], subject: `Запис підтверджено — ${tenant?.name || 'Detailflow'}`, text, html: `<p>${escapeHtml(text)}</p>`, fromName: tenant?.name || 'Detailflow' })
+      await sendEmail({ to: [{ email }], subject: `Запис підтверджено — ${tenant?.name || 'Detailflow'}`, text, html: `<p>${escapeHtml(text)}</p>`, fromName: tenant?.name || 'Detailflow' })
       return response.status(200).json({ ok: true, notification: 'sent' })
     } catch {
       return response.status(200).json({ ok: true, notification: 'failed' })

@@ -1,72 +1,68 @@
+import { readAllPages } from '../../src/lib/pagination.js'
 import { createClient } from '@supabase/supabase-js'
+import { availableStaff, bookingTotals, type BookingData } from '../../src/lib/bookingAvailability.js'
 
-type Request = { method?: string; query?: Record<string, string | string[] | undefined>; body?: unknown }
-type Response = { status: (code: number) => Response; json: (body: unknown) => void }
+type Request = { method?:string; query?:Record<string,string|string[]|undefined>; body?:unknown }
+type Response = { status:(code:number)=>Response; json:(body:unknown)=>void }
+const required=(name:string)=>{const value=process.env[name];if(!value)throw new Error(`Missing ${name}`);return value}
+const clean=(value:unknown,max:number)=>typeof value==='string'?value.trim().slice(0,max):''
 
-const required = (name: string) => {
-  const value = process.env[name]
-  if (!value) throw new Error(`Missing ${name}`)
-  return value
-}
-
-const db = () => createClient(required('VITE_SUPABASE_URL'), required('SUPABASE_SERVICE_ROLE_KEY'))
-const cleanText = (value: unknown, max: number) => typeof value === 'string' ? value.trim().slice(0, max) : ''
-const overlap = (startA: Date, endA: Date, startB: Date, endB: Date) => startA < endB && endA > startB
-const weekdayIn = (value:Date, timezone:string) => ({Sun:0,Mon:1,Tue:2,Wed:3,Thu:4,Fri:5,Sat:6}[new Intl.DateTimeFormat('en-US',{timeZone:timezone,weekday:'short'}).format(value)] ?? -1)
-const minutes = (value:string) => { const [hour,minute]=value.slice(0,5).split(':').map(Number); return hour*60+minute }
-
-export default async function handler(request: Request, response: Response) {
+export function createPublicBookingHandler(makeClient:typeof createClient=createClient) {
+ return async function handler(request:Request,response:Response) {
   try {
-    const slug = cleanText(request.method === 'GET' ? request.query?.slug : (request.body as { slug?: unknown } | undefined)?.slug, 63).toLowerCase()
-    if (!/^[a-z0-9-]{3,63}$/.test(slug)) return response.status(400).json({ error: 'Invalid studio address' })
-    const supabase = db()
-    const { data: tenant, error: tenantError } = await supabase.from('tenants').select('id,name,address,timezone').eq('slug', slug).maybeSingle()
-    if (tenantError || !tenant) return response.status(404).json({ error: 'Studio not found' })
-
-    if (request.method === 'GET') {
-      const [services, staff, appointments, schedules] = await Promise.all([
-        supabase.from('services').select('id,name,price,duration_minutes').eq('tenant_id', tenant.id).eq('active', true).order('created_at'),
-        supabase.from('staff_profiles').select('id,full_name,specialty').eq('tenant_id', tenant.id).eq('active', true).order('created_at'),
-        supabase.from('appointments').select('staff_id,starts_at,ends_at').eq('tenant_id', tenant.id).in('status', ['confirmed', 'in_progress']).gte('starts_at', new Date().toISOString()),
-        supabase.from('work_schedules').select('staff_id,weekday,starts_at,ends_at').eq('tenant_id',tenant.id)
-      ])
-      if (services.error || staff.error || appointments.error || schedules.error) throw services.error || staff.error || appointments.error || schedules.error
-      return response.status(200).json({ studio: { name: tenant.name, address: tenant.address, timezone: tenant.timezone }, services: services.data, staff: staff.data, appointments: appointments.data, schedules:schedules.data })
-    }
-
-    if (request.method !== 'POST') return response.status(405).json({ error: 'Method not allowed' })
-    const body = request.body as Record<string, unknown> | undefined
-    const clientName = cleanText(body?.clientName, 120), phone = cleanText(body?.phone, 32), email = cleanText(body?.email, 254).toLowerCase(), car = cleanText(body?.car, 180)
-    const serviceId = cleanText(body?.serviceId, 80), staffId = cleanText(body?.staffId, 80), startsAtValue = cleanText(body?.startsAt, 64)
-    if (!clientName || !phone || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !serviceId || !staffId || !startsAtValue) return response.status(400).json({ error: 'Fill in a valid name, phone, email, service, staff, and time' })
-    const startsAt = new Date(startsAtValue)
-    if (Number.isNaN(startsAt.getTime()) || startsAt.getTime() < Date.now() - 5 * 60_000) return response.status(400).json({ error: 'Choose a future time' })
-    const [serviceResult, staffResult] = await Promise.all([
-      supabase.from('services').select('id,name,price,duration_minutes').eq('tenant_id', tenant.id).eq('id', serviceId).eq('active', true).maybeSingle(),
-      supabase.from('staff_profiles').select('id').eq('tenant_id', tenant.id).eq('id', staffId).eq('active', true).maybeSingle()
+    if(!['GET','POST'].includes(request.method||''))return response.status(405).json({error:'Метод не підтримується.'})
+    const body=request.body as Record<string,unknown>|undefined
+    const slug=clean(request.method==='GET'?request.query?.slug:body?.slug,63).toLowerCase()
+    if(!/^[a-z0-9-]{3,63}$/.test(slug))return response.status(400).json({error:'Некоректна адреса студії.'})
+    const supabase=makeClient(required('VITE_SUPABASE_URL'),required('SUPABASE_SERVICE_ROLE_KEY'))
+    const {data:tenant,error:tenantError}=await supabase.from('tenants').select('id,name,address,timezone').eq('slug',slug).maybeSingle()
+    if(tenantError)throw tenantError
+    if(!tenant)return response.status(404).json({error:'Студію не знайдено.'})
+    const now=Date.now(),horizon=new Date(now+31*86400_000).toISOString()
+    const [services,staff,appointments,schedules]=await Promise.all([
+      supabase.from('services').select('id,name,category,price,duration_minutes').eq('tenant_id',tenant.id).eq('active',true).order('created_at'),
+      supabase.from('staff_profiles').select('id,full_name,specialty').eq('tenant_id',tenant.id).eq('active',true).order('created_at'),
+      readAllPages((from,to)=>supabase.from('appointments').select('staff_id,starts_at,ends_at').eq('tenant_id',tenant.id).in('status',['confirmed','in_progress']).gte('ends_at',new Date(now).toISOString()).lte('starts_at',horizon).order('id').range(from,to)),
+      supabase.from('work_schedules').select('staff_id,weekday,starts_at,ends_at').eq('tenant_id',tenant.id)
     ])
-    if (!serviceResult.data || !staffResult.data) return response.status(400).json({ error: 'Service or specialist is unavailable' })
-    const endsAt = new Date(startsAt.getTime() + Number(serviceResult.data.duration_minutes) * 60_000)
-    const {data:schedules,error:scheduleError}=await supabase.from('work_schedules').select('weekday,starts_at,ends_at').eq('tenant_id',tenant.id).eq('staff_id',staffId)
-    if(scheduleError) throw scheduleError
-    if((schedules ?? []).length){const shift=schedules?.find(item=>item.weekday===weekdayIn(startsAt,tenant.timezone));const startTime=new Intl.DateTimeFormat('en-GB',{timeZone:tenant.timezone,hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(startsAt);const endTime=new Intl.DateTimeFormat('en-GB',{timeZone:tenant.timezone,hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(endsAt);if(!shift || minutes(startTime)<minutes(shift.starts_at) || minutes(endTime)>minutes(shift.ends_at)) return response.status(400).json({error:'Обраний час поза графіком майстра. Оберіть інший слот.'})}
-    const { data: active, error: activeError } = await supabase.from('appointments').select('starts_at,ends_at').eq('tenant_id', tenant.id).eq('staff_id', staffId).in('status', ['confirmed', 'in_progress']).gte('ends_at', startsAt.toISOString())
-    if (activeError) throw activeError
-    if ((active ?? []).some(item => overlap(startsAt, endsAt, new Date(item.starts_at), new Date(item.ends_at)))) return response.status(409).json({ error: 'This time is no longer available. Choose another slot.' })
-    const { data: client, error: clientError } = await supabase.from('clients').upsert({ tenant_id: tenant.id, full_name: clientName, phone, email }, { onConflict: 'tenant_id,phone' }).select('id').single()
-    if (clientError || !client) throw clientError || new Error('Unable to save client')
-    let vehicleId: string | null = null
-    if (car) {
-      const { data: vehicle, error: vehicleError } = await supabase.from('vehicles').insert({ tenant_id: tenant.id, client_id: client.id, notes: car }).select('id').single()
-      if (vehicleError) throw vehicleError
-      vehicleId = vehicle.id
+    if(services.error||staff.error||appointments.error||schedules.error)throw services.error||staff.error||appointments.error||schedules.error
+    const data:BookingData={studio:{name:tenant.name,address:tenant.address,timezone:tenant.timezone||'Europe/Kyiv'},services:services.data||[],staff:staff.data||[],appointments:appointments.data||[],schedules:schedules.data||[]}
+    if(request.method==='GET')return response.status(200).json(data)
+    const clientName=clean(body?.clientName,120),phone=clean(body?.phone,32).replace(/[^+\d]/g,''),email=clean(body?.email,254).toLowerCase(),car=clean(body?.car,180),preferred=clean(body?.staffId,80)
+    const raw=body?.serviceIds??[body?.serviceId]
+    if(!Array.isArray(raw)||!raw.length||raw.length>20||raw.some(id=>typeof id!=='string'))return response.status(400).json({error:'Оберіть від 1 до 20 послуг.'})
+    const ids=[...new Set(raw as string[])],chosen=data.services.filter(s=>ids.includes(s.id)),startsAt=new Date(clean(body?.startsAt,64)),totals=bookingTotals(chosen)
+    if(!clientName||phone.replace(/\D/g,'').length<10||phone.replace(/\D/g,'').length>15||!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return response.status(400).json({error:'Вкажіть ім’я, дійсний телефон та email.'})
+    if(chosen.length!==ids.length||chosen.some(s=>!Number.isFinite(Number(s.duration_minutes))||Number(s.duration_minutes)<=0)||totals.duration>24*60)return response.status(400).json({error:'Обрані послуги недоступні. Оновіть сторінку.'})
+    const member=availableStaff(data,startsAt,totals.duration,preferred,now)[0]
+    if(!member)return response.status(409).json({error:'Обраний час більше не доступний. Оберіть інший день, час або майстра.'})
+    const endsAt=new Date(startsAt.getTime()+totals.duration*60_000)
+    // Public requests must never overwrite an existing customer's name or email.
+    const {error:clientError}=await supabase.from('clients').upsert({tenant_id:tenant.id,full_name:clientName,phone,email},{onConflict:'tenant_id,phone',ignoreDuplicates:true})
+    if(clientError)throw clientError
+    const {data:client,error:lookupError}=await supabase.from('clients').select('id').eq('tenant_id',tenant.id).eq('phone',phone).single()
+    if(lookupError||!client)throw lookupError||new Error('Missing client')
+    let vehicleId:string|null=null
+    if(car){
+      const {data:vehicle,error}=await supabase.from('vehicles').insert({tenant_id:tenant.id,client_id:client.id,notes:car}).select('id').single()
+      if(error)throw error
+      vehicleId=vehicle.id
     }
-    const { data: appointment, error: appointmentError } = await supabase.from('appointments').insert({ tenant_id: tenant.id, client_id: client.id, vehicle_id: vehicleId, staff_id: staffId, starts_at: startsAt.toISOString(), ends_at: endsAt.toISOString(), status: 'pending', source: 'public' }).select('id').single()
-    if (appointmentError || !appointment) throw appointmentError || new Error('Unable to create request')
-    const { error: serviceError } = await supabase.from('appointment_services').insert({ appointment_id: appointment.id, service_id: serviceResult.data.id, service_name: serviceResult.data.name, unit_price: serviceResult.data.price, duration_minutes: serviceResult.data.duration_minutes })
-    if (serviceError) throw serviceError
-    return response.status(201).json({ ok: true, message: 'Request created' })
-  } catch (error) {
-    return response.status(500).json({ error: error instanceof Error ? error.message : 'Unable to create request' })
+    const {data:appointment,error:appointmentError}=await supabase.from('appointments').insert({tenant_id:tenant.id,client_id:client.id,vehicle_id:vehicleId,staff_id:member.id,starts_at:startsAt.toISOString(),ends_at:endsAt.toISOString(),status:'pending',source:'public',notes:`Email онлайн-запису: ${email}
+Онлайн-заявка: ${clientName} · ${phone} · ${email}${preferred?'':'. Будь-який вільний майстер.'}`}).select('id').single()
+    if(appointmentError||!appointment)throw appointmentError||new Error('Missing appointment')
+    const {error:serviceError}=await supabase.from('appointment_services').insert(chosen.map(s=>({appointment_id:appointment.id,service_id:s.id,service_name:s.name,unit_price:s.price,duration_minutes:s.duration_minutes,quantity:1})))
+    if(serviceError){
+      // The whole multi-row insert rolls back; remove its empty parent request too.
+      const cleanup=await supabase.from('appointments').delete().eq('id',appointment.id).eq('tenant_id',tenant.id).eq('status','pending')
+      if(cleanup.error)console.error('Public booking cleanup failed',cleanup.error.code)
+      throw serviceError
+    }
+    return response.status(201).json({ok:true,status:'pending'})
+  }catch(error){
+    console.error('Public booking failed',error instanceof Error?error.name:(error as {code?:string})?.code)
+    return response.status(500).json({error:'Не вдалося обробити запис. Спробуйте пізніше або зв’яжіться зі студією.'})
   }
+ }
 }
+export default createPublicBookingHandler()

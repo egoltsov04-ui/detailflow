@@ -1,3 +1,4 @@
+import { bookingEmail } from './lib/bookingContact.js'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail } from './lib/sendpulse.js'
 
@@ -18,18 +19,19 @@ export default async function handler(request: Request, response: Response) {
     const supabase = createClient(required('VITE_SUPABASE_URL'), required('SUPABASE_SERVICE_ROLE_KEY'))
     const now = new Date()
     const inTwentyFiveHours = new Date(now.getTime() + 25 * 60 * 60 * 1000).toISOString()
-    const { data: appointments, error } = await supabase.from('appointments').select('id,tenant_id,starts_at,clients(full_name,email),services:appointment_services(service_name),tenants(name),reminder_settings(email_enabled,reminder_24h_enabled,reminder_2h_enabled)').eq('status', 'confirmed').gte('starts_at', now.toISOString()).lte('starts_at', inTwentyFiveHours)
+    const { data: appointments, error } = await supabase.from('appointments').select('id,tenant_id,starts_at,notes,source,clients(full_name,email),services:appointment_services(service_name),tenants(name,timezone,reminder_settings(email_enabled,reminder_24h_enabled,reminder_2h_enabled))').eq('status', 'confirmed').gte('starts_at', now.toISOString()).lte('starts_at', inTwentyFiveHours)
     if (error) throw error
 
     let sent = 0, failed = 0
     for (const appointment of appointments ?? []) {
       const client = Array.isArray(appointment.clients) ? appointment.clients[0] : appointment.clients
-      const settings = Array.isArray(appointment.reminder_settings) ? appointment.reminder_settings[0] : appointment.reminder_settings
       const tenant = Array.isArray(appointment.tenants) ? appointment.tenants[0] : appointment.tenants
-      const service = Array.isArray(appointment.services) ? appointment.services[0] : appointment.services
+      const settings = Array.isArray(tenant?.reminder_settings) ? tenant.reminder_settings[0] : tenant?.reminder_settings
+      const services = (Array.isArray(appointment.services) ? appointment.services : [appointment.services]).map(s=>s?.service_name).filter(Boolean).join(' + ')
       const start = new Date(appointment.starts_at)
       const hoursUntil = (start.getTime() - now.getTime()) / 3_600_000
-      if (!settings?.email_enabled || !client?.email) continue
+      const email=bookingEmail(appointment.notes,appointment.source,client?.email)
+      if (!settings?.email_enabled || !email) continue
       const timing = settings.reminder_24h_enabled && hoursUntil >= 23 && hoursUntil <= 25 ? { hours:24, label:'завтра' } : settings.reminder_2h_enabled && hoursUntil >= 1.75 && hoursUntil <= 2.25 ? { hours:2, label:'сьогодні' } : null
       if (!timing) continue
 
@@ -38,9 +40,9 @@ export default async function handler(request: Request, response: Response) {
       if (existing.data) continue
 
       const subject = `Нагадування про запис — ${tenant?.name || 'ваша студія'}`
-      const text = `Вітаємо, ${client.full_name}! Нагадуємо про запис ${timing.label}: ${start.toLocaleString('uk-UA')}. Послуга: ${service?.service_name || 'детейлінг'}.`
+      const text = `Вітаємо, ${client.full_name}! Нагадуємо про запис ${timing.label}: ${start.toLocaleString('uk-UA',{timeZone:tenant?.timezone||'Europe/Kyiv'})}. Послуга: ${services || 'детейлінг'}.`
       try {
-        const result = await sendEmail({ to: [{ email: client.email }], subject, text, html: `<p>${text}</p>`, fromName: tenant?.name || 'Detailflow' })
+        const result = await sendEmail({ to: [{ email }], subject, text, html: `<p>${text.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]||c))}</p>`, fromName: tenant?.name || 'Detailflow' })
         const providerMessageId = typeof result.id === 'string' ? result.id : null
         await supabase.from('reminders').insert({ tenant_id: appointment.tenant_id, appointment_id: appointment.id, channel: 'email', scheduled_for: scheduledFor, sent_at: new Date().toISOString(), provider_message_id: providerMessageId })
         sent += 1
