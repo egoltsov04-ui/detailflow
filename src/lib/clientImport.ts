@@ -100,6 +100,6 @@ export async function importClientRows(tenantId: string, rows: ClientImportRow[]
     }
     for (let i = 0; i < newClients.length; i += 100) result.clients += await store.clients(newClients.slice(i, i + 100))
     for (let i = 0; i < newVehicles.length; i += 100) result.vehicles += await store.vehicles(newVehicles.slice(i, i + 100))
-  } catch { result.error = 'Імпорт перервано. Частина даних могла зберегтися. Перевірте з’єднання й повторіть імпорт: збережені клієнти зі збігом телефону та однакові авто не дублюються.' }
+  } catch (error) { const code=(error as {code?:string})?.code; const reason=code==='42501'?'Немає прав на збереження клієнтів у цій студії. ':code==='23505'?'Клієнт із цим телефоном уже існує. ':code==='PGRST204'||code==='42703'?'Структуру бази потрібно оновити. ':''; result.error = reason+'Імпорт перервано. Частина даних могла зберегтися. Перевірте з’єднання й повторіть імпорт: збережені клієнти зі збігом телефону та однакові авто не дублюються.' }
   return result
 }

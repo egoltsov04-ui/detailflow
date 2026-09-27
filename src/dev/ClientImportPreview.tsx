@@ -11,5 +11,6 @@ const store: ClientImportStore = {
 }
 export default function ClientImportPreview() {
   const [, refresh] = useState(0)
-  return <section className="content"><p>Тестове сховище: {clients.length} клієнтів, {vehicles.length} авто.</p><button className="text-btn" onClick={() => { fail = true }}>Тест: помилка збереження авто</button><ClientImport tenantId="qa-import" store={store} onComplete={() => refresh(v => v + 1)}/></section>
+  const [showClients,setShowClients]=useState(false)
+  return <section className="content"><p>Тестове сховище: {clients.length} клієнтів, {vehicles.length} авто.</p><button className="text-btn" onClick={() => { fail = true }}>Тест: помилка збереження авто</button><ClientImport tenantId="qa-import" store={store} onViewClients={()=>setShowClients(true)} onComplete={() => refresh(v => v + 1)}/>{showClients&&<section className="panel" aria-label="Імпортовані клієнти"><h2>Імпортовані клієнти</h2>{clients.map(client=><p key={client.id}>{(client as ExistingImportClient & {full_name:string}).full_name} · {client.phone}</p>)}</section>}</section>
 }

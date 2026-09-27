@@ -15,24 +15,24 @@ function databaseStore(tenantId: string): ClientImportStore {
         readAllPages((from, to) => db.from('clients').select('id,phone').eq('tenant_id', tenantId).order('id').range(from, to)),
         readAllPages((from, to) => db.from('vehicles').select('id,client_id,notes,make,model,plate_number').eq('tenant_id', tenantId).order('id').range(from, to)),
       ])
-      if (clients.error || vehicles.error) throw new Error('Could not check existing clients')
+      if (clients.error || vehicles.error) throw clients.error || vehicles.error
       return { clients: clients.data!, vehicles: vehicles.data! }
     },
     async clients(rows) {
       if (!db) throw new Error('No database')
-      const { data, error } = await db.from('clients').upsert(rows.map(r => ({ ...r, tenant_id: tenantId })), { onConflict: 'id', ignoreDuplicates: true }).select('id')
-      if (error || !data) throw new Error('Could not save clients')
+      const { data, error } = await db.from('clients').upsert(rows.map(r => ({ ...r, email:r.email||null, notes:r.notes||null, tenant_id: tenantId })), { onConflict: 'id', ignoreDuplicates: true }).select('id')
+      if (error || !data) throw error || new Error('Could not save clients')
       return data.length
     },
     async vehicles(rows) {
       if (!db) throw new Error('No database')
-      const { data, error } = await db.from('vehicles').upsert(rows.map(r => ({ ...r, tenant_id: tenantId })), { onConflict: 'id', ignoreDuplicates: true }).select('id')
-      if (error || !data) throw new Error('Could not save vehicles')
+      const { data, error } = await db.from('vehicles').upsert(rows.map(r => ({ ...r, make:r.make||null,model:r.model||null,plate_number:r.plate_number||null,year:r.year||null, tenant_id: tenantId })), { onConflict: 'id', ignoreDuplicates: true }).select('id')
+      if (error || !data) throw error || new Error('Could not save vehicles')
       return data.length
     },
   }
 }
-export default function ClientImport({ tenantId, onComplete, store }: { tenantId: string | null; onComplete?: () => void; store?: ClientImportStore }) {
+export default function ClientImport({ tenantId, onComplete, onViewClients, store }: { tenantId: string | null; onComplete?: () => void; onViewClients?: () => void; store?: ClientImportStore }) {
   const [table, setTable] = useState<CsvTable | null>(null), [mapping, setMapping] = useState<ImportMapping>({ name: -1, phone: -1, vehicle: -1 }), [error, setError] = useState(''), [busy, setBusy] = useState(false), [loading, setLoading] = useState(false), [filename, setFilename] = useState(''), [paste, setPaste] = useState(false), [text, setText] = useState(''), [result, setResult] = useState<ImportResult | null>(null)
   const request = useRef(0), lock = useRef(false)
   const preview = table ? validateClientRows(table, mapping) : { rows: [], errors: [] }
@@ -66,11 +66,12 @@ export default function ClientImport({ tenantId, onComplete, store }: { tenantId
     {loading && <p role="status">Читаємо файл…</p>}{error && <p className="import-error" role="alert">{error}</p>}
     {table && <div className="import-review"><h3>{filename}</h3><p>Рядків у файлі: {table.rows.length}. Обов’язкові поля: ім’я та телефон. Необов’язкові колонки можна пропустити.</p><details className="import-column-settings" open={mapping.name<0||mapping.phone<0}><summary>Зіставлення колонок · перевірити або змінити</summary><div className="import-mapping">{(Object.keys(importFields) as ImportField[]).map(field => <label key={field}>{importFields[field]}<Select disabled={busy || !!result && !result.error} value={mapping[field] ?? -1} onChange={e => { setMapping(m => ({ ...m, [field]: Number(e.target.value) })); setResult(null) }}><option value={-1}>{field === 'name' || field === 'phone' ? 'Оберіть колонку' : 'Не імпортувати'}</option>{table.headers.map((h, i) => <option value={i} key={i}>{h || 'Колонка ' + (i + 1)}</option>)}</Select></label>)}</div></details>
       {!!preview.errors.length && <div className="import-error" role="alert"><p>Виправте дані перед імпортом:</p><ul>{preview.errors.slice(0, 5).map(e => <li key={e}>{e}</li>)}</ul>{preview.errors.length > 5 && <p>Ще помилок: {preview.errors.length - 5}</p>}</div>}
-      {!!preview.rows.length && <><div className="import-table-scroll" tabIndex={0} role="region" aria-label="Попередній перегляд клієнтів"><table><thead><tr><th>Ім’я</th><th>Телефон</th><th>Email</th><th>Примітка клієнта</th><th>Авто</th><th>Рік</th><th>Примітка авто</th></tr></thead><tbody>{preview.rows.slice(0, 10).map((row, i) => <tr key={i}><td>{row.name}</td><td>{row.phone}</td><td>{row.email || '—'}</td><td>{row.clientNotes || '—'}</td><td>{[row.make,row.model,row.plate].filter(Boolean).join(' ') || '—'}</td><td>{row.year || '—'}</td><td>{row.vehicle || '—'}</td></tr>)}</tbody></table></div><small>Показано {Math.min(10, preview.rows.length)} з {preview.rows.length} коректних рядків.</small></>}
+      {!!preview.rows.length && <><div className="import-table-scroll" tabIndex={0} role="region" aria-label="Попередній перегляд клієнтів"><table><thead><tr><th>Ім’я</th><th>Телефон</th><th>Email</th><th>Примітка клієнта</th><th>Авто</th><th>Рік</th><th>Примітка авто</th></tr></thead><tbody>{preview.rows.slice(0, 10).map((row, i) => <tr key={i}><td>{row.name}</td><td>{row.phone}</td><td>{row.email || '—'}</td><td>{row.clientNotes || '—'}</td><td>{[row.make,row.model,row.plate].filter(Boolean).join(' ') || '—'}</td><td>{row.year || '—'}</td><td>{row.vehicle || '—'}</td></tr>)}</tbody></table></div><div className="import-mobile-cards">{preview.rows.slice(0,10).map((row,i)=><article key={i}><strong>{row.name}</strong><span>{row.phone}</span>{row.email&&<span>{row.email}</span>}<dl>{Object.entries({Авто:[row.make,row.model,row.plate].filter(Boolean).join(' '),Рік:row.year,'Примітка клієнта':row.clientNotes,'Примітка авто':row.vehicle}).filter(([,v])=>v).map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl></article>)}</div><small>Показано {Math.min(10, preview.rows.length)} з {preview.rows.length} коректних рядків.</small></>}
       <p>Наявних клієнтів зіставляємо за телефоном. Їхні дані не перезаписуємо; додаємо лише відсутні авто.</p>
       {!tenantId && <p className="import-error">Для імпорту увійдіть до акаунта студії.</p>}
       {result && <div className={result.error ? 'import-error' : 'import-success'} role={result.error ? 'alert' : 'status'}>{!result.error && <CheckCircle2 size={18}/>}<p>{result.error || 'Імпорт завершено.'}<br/>Додано клієнтів: {result.clients}. Автомобілів: {result.vehicles}. Рядків зі збігом телефону: {result.matched}.</p></div>}
       <button type="button" className="primary" disabled={!tenantId || busy || loading || !!preview.errors.length || !preview.rows.length || !!result && !result.error} onClick={() => void commit()}>{busy ? 'Імпортуємо… Не закривайте сторінку' : result && !result.error ? 'Імпорт завершено' : result?.error ? 'Повторити імпорт' : 'Підтвердити імпорт'}</button>
+      {result&&!result.error&&onViewClients&&<button className="text-btn" type="button" onClick={onViewClients}>Перейти до клієнтів</button>}
     </div>}
   </section>
 }

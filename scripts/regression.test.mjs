@@ -122,3 +122,22 @@ test('rich import validates and persists client and structured vehicle fields wi
  assert.ok(validateClientRows(parseClientCsv(header+'Test;+380671234567;;;BMW;X5;;2101;'),mapping).errors.length)
  assert.ok(validateClientRows(table,{...mapping,year:mapping.phone}).errors.length)
 })
+
+
+test('staff mail keeps linked identity and refuses blocked accounts or missing invitation',async()=>{
+ const {staffMailDecision}=await import('../api/lib/staffMail.ts')
+ const linked={active:true,user_id:'master',invite_email:'old@example.com'}
+ assert.deepEqual(staffMailDecision(linked,'resend','','current@example.com'),{kind:'recovery',email:'current@example.com'})
+ assert.deepEqual(staffMailDecision(linked,'recovery','','current@example.com'),{kind:'recovery',email:'current@example.com'})
+ assert.throws(()=>staffMailDecision(linked,'recovery','stranger@example.com','current@example.com'),/поточний email/)
+ assert.throws(()=>staffMailDecision({...linked,active:false},'resend','','current@example.com'),/активуйте/)
+ assert.throws(()=>staffMailDecision({active:true,user_id:null,invite_email:null},'recovery','new@example.com'),/запрошення/)
+ assert.deepEqual(staffMailDecision({active:true,user_id:null,invite_email:'new@example.com'},'invite',''),{kind:'invite',email:'new@example.com'})
+})
+
+test('imported clients retain car identity instead of replacing it with notes',async()=>{
+ const {mapStudioClient}=await import('../src/lib/studioClients.ts')
+ const row={id:'id',full_name:'Name',phone:'+380000000001',tags:null,notes:null,source:null,vehicles:[{make:'BMW',model:'X5',plate_number:'AA0001AA',notes:'Ceramic'}]}
+ assert.equal(mapStudioClient(row).car,'BMW X5 AA0001AA')
+ assert.equal(mapStudioClient({...row,vehicles:[{make:null,model:null,plate_number:null,notes:'Legacy car'}]}).car,'Legacy car')
+})
