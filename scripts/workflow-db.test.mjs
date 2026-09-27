@@ -1,3 +1,4 @@
+import { jobAssignmentInput } from '../src/workflow/assignment.ts'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile, readdir } from 'node:fs/promises'
@@ -128,6 +129,14 @@ test('workflow migration, tenant isolation, review, payroll and attendance',asyn
  const carJobs=(await db.query('select * from work_order_jobs where work_order_id=$1 order by price desc',[carOrder.id])).rows
  assert.equal(carJobs.length,2);assert.ok(carJobs.every(j=>j.staff_id===null&&j.service_id===service))
  await assert.rejects(db.query("update appointments set status='completed' where id=$1",[appointment]),/перевірка/)
+ // Board assignment uses the same RPC as the overview; each service stays independent.
+ await db.query('select save_work_job($1,$2,$3)',[carOrder.id,JSON.stringify(jobAssignmentInput(carJobs[0],staff)),carJobs[0].version])
+ const assignedCarJob=(await db.query('select * from work_order_jobs where id=$1',[carJobs[0].id])).rows[0]
+ assert.equal(assignedCarJob.staff_id,staff);assert.equal(assignedCarJob.status,'assigned');assert.equal(Number(assignedCarJob.rate),45)
+ assert.equal((await db.query('select staff_id from work_order_jobs where id=$1',[carJobs[1].id])).rows[0].staff_id,null)
+ await assert.rejects(db.query('select save_work_job($1,$2,$3)',[carOrder.id,JSON.stringify(jobAssignmentInput(carJobs[0],staff)),carJobs[0].version]))
+ carJobs[0]=assignedCarJob
+
  for(let i=0;i<carJobs.length;i++)await db.query('select save_work_job($1,$2,$3)',[carOrder.id,JSON.stringify({id:carJobs[i].id,staff_id:staff,service_id:service,title:carJobs[i].title,position:i,price:carJobs[i].price,pay_mode:'fixed',rate:0,checklist:[{title:carJobs[i].title}]}),carJobs[i].version])
  await actor(user);await db.query("select manage_master_shift($1,'start')",[staff])
  let first=(await db.query('select * from work_order_jobs where id=$1',[carJobs[0].id])).rows[0]
