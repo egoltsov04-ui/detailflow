@@ -1,6 +1,8 @@
 export type CsvTable = { headers: string[]; rows: string[][] }
-export type ClientImportRow = { name: string; phone: string; vehicle: string }
-export type ImportMapping = { name: number; phone: number; vehicle: number }
+export const importFields = { name: 'Ім’я', phone: 'Телефон', email: 'Email', clientNotes: 'Примітка клієнта', make: 'Марка', model: 'Модель', plate: 'Держномер', year: 'Рік', vehicle: 'Примітка авто' } as const
+export type ImportField = keyof typeof importFields
+export type ClientImportRow = { name: string; phone: string; vehicle: string; email?: string; clientNotes?: string; make?: string; model?: string; plate?: string; year?: number }
+export type ImportMapping = { name: number; phone: number; vehicle: number } & Partial<Record<ImportField, number>>
 export function normalizePhone(value: string): string {
   let digits = value.replace(/\D/g, '')
   if (digits.length === 10 && digits.startsWith('0')) digits = '38' + digits
@@ -39,19 +41,25 @@ export function parseClientCsv(text: string): CsvTable {
 export function suggestMapping(headers: string[]): ImportMapping {
   const normalized = headers.map(h => h.toLowerCase().replace(/[\s_’'`-]/g, ''))
   const find = (aliases: string[]) => normalized.findIndex(h => aliases.includes(h))
-  return { name: find(['імя', 'імятапрізвище', 'піб', 'клієнт', 'имя', 'фио', 'клиент', 'name', 'fullname', 'client']), phone: find(['телефон', 'номер', 'номертелефону', 'phone', 'telephone', 'mobile']), vehicle: find(['авто', 'автомобіль', 'автомобиль', 'car', 'vehicle']) }
+  return { name: find(['імя', 'імятапрізвище', 'піб', 'клієнт', 'имя', 'фио', 'клиент', 'name', 'fullname', 'client']), phone: find(['телефон', 'номер', 'номертелефону', 'phone', 'telephone', 'mobile']), vehicle: find(['авто', 'автомобіль', 'автомобиль', 'car', 'vehicle', 'приміткаавто', 'примечаниеавто']), email: find(['email', 'електроннапошта', 'пошта']), clientNotes: find(['приміткаклієнта', 'примечаниеклиента', 'clientnotes']), make: find(['марка', 'make', 'brand']), model: find(['модель', 'model']), plate: find(['держномер', 'госномер', 'номернийзнак', 'plate', 'platenumber']), year: find(['рік', 'год', 'year']) }
 }
 export function validateClientRows(table: CsvTable, mapping: ImportMapping): { rows: ClientImportRow[]; errors: string[] } {
   if (mapping.name < 0 || mapping.phone < 0) return { rows: [], errors: ['Оберіть колонки імені та телефону.'] }
-  const indices = [mapping.name, mapping.phone, mapping.vehicle].filter(i => i >= 0)
+  const indices = Object.values(mapping).filter((i): i is number => typeof i === 'number' && i >= 0)
   if (new Set(indices).size !== indices.length || indices.some(i => i >= table.headers.length)) return { rows: [], errors: ['Для кожного поля оберіть окрему колонку.'] }
   const rows: ClientImportRow[] = [], errors: string[] = []
   table.rows.forEach((row, index) => {
     const name = row[mapping.name].trim(), originalPhone = row[mapping.phone].trim(), phone = normalizePhone(originalPhone), vehicle = mapping.vehicle < 0 ? '' : row[mapping.vehicle].trim()
+    const optional = (key: ImportField) => { const i = mapping[key] ?? -1; return i < 0 ? '' : row[i].trim() }
+    const email = optional('email'), clientNotes = optional('clientNotes'), make = optional('make'), model = optional('model'), plate = optional('plate').toUpperCase(), yearText = optional('year')
+    if (email && (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) { errors.push(`Рядок ${index + 2}: перевірте email.`); return }
+    if (yearText && (!/^\d{4}$/.test(yearText) || +yearText < 1900 || +yearText > 2100)) { errors.push(`Рядок ${index + 2}: рік має бути від 1900 до 2100.`); return }
+    if (clientNotes.length > 2000 || make.length > 100 || model.length > 100 || plate.length > 24) { errors.push(`Рядок ${index + 2}: примітка до 2000, марка та модель до 100, держномер до 24 символів.`); return }
+    if (yearText && !make && !model && !plate && !vehicle) { errors.push(`Рядок ${index + 2}: для року вкажіть автомобіль.`); return }
     if (!name || name.length > 160) errors.push(`Рядок ${index + 2}: ім’я обов’язкове, до 160 символів.`)
     else if (!/^[+\d\s().-]+$/.test(originalPhone) || phone.length < 7 || phone.length > 15) errors.push(`Рядок ${index + 2}: перевірте номер телефону.`)
     else if (vehicle.length > 500) errors.push(`Рядок ${index + 2}: опис авто має бути до 500 символів.`)
-    else rows.push({ name, phone: '+' + phone, vehicle })
+    else rows.push({ name, phone: '+' + phone, vehicle, ...(email && {email}), ...(clientNotes && {clientNotes}), ...(make && {make}), ...(model && {model}), ...(plate && {plate}), ...(yearText && {year: +yearText}) })
   })
   return { rows, errors }
 }
@@ -60,8 +68,8 @@ export type ExistingImportClient = { id: string; phone: string | null }
 export type ExistingImportVehicle = { id: string; client_id: string; notes: string | null; make?: string | null; model?: string | null; plate_number?: string | null }
 export type ClientImportStore = {
   load: () => Promise<{ clients: ExistingImportClient[]; vehicles: ExistingImportVehicle[] }>
-  clients: (rows: { id: string; full_name: string; phone: string }[]) => Promise<number>
-  vehicles: (rows: { id: string; client_id: string; notes: string }[]) => Promise<number>
+  clients: (rows: { id: string; full_name: string; phone: string; email?: string; notes?: string }[]) => Promise<number>
+  vehicles: (rows: { id: string; client_id: string; notes: string; make?: string; model?: string; plate_number?: string; year?: number }[]) => Promise<number>
 }
 export type ImportResult = { clients: number; vehicles: number; matched: number; error: string }
 async function stableId(value: string) {
@@ -77,13 +85,18 @@ export async function importClientRows(tenantId: string, rows: ClientImportRow[]
     const existing = await store.load(), byPhone = new Map(existing.clients.filter(c => c.phone).map(c => [normalizePhone(c.phone!), c.id]))
     const normalizeCar = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ')
     const cars = new Set(existing.vehicles.flatMap(v => [v.notes, [v.make, v.model, v.plate_number].filter(Boolean).join(' ')].filter(Boolean).map(label => v.client_id + ':' + normalizeCar(label!))))
-    const newClients: { id: string; full_name: string; phone: string }[] = [], newVehicles: { id: string; client_id: string; notes: string }[] = []
+    const plates = new Set(existing.vehicles.filter(v => v.plate_number).map(v => v.client_id + ':' + v.plate_number!.toUpperCase().replace(/\s/g, '')))
+    const newClients: Parameters<ClientImportStore['clients']>[0] = [], newVehicles: Parameters<ClientImportStore['vehicles']>[0] = []
     for (const row of rows) {
       const phone = normalizePhone(row.phone); let clientId = byPhone.get(phone)
       if (clientId) result.matched++
-      else { clientId = await stableId(`detailflow:client:${tenantId}:${phone}`); byPhone.set(phone, clientId); newClients.push({ id: clientId, full_name: row.name, phone: row.phone }) }
-      const carKey = clientId + ':' + normalizeCar(row.vehicle)
-      if (row.vehicle && !cars.has(carKey)) { cars.add(carKey); newVehicles.push({ id: await stableId(`detailflow:vehicle:${tenantId}:${carKey}`), client_id: clientId, notes: row.vehicle }) }
+      else { clientId = await stableId(`detailflow:client:${tenantId}:${phone}`); byPhone.set(phone, clientId); newClients.push({ id: clientId, full_name: row.name, phone: row.phone, ...(row.email && {email: row.email}), ...(row.clientNotes && {notes: row.clientNotes}) }) }
+      const label = [row.make, row.model, row.plate].filter(Boolean).join(' ') || row.vehicle
+      const carKey = clientId + ':' + normalizeCar(label), plateKey = row.plate ? clientId + ':' + row.plate.toUpperCase().replace(/\s/g, '') : ''
+      if (label && !cars.has(carKey) && (!plateKey || !plates.has(plateKey))) {
+        cars.add(carKey); if (plateKey) plates.add(plateKey)
+        newVehicles.push({ id: await stableId(`detailflow:vehicle:${tenantId}:${plateKey || carKey}`), client_id: clientId, notes: row.vehicle, ...(row.make && {make: row.make}), ...(row.model && {model: row.model}), ...(row.plate && {plate_number: row.plate}), ...(row.year && {year: row.year}) })
+      }
     }
     for (let i = 0; i < newClients.length; i += 100) result.clients += await store.clients(newClients.slice(i, i + 100))
     for (let i = 0; i < newVehicles.length; i += 100) result.vehicles += await store.vehicles(newVehicles.slice(i, i + 100))

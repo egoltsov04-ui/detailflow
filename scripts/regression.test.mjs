@@ -9,9 +9,9 @@ import { parseClientCsv, suggestMapping, validateClientRows, normalizePhone, imp
 
 test('downloadable template is empty and completed rows map without manual setup',async()=>{
  const template=await readFile(new URL('../public/templates/detailflow-clients.csv',import.meta.url),'utf8')
- assert.equal(template.replace(/^\uFEFF/,'').trim(),'Ім’я;Телефон;Авто')
+ assert.equal(template.replace(/^\uFEFF/,'').trim(),'Ім’я;Телефон;Email;Примітка клієнта;Марка;Модель;Держномер;Рік;Примітка авто')
  assert.throws(()=>parseClientCsv(template),/хоча б одного клієнта/)
- const table=parseClientCsv(template+'Тестовий клієнт;+380671234567;BMW X5\r\n')
+ const table=parseClientCsv(template+'Тестовий клієнт;+380671234567;test@example.com;Зателефонувати;BMW;X5;AA1234AA;2021;Кераміка\r\n')
  const checked=validateClientRows(table,suggestMapping(table.headers))
  assert.equal(checked.errors.length,0);assert.equal(checked.rows.length,1)
  assert.throws(()=>parseClientCsv('Name;Phone\n\uFFFD;+380671234567'),/UTF-8/)
@@ -19,7 +19,7 @@ test('downloadable template is empty and completed rows map without manual setup
 
 test('client CSV supports exports, quoting, BOM, semicolons and pasted tabular data',()=>{
  const csv=parseClientCsv('\uFEFFІм’я;Телефон;Авто\r\n"Іван; Петренко";+380671234567;"BMW ""X5""\nAA1234"\r\n')
- assert.deepEqual(suggestMapping(csv.headers),{name:0,phone:1,vehicle:2})
+ assert.equal(suggestMapping(csv.headers).name,0);assert.equal(suggestMapping(csv.headers).phone,1);assert.equal(suggestMapping(csv.headers).vehicle,2)
  assert.equal(csv.rows[0][0],'Іван; Петренко');assert.equal(csv.rows[0][2],'BMW "X5"\nAA1234')
  assert.equal(parseClientCsv('name\tphone\nTest\t0671234567').rows[0][1],'0671234567')
  assert.equal(normalizePhone('067 123-45-67'),'380671234567')
@@ -103,4 +103,22 @@ test('payroll loads every page and does not return partial totals on failure',as
  assert.equal(result.data.length,1201);assert.equal(result.data.reduce((s,r)=>s+r.amount,0),12010)
  const failed=await readAllPages(async(from,to)=>from?{data:null,error:'offline'}:{data:rows.slice(from,to+1),error:null})
  assert.equal(failed.data,null);assert.equal(failed.error,'offline')
+})
+
+
+test('rich import validates and persists client and structured vehicle fields without duplicates',async()=>{
+ const header='Ім’я;Телефон;Email;Примітка клієнта;Марка;Модель;Держномер;Рік;Примітка авто\n'
+ const table=parseClientCsv(header+'Test;+380671234567;a@example.com;Note;BMW;X5;AA 1234 AA;2021;Ceramic')
+ const mapping=suggestMapping(table.headers),checked=validateClientRows(table,mapping)
+ assert.deepEqual(checked.errors,[]);assert.equal(checked.rows[0].year,2021)
+ const clients=[],vehicles=[]
+ const store={load:async()=>({clients,vehicles}),clients:async rows=>{clients.push(...rows);return rows.length},vehicles:async rows=>{vehicles.push(...rows);return rows.length}}
+ assert.equal((await importClientRows('tenant',checked.rows,store)).error,'')
+ assert.equal(clients[0].email,'a@example.com');assert.equal(clients[0].notes,'Note')
+ assert.equal(vehicles[0].make,'BMW');assert.equal(vehicles[0].model,'X5');assert.equal(vehicles[0].plate_number,'AA 1234 AA');assert.equal(vehicles[0].year,2021);assert.equal(vehicles[0].notes,'Ceramic')
+ const changed=checked.rows.map(row=>({...row,plate:'AA1234AA',vehicle:'Different note'}))
+ assert.equal((await importClientRows('tenant',changed,store)).vehicles,0)
+ assert.ok(validateClientRows(parseClientCsv(header+'Test;+380671234567;wrong;;BMW;X5;;2021;'),mapping).errors.length)
+ assert.ok(validateClientRows(parseClientCsv(header+'Test;+380671234567;;;BMW;X5;;2101;'),mapping).errors.length)
+ assert.ok(validateClientRows(table,{...mapping,year:mapping.phone}).errors.length)
 })

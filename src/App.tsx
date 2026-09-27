@@ -575,6 +575,7 @@ export default function App() {
   if(!user)return <AccessPortal admin={adminEntry}/>
   if(resolvedUser!==user.id)return <main className="access-portal">Перевіряємо доступ…</main>
   if(accessError)return <AccessNotice title="Не вдалося увійти" description={accessError} retry={()=>setAccessRetry(value=>value+1)}/>
+  if(invitation)return <InvitationPassword complete={()=>{setInvitation(false);window.history.replaceState({},'',window.location.pathname)}}/>
   if(adminEntry){
     if(userRole!=='super_admin')return <AccessNotice title="Службовий доступ" description="Цей акаунт не має прав підтримки. Увійдіть службовим акаунтом або поверніться на головну сторінку."/>
     return <SupportPortal/>
@@ -583,7 +584,6 @@ export default function App() {
   if(userRole==='super_admin')return <AccessNotice title="Кабінет підтримки" description="Відкрийте /admin на цьому сайті для службового входу."/>
   if(userRole==='owner_request')return <OwnerPending/>
   if(!tenantId)return <AccessNotice title="Профіль не прив’язано" description="Для майстра потрібне запрошення від власника. Якщо ви вже перейшли з листа, попросіть власника перевірити прив’язку акаунта." retry={()=>setAccessRetry(value=>value+1)}/>
-  if(invitation)return <InvitationPassword complete={()=>{setInvitation(false);window.history.replaceState({},'',window.location.pathname)}}/>
   const ownMaster=staffList.find(item=>item.userId===user.id)
   if(userRole==='master'&&!ownMaster)return staffLoaded?<AccessNotice title="Профіль майстра недоступний" description={syncWarning||'Доступ міг бути заблокований власником. Перевірте прив’язку акаунта.'} retry={()=>setAccessRetry(v=>v+1)}/>:<main className="access-portal">Завантаження профілю майстра…</main>
   if(userRole==='master'&&ownMaster&&!ownMaster.profileCompletedAt)return <MasterProfileForm initialName={ownMaster.name} complete={()=>setSyncVersion(v=>v+1)}/>
