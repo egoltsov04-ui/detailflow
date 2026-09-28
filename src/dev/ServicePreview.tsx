@@ -1,3 +1,4 @@
+import ServiceVariantsPreview from './ServiceVariantsPreview'
 import FinancePreview from './FinancePreview'
 import PublicBookingPreview from './PublicBookingPreview'
 import WorkflowPreview from './WorkflowPreview'
@@ -45,6 +46,7 @@ export default function ServicePreview(){
   'Майстер':<MasterCabinet staff={staff[0]} orders={orders} shifts={shift?[{id:'1',staffId:'1',startedAt:new Date().toISOString(),endedAt:null}]:[]} earnings={orders.filter(o=>o.status==='ready').map(o=>({id:String(o.id),staffId:'1',workOrderId:String(o.id),amount:600,status:'accrued',accruedAt:new Date().toISOString()}))} toggleShift={async()=>{setShift(v=>!v);return ''}} updateOrder={update}/>,
   'Аналітика та фінанси':<FinancePreview/>,
   'Фінанси':<CashFlow items={[]} clients={clients} add={ok} remove={ok}/>,
+  'Варіанти послуг':<ServiceVariantsPreview/>,
   'Каталог':<Catalog services={[[initial.title,'Полірування','4 год',2000]]} products={[]} packages={[]} addService={()=>{}} updateService={ok} removeService={()=>{}} addPackage={ok} removePackage={ok}/>,
   'Склад':<section className="content"><WarehouseControls items={[{id:1,name:'Автошампунь',unit:'л',quantity:10,lastUnitCost:100}]} receive={yes} adjust={yes}/></section>,
   'Проценти':<CompensationPreview/>,

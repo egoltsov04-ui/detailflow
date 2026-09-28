@@ -1,4 +1,32 @@
-export type BookingService = { id:string; name:string; category?:string|null; price:number; duration_minutes:number }
+export type ServiceVariant = {id:string;name:string;price:number;duration_minutes:number;description?:string}
+export type ServiceOptions = {description:string;variants:ServiceVariant[]}
+export type BookingService = { id:string; name:string; category?:string|null; price:number; duration_minutes:number;description?:string;variants?:ServiceVariant[] }
+export function serviceOptionsError(options:ServiceOptions):string {
+  if(options.description.length>2000)return 'Опис послуги — до 2000 символів.'
+  if(!Array.isArray(options.variants)||options.variants.length>20)return 'Додайте не більше 20 варіантів.'
+  const ids=new Set<string>(),names=new Set<string>()
+  for(const v of options.variants){
+    if(!v.id||!v.name.trim()||v.name.length>80)return 'Вкажіть назву кожного варіанта (до 80 символів).'
+    if(ids.has(v.id)||names.has(v.name.trim().toLocaleLowerCase()))return 'Назви варіантів не мають повторюватися.'
+    ids.add(v.id);names.add(v.name.trim().toLocaleLowerCase())
+    if(!Number.isFinite(v.price)||v.price<0||v.price>99999999.99||Math.abs(v.price*100-Math.round(v.price*100))>0.00001)return 'Вкажіть коректну ціну варіанта з точністю до копійок.'
+    if(!Number.isInteger(v.duration_minutes)||v.duration_minutes<1||v.duration_minutes>1440)return 'Тривалість варіанта — від 1 до 1440 хвилин.'
+    if((v.description||'').length>500)return 'Опис варіанта — до 500 символів.'
+  }
+  return ''
+}
+/** Resolve prices from the studio catalog, never from the customer's payload. */
+export function resolveBookingServices(catalog:BookingService[],ids:string[],variants:Record<string,string>={}):BookingService[]{
+  if(Object.keys(variants).some(id=>!ids.includes(id)))throw new Error('Оновіть вибір послуг і варіантів.')
+  return ids.map(id=>{
+    const s=catalog.find(s=>s.id===id)
+    if(!s)throw new Error('Обрана послуга недоступна. Оновіть сторінку.')
+    if(!s.variants?.length){if(variants[id])throw new Error('Варіант більше недоступний. Оберіть послугу знову.');return s}
+    const v=s.variants.find(v=>v.id===variants[id])
+    if(!v)throw new Error(`Оберіть варіант послуги «${s.name}».`)
+    return {...s,name:`${s.name} · ${v.name}`,price:Number(v.price),duration_minutes:Number(v.duration_minutes)}
+  })
+}
 export type BookingStaff = { id:string; full_name:string; specialty:string|null }
 export type BookingBusy = { staff_id:string|null; starts_at:string; ends_at:string }
 export type BookingShift = { staff_id:string; weekday:number; starts_at:string; ends_at:string }

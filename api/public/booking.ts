@@ -1,6 +1,6 @@
 import { readAllPages } from '../../src/lib/pagination.js'
 import { createClient } from '@supabase/supabase-js'
-import { availableStaff, bookingTotals, type BookingData } from '../../src/lib/bookingAvailability.js'
+import { availableStaff, bookingTotals, resolveBookingServices, type BookingData, type BookingService } from '../../src/lib/bookingAvailability.js'
 
 type Request = { method?:string; query?:Record<string,string|string[]|undefined>; body?:unknown }
 type Response = { status:(code:number)=>Response; json:(body:unknown)=>void }
@@ -20,20 +20,24 @@ export function createPublicBookingHandler(makeClient:typeof createClient=create
     if(!tenant)return response.status(404).json({error:'Студію не знайдено.'})
     const now=Date.now(),horizon=new Date(now+31*86400_000).toISOString()
     const [services,staff,appointments,schedules]=await Promise.all([
-      supabase.from('services').select('id,name,category,price,duration_minutes').eq('tenant_id',tenant.id).eq('active',true).order('created_at'),
+      supabase.from('services').select('*').eq('tenant_id',tenant.id).eq('active',true).order('created_at'),
       supabase.from('staff_profiles').select('id,full_name,specialty').eq('tenant_id',tenant.id).eq('active',true).order('created_at'),
       readAllPages((from,to)=>supabase.from('appointments').select('staff_id,starts_at,ends_at').eq('tenant_id',tenant.id).in('status',['confirmed','in_progress']).gte('ends_at',new Date(now).toISOString()).lte('starts_at',horizon).order('id').range(from,to)),
       supabase.from('work_schedules').select('staff_id,weekday,starts_at,ends_at').eq('tenant_id',tenant.id)
     ])
     if(services.error||staff.error||appointments.error||schedules.error)throw services.error||staff.error||appointments.error||schedules.error
-    const data:BookingData={studio:{name:tenant.name,address:tenant.address,timezone:tenant.timezone||'Europe/Kyiv'},services:services.data||[],staff:staff.data||[],appointments:appointments.data||[],schedules:schedules.data||[]}
+    const data:BookingData={studio:{name:tenant.name,address:tenant.address,timezone:tenant.timezone||'Europe/Kyiv'},services:(services.data||[]).map(s=>({id:s.id,name:s.name,category:s.category,price:Number(s.price),duration_minutes:s.duration_minutes,description:s.description||'',variants:Array.isArray(s.variants)?s.variants:[]})),staff:staff.data||[],appointments:appointments.data||[],schedules:schedules.data||[]}
     if(request.method==='GET')return response.status(200).json(data)
     const clientName=clean(body?.clientName,120),phone=clean(body?.phone,32).replace(/[^+\d]/g,''),email=clean(body?.email,254).toLowerCase(),car=clean(body?.car,180),preferred=clean(body?.staffId,80)
     const raw=body?.serviceIds??[body?.serviceId]
     if(!Array.isArray(raw)||!raw.length||raw.length>20||raw.some(id=>typeof id!=='string'))return response.status(400).json({error:'Оберіть від 1 до 20 послуг.'})
-    const ids=[...new Set(raw as string[])],chosen=data.services.filter(s=>ids.includes(s.id)),startsAt=new Date(clean(body?.startsAt,64)),totals=bookingTotals(chosen)
+    const ids=[...new Set(raw as string[])],variantIds=body?.variantIds??{}
+    if(!variantIds||Array.isArray(variantIds)||typeof variantIds!=='object'||Object.values(variantIds).some(v=>typeof v!=='string'))return response.status(400).json({error:'Оберіть коректні варіанти послуг.'})
+    let chosen:BookingService[]
+    try{chosen=resolveBookingServices(data.services,ids,variantIds as Record<string,string>)}catch(error){return response.status(400).json({error:error instanceof Error?error.message:'Оберіть варіанти послуг.'})}
+    const startsAt=new Date(clean(body?.startsAt,64)),totals=bookingTotals(chosen)
     if(!clientName||phone.replace(/\D/g,'').length<10||phone.replace(/\D/g,'').length>15||!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return response.status(400).json({error:'Вкажіть ім’я, дійсний телефон та email.'})
-    if(chosen.length!==ids.length||chosen.some(s=>!Number.isFinite(Number(s.duration_minutes))||Number(s.duration_minutes)<=0)||totals.duration>24*60)return response.status(400).json({error:'Обрані послуги недоступні. Оновіть сторінку.'})
+    if(chosen.length!==ids.length||chosen.some(s=>!Number.isFinite(Number(s.duration_minutes))||Number(s.duration_minutes)<=0||!Number.isFinite(s.price)||s.price<0)||totals.duration>24*60)return response.status(400).json({error:'Обрані послуги недоступні. Оновіть сторінку.'})
     const member=availableStaff(data,startsAt,totals.duration,preferred,now)[0]
     if(!member)return response.status(409).json({error:'Обраний час більше не доступний. Оберіть інший день, час або майстра.'})
     const endsAt=new Date(startsAt.getTime()+totals.duration*60_000)

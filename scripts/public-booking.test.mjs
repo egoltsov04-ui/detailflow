@@ -56,6 +56,13 @@ test('public API validates tenant catalog and server time, saves multiple servic
  assert.equal(writes.find(w=>w.table==='appointment_services').values.length,2)
  assert.equal(writes.find(w=>w.table==='clients').options.ignoreDuplicates,true)
  assert.equal(bookingEmail(appointment.notes,'public'),payload.email)
+ data.services[0].variants=[{id:'xl',name:'XL',price:1400,duration_minutes:120}]
+ assert.equal((await request({...payload,serviceIds:['wash']})).status,400)
+ assert.equal((await request({...payload,serviceIds:['wash'],variantIds:{wash:'wrong'}})).status,400)
+ assert.equal((await request({...payload,serviceIds:['wash'],variantIds:{wash:'xl'},price:1})).status,201)
+ const variantWrite=writes.filter(w=>w.table==='appointment_services').at(-1).values[0]
+ assert.equal(variantWrite.service_id,'wash');assert.equal(variantWrite.service_name,'Wash · XL');assert.equal(variantWrite.unit_price,1400);assert.equal(variantWrite.duration_minutes,120)
+ delete data.services[0].variants
  const count=writes.length;busy=[{staff_id:null,starts_at:start.toISOString(),ends_at:'2026-09-28T10:00:00Z'}]
  assert.equal((await request(payload)).status,409);assert.equal(writes.length,count)
  busy=[];failServices=true
