@@ -1,3 +1,4 @@
+import FinancePreview from './FinancePreview'
 import PublicBookingPreview from './PublicBookingPreview'
 import WorkflowPreview from './WorkflowPreview'
 import ClientImportPreview from './ClientImportPreview'
@@ -42,7 +43,7 @@ export default function ServicePreview(){
   'Поля':<section className="content"><h1>Дата, час і числа</h1><form className="panel settings" onSubmit={e=>{e.preventDefault();setSaved(`${date} / ${time} / ${due} / ${number} / ${percent}`)}}><label>Дата<DateInput required type="date" value={date} onChange={e=>setDate(e.target.value)}/></label><label>Час<DateInput required type="time" value={time} onChange={e=>setTime(e.target.value)}/></label><label>Термін<DateInput type="datetime-local" value={due} onChange={e=>setDue(e.target.value)}/></label><label>Сума, ₴<NumberInput required type="number" min={0} step="0.01" value={number} onChange={e=>setNumber(e.target.value)}/></label><label>Відсоток, %<NumberInput type="number" min={0} max={100} value={percent} onChange={e=>setPercent(e.target.value)}/></label><button className="primary">Перевірити форму</button><output>{saved}</output></form></section>,
   'Замовлення':<WorkOrders items={orders} clients={clients} staff={staff} add={async item=>{setOrders(rows=>[...rows,item]);return ''}} update={update} remove={ok} recordPayment={async(item,payment)=>update(item.id,{deposit:item.deposit+payment.amount})} approve={async item=>{const error=transitionError(item,'ready');return error||update(item.id,{status:'ready'})}}/>,
   'Майстер':<MasterCabinet staff={staff[0]} orders={orders} shifts={shift?[{id:'1',staffId:'1',startedAt:new Date().toISOString(),endedAt:null}]:[]} earnings={orders.filter(o=>o.status==='ready').map(o=>({id:String(o.id),staffId:'1',workOrderId:String(o.id),amount:600,status:'accrued',accruedAt:new Date().toISOString()}))} toggleShift={async()=>{setShift(v=>!v);return ''}} updateOrder={update}/>,
-  'Звіти':<Reports bookings={[]} expenses={[{date:localDate(),category:'Матеріали',amount:200}]} sales={[]} invoices={[]}/>,
+  'Аналітика та фінанси':<FinancePreview/>,
   'Фінанси':<CashFlow items={[]} clients={clients} add={ok} remove={ok}/>,
   'Каталог':<Catalog services={[[initial.title,'Полірування','4 год',2000]]} products={[]} packages={[]} addService={()=>{}} updateService={ok} removeService={()=>{}} addPackage={ok} removePackage={ok}/>,
   'Склад':<section className="content"><WarehouseControls items={[{id:1,name:'Автошампунь',unit:'л',quantity:10,lastUnitCost:100}]} receive={yes} adjust={yes}/></section>,
