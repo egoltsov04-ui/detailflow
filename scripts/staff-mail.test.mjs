@@ -4,7 +4,7 @@ import {readFile} from 'node:fs/promises'
 import {stripTypeScriptTypes} from 'node:module'
 const source=(await readFile(new URL('../api/staff/invite.ts',import.meta.url),'utf8'))
  .replace("'@supabase/supabase-js'",JSON.stringify(import.meta.resolve('@supabase/supabase-js')))
- .replace("'../lib/staffMail.js'",JSON.stringify(new URL('../api/lib/staffMail.ts',import.meta.url).href))
+ .replace("'../../server/lib/staffMail.js'",JSON.stringify(new URL('../server/lib/staffMail.ts',import.meta.url).href))
 const compiled=stripTypeScriptTypes(source)
 const {createStaffMailHandler}=await import('data:text/javascript;base64,'+Buffer.from(compiled).toString('base64'))
 test('staff email endpoint enforces membership, identity, blocked state and delivery failures',async t=>{

@@ -1,6 +1,6 @@
-import { bookingEmail } from './lib/bookingContact.js'
+import { bookingEmail } from '../server/lib/bookingContact.js'
 import { createClient } from '@supabase/supabase-js'
-import { sendEmail } from './lib/sendpulse.js'
+import { sendEmail } from '../server/lib/sendpulse.js'
 
 type Request = { headers: Record<string, string | string[] | undefined>; method?: string }
 type Response = { status: (code: number) => Response; json: (body: unknown) => void }

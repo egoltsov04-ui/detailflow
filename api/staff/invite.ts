@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { staffMailDecision, type StaffMailAction } from '../lib/staffMail.js'
+import { staffMailDecision, type StaffMailAction } from '../../server/lib/staffMail.js'
 
 type Request = { method?: string; headers: Record<string, string | string[] | undefined>; body?: unknown }
 type Response = { status: (code: number) => Response; json: (body: unknown) => void }

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import {readFile} from 'node:fs/promises'
 import {stripTypeScriptTypes} from 'node:module'
 import {availableStaff,bookingTotals,studioDay,addBookingDays} from '../src/lib/bookingAvailability.ts'
-import {bookingEmail} from '../api/lib/bookingContact.ts'
+import {bookingEmail} from '../server/lib/bookingContact.ts'
 const data={studio:{name:'Test',address:null,timezone:'Europe/Kyiv'},services:[{id:'wash',name:'Wash',price:850,duration_minutes:60},{id:'inside',name:'Interior',price:1200,duration_minutes:90}],staff:[{id:'a',full_name:'A'},{id:'b',full_name:'B'}],schedules:[],appointments:[]}
 const now=Date.parse('2026-09-28T04:00:00Z'),start=new Date('2026-09-28T06:00:00Z')
 test('booking totals, timezone dates and date arithmetic',()=>{

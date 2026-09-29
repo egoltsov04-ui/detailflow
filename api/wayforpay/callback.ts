@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { hmacMd5, merchantAccount, safeEqual } from '../lib/wayforpay.js'
+import { hmacMd5, merchantAccount, safeEqual } from '../../server/lib/wayforpay.js'
 
 type Callback = { merchantAccount?: string; orderReference?: string; merchantSignature?: string; amount?: string | number; currency?: string; authCode?: string; cardPan?: string; transactionStatus?: string; reasonCode?: string | number }
 type Request = { method?: string; body?: unknown }

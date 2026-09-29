@@ -5,9 +5,9 @@ import {stripTypeScriptTypes} from 'node:module'
 import {runInNewContext} from 'node:vm'
 import {t} from '../src/i18n/core.ts'
 import {messages} from '../src/i18n/messages.ts'
-import {hmacMd5} from '../api/lib/wayforpay.ts'
+import {hmacMd5} from '../server/lib/wayforpay.ts'
 const read=p=>readFile(new URL('../'+p,import.meta.url),'utf8')
-async function loadHandler(path){const source=(await read(path)).replace("'@supabase/supabase-js'",JSON.stringify(import.meta.resolve('@supabase/supabase-js'))).replace("'../lib/wayforpay.js'",JSON.stringify(new URL('../api/lib/wayforpay.ts',import.meta.url).href));return import('data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(source)).toString('base64'))}
+async function loadHandler(path){const source=(await read(path)).replace("'@supabase/supabase-js'",JSON.stringify(import.meta.resolve('@supabase/supabase-js'))).replace("'../../server/lib/wayforpay.js'",JSON.stringify(new URL('../server/lib/wayforpay.ts',import.meta.url).href));return import('data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(source)).toString('base64'))}
 test('translations preserve unknown user content, spacing and source status values',()=>{
  for(const [key,pair] of Object.entries(messages)){assert.equal(pair.length,2,key);assert.ok(pair.every(v=>typeof v==='string'&&v.length>0),key)}
  assert.equal(t('Усі клієнти','en'),'All clients');assert.equal(t(' Клієнти ','ru'),' Клиенты ')

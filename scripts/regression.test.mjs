@@ -125,7 +125,7 @@ test('rich import validates and persists client and structured vehicle fields wi
 
 
 test('staff mail keeps linked identity and refuses blocked accounts or missing invitation',async()=>{
- const {staffMailDecision}=await import('../api/lib/staffMail.ts')
+ const {staffMailDecision}=await import('../server/lib/staffMail.ts')
  const linked={active:true,user_id:'master',invite_email:'old@example.com'}
  assert.deepEqual(staffMailDecision(linked,'resend','','current@example.com'),{kind:'recovery',email:'current@example.com'})
  assert.deepEqual(staffMailDecision(linked,'recovery','','current@example.com'),{kind:'recovery',email:'current@example.com'})
