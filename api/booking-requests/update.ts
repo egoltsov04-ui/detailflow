@@ -22,7 +22,7 @@ export default async function handler(request: Request, response: Response) {
     const db = createClient(required('VITE_SUPABASE_URL'), required('SUPABASE_SERVICE_ROLE_KEY'))
     const { data: appointment, error: appointmentError } = await db.from('appointments').select('id,tenant_id,starts_at,notes,source,clients(full_name,email),appointment_services(service_name),tenants(name,timezone)').eq('id', appointmentId).eq('status', 'pending').maybeSingle()
     if (appointmentError || !appointment) return response.status(404).json({ error: 'Pending request not found' })
-    const { data: membership } = await db.from('tenant_memberships').select('tenant_id').eq('tenant_id', appointment.tenant_id).eq('user_id', authData.user.id).in('role', ['owner', 'admin']).maybeSingle()
+    const { data: membership } = await db.from('tenant_memberships').select('tenant_id').eq('tenant_id', appointment.tenant_id).eq('user_id', authData.user.id).in('role', ['owner', 'admin']).eq('active',true).maybeSingle()
     if (!membership) return response.status(403).json({ error: 'Only an owner or admin can process requests' })
     const { data: updated, error: updateError } = await db.from('appointments').update({ status }).eq('id', appointmentId).eq('status', 'pending').select('id').maybeSingle()
     if (updateError?.code === '23P01') return response.status(409).json({error:'Цей час уже зайнятий. Узгодьте з клієнтом інший час у календарі.'})

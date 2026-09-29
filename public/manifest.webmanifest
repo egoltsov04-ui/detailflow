@@ -1,0 +1,15 @@
+{
+  "id": "/app",
+  "name": "Detailflow",
+  "short_name": "Detailflow",
+  "description": "Студія, команда та автомобілі в одному застосунку",
+  "start_url": "/app",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#181b22",
+  "theme_color": "#181b22",
+  "icons": [
+    {"src":"/icons/app-192.png","sizes":"192x192","type":"image/png"},
+    {"src":"/icons/app-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+  ]
+}

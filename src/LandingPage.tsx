@@ -1,3 +1,5 @@
+import LanguageSwitcher from './i18n/LanguageSwitcher'
+import {t} from './i18n/core'
 import { useState } from 'react'
 import { ArrowDown, ArrowRight, Calculator, CalendarDays, CarFront, Check, CheckCheck, ChevronDown, CircleDollarSign, ClipboardCheck, Clock3, Layers3, Menu, MessageSquare, Package, Sheet, ShieldCheck, Users, X } from 'lucide-react'
 import './landing.css'
@@ -24,9 +26,9 @@ export default function LandingPage() {
     <header className="lp-header"><div className="lp-wrap lp-header-inner">
       <a className="lp-brand" href="/" aria-label="Detailflow — головна"><i/>detailflow<span>для детейлінгу</span></a>
       <button type="button" className="lp-menu-toggle" aria-label={menu ? 'Закрити меню' : 'Відкрити меню'} aria-expanded={menu} aria-controls="lp-nav" onClick={() => setMenu(!menu)}>{menu ? <X/> : <Menu/>}</button>
-      <nav id="lp-nav" className={menu ? 'lp-nav is-open' : 'lp-nav'} aria-label="Головна навігація" onClick={() => setMenu(false)}>
-        <a href="#features">Можливості</a><a href="#stock">Склад</a><a href="#workflow">Як це працює</a><a href="#questions">Запитання</a>
-        <a className="lp-login" href="/login">Увійти <ArrowRight size={16}/></a><a className="lp-button lp-button-small" href="/register">Зареєструвати студію</a>
+      <LanguageSwitcher/><nav id="lp-nav" className={menu ? 'lp-nav is-open' : 'lp-nav'} aria-label="Головна навігація" onClick={() => setMenu(false)}>
+        <a href="#features">Можливості</a><a href="#stock">{t("Склад")}</a><a href="#workflow">Як це працює</a><a href="#questions">Запитання</a>
+        <a className="lp-login" href="/login">{t("Увійти ")}<ArrowRight size={16}/></a><a className="lp-button lp-button-small" href="/register">Зареєструвати студію</a>
       </nav>
     </div></header>
     <main id="lp-main">
@@ -56,7 +58,7 @@ export default function LandingPage() {
       </section>
       <section className="lp-wrap lp-section lp-stock" id="stock" aria-labelledby="lp-stock-title">
         <div className="lp-stock-copy"><p className="lp-eyebrow">Склад вашої студії</p><h2 id="lp-stock-title">Хімія та матеріали —<br/>під контролем.</h2><p>Відстежуйте залишки автохімії, витратних матеріалів і товарів. Бачте, що є на складі та що вже час докупити.</p><ul><li><Check size={17}/><span><b>Залишки та мінімальний запас</b>Встановлюйте поріг для кожної позиції й бачте матеріали, яких бракує.</span></li><li><Check size={17}/><span><b>Прихід і списання</b>Фіксуйте поставки та використання матеріалів з історією рухів.</span></li><li><Check size={17}/><span><b>Інвентаризація</b>Звіряйте облік із фактичними залишками на полиці.</span></li></ul><a className="lp-secondary" href="/register">Підключити свою студію <ArrowRight size={17}/></a></div>
-        <div className="lp-stock-visual"><div className="lp-stock-preview"><div className="lp-preview-top"><span><Package size={18}/> Залишки матеріалів</span><small>Приклад складу</small></div><div className="lp-stock-list" role="table" aria-label="Демонстраційні залишки матеріалів"><div className="lp-stock-head" role="row"><span role="columnheader">Матеріал</span><span role="columnheader">Залишок</span><span role="columnheader">Стан</span></div>{[
+        <div className="lp-stock-visual"><div className="lp-stock-preview"><div className="lp-preview-top"><span><Package size={18}/> Залишки матеріалів</span><small>Приклад складу</small></div><div className="lp-stock-list" role="table" aria-label="Демонстраційні залишки матеріалів"><div className="lp-stock-head" role="row"><span role="columnheader">Матеріал</span><span role="columnheader">{t("Залишок")}</span><span role="columnheader">Стан</span></div>{[
           {name:'Автошампунь',minimum:'Мінімум: 3 л',quantity:'8 л',low:false},
           {name:'Мікрофібра',minimum:'Мінімум: 10 шт.',quantity:'24 шт.',low:false},
           {name:'Полірувальна паста',minimum:'Мінімум: 1 л',quantity:'0,4 л',low:true},
@@ -79,8 +81,8 @@ export default function LandingPage() {
 }
 
 function StudioPreview() {
-  return <div className="lp-studio-preview"><div className="lp-preview-top"><span><Layers3 size={17}/> Робота студії</span><small>Сьогодні</small></div><div className="lp-preview-metrics"><div><small>Авто в роботі</small><b>4 <CarFront size={19}/></b></div><div><small>Команда на зміні</small><b>3 <Users size={19}/></b></div></div><div className="lp-preview-board"><div><p><span/> У роботі <b>2</b></p><article><CarFront size={26}/><h4>BMW 5 Series</h4><p>Полірування кузова</p><div><span className="lp-avatar">ОМ</span><small>Олександр · майстер</small></div><span className="lp-progress"><i/></span><small>2 з 3 завдань виконано</small></article></div><div><p><span/> На перевірці <b>1</b></p><article><CarFront size={26}/><h4>Audi Q7</h4><p>Хімчистка салону</p><div><span className="lp-avatar">ІК</span><small>Іван · майстер</small></div><span className="lp-review"><CheckCheck size={15}/> Завдання виконано</span><small>Очікує перевірки власника</small></article></div></div></div>
+  return <div className="lp-studio-preview"><div className="lp-preview-top"><span><Layers3 size={17}/> Робота студії</span><small>{t("Сьогодні")}</small></div><div className="lp-preview-metrics"><div><small>Авто в роботі</small><b>4 <CarFront size={19}/></b></div><div><small>{t("Команда на зміні")}</small><b>3 <Users size={19}/></b></div></div><div className="lp-preview-board"><div><p><span/>{t(" У роботі ")}<b>2</b></p><article><CarFront size={26}/><h4>BMW 5 Series</h4><p>Полірування кузова</p><div><span className="lp-avatar">ОМ</span><small>Олександр · майстер</small></div><span className="lp-progress"><i/></span><small>2 з 3 завдань виконано</small></article></div><div><p><span/>{t(" На перевірці ")}<b>1</b></p><article><CarFront size={26}/><h4>Audi Q7</h4><p>Хімчистка салону</p><div><span className="lp-avatar">ІК</span><small>Іван · майстер</small></div><span className="lp-review"><CheckCheck size={15}/> Завдання виконано</span><small>Очікує перевірки власника</small></article></div></div></div>
 }
 function MasterPreview() {
-  return <div className="lp-master-preview"><div className="lp-preview-top"><span>Кабінет майстра</span><span className="lp-tag"><span className="lp-dot"/> На зміні</span></div><h4>Привіт, Олександр</h4><p><Clock3 size={15}/> Зміну розпочато о 09:00</p><div className="lp-master-job"><span className="lp-tag">Моє завдання</span><h4>BMW 5 Series</h4><p>Полірування кузова</p><ul><li><Check size={17}/> Підготовча мийка</li><li><Check size={17}/> Полірування</li><li><span className="lp-unchecked"/> Фінішна перевірка</li></ul><div className="lp-preview-action"><ClipboardCheck size={17}/> Передати на перевірку</div></div><div className="lp-master-earned"><span>Підтверджені нарахування</span><b>2 400 ₴</b></div></div>
+  return <div className="lp-master-preview"><div className="lp-preview-top"><span>{t("Кабінет майстра")}</span><span className="lp-tag"><span className="lp-dot"/>{t(" На зміні")}</span></div><h4>Привіт, Олександр</h4><p><Clock3 size={15}/> Зміну розпочато о 09:00</p><div className="lp-master-job"><span className="lp-tag">Моє завдання</span><h4>BMW 5 Series</h4><p>Полірування кузова</p><ul><li><Check size={17}/> Підготовча мийка</li><li><Check size={17}/> Полірування</li><li><span className="lp-unchecked"/> Фінішна перевірка</li></ul><div className="lp-preview-action"><ClipboardCheck size={17}/> Передати на перевірку</div></div><div className="lp-master-earned"><span>Підтверджені нарахування</span><b>2 400 ₴</b></div></div>
 }

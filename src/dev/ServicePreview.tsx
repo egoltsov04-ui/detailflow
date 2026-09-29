@@ -1,3 +1,5 @@
+import PlatformPreview from './PlatformPreview'
+import LanguageSwitcher from '../i18n/LanguageSwitcher'
 import ServiceVariantsPreview from './ServiceVariantsPreview'
 import FinancePreview from './FinancePreview'
 import PublicBookingPreview from './PublicBookingPreview'
@@ -32,6 +34,7 @@ export default function ServicePreview(){
  const [page,setPage]=useState('Поля'),[date,setDate]=useState(localDate()),[time,setTime]=useState('09:00'),[due,setDue]=useState(''),[number,setNumber]=useState('1250.5'),[percent,setPercent]=useState('30'),[saved,setSaved]=useState(''),[orders,setOrders]=useState<WorkOrder[]>([initial]),[shift,setShift]=useState(true),[width,setWidth]=useState('100%')
  async function update(id:WorkOrder['id'],patch:Partial<WorkOrder>){setOrders(rows=>rows.map(row=>row.id===id?{...row,...patch}:row));return ''}
  const screens:Record<string,React.ReactNode>={
+  'CRM і чеки':<PlatformPreview/>,
   'Огляд':<Dashboard bookings={seedBookings} staff={staff.map(s=>({...s,role:'Майстер',load:50}))} revenue={2000} name="Тест" onCreate={()=>setPage('Запис')} onStatus={()=>{}} calendar={()=>setPage('Календар')} open={setPage}/>,
   'Календар':<Calendar bookings={seedBookings.map(b=>({...b,date:date||localDate()}))} onCreate={()=>setPage('Запис')} onStatus={()=>{}}/>,
   'Клієнти':<Clients items={clients.map(c=>({...c,visits:0,total:0}))} bookings={[]} add={()=>{}} remove={()=>{}} edit={ok}/>,
@@ -61,5 +64,5 @@ export default function ServicePreview(){
   'Аналітика':<Analytics bookings={[]} expenses={[]} cashTransactions={[]}/>,
   'Заявки':<BookingRequests bookings={[]} update={ok} link="http://localhost/"/>
  }
- return <><nav aria-label="Тестові розділи" style={{display:'flex',flexWrap:'wrap',gap:8,padding:16}}>{Object.keys(screens).map(name=><button className={page===name?'primary':'text-btn'} key={name} onClick={()=>setPage(name)}>{name}</button>)}<select aria-label="Ширина макета" value={width} onChange={e=>setWidth(e.target.value)}><option value="100%">Широкий</option><option value="768px">768 px</option><option value="390px">390 px</option></select></nav><p style={{padding:'0 16px'}}>Локальний стенд · синтетичні дані · записи до бази вимкнені</p><main style={{width,maxWidth:'100%',margin:'auto',border:'1px solid #2c303c'}}>{screens[page]}</main></>
+ return <><LanguageSwitcher/><nav aria-label="Тестові розділи" style={{display:'flex',flexWrap:'wrap',gap:8,padding:16}}>{Object.keys(screens).map(name=><button className={page===name?'primary':'text-btn'} key={name} onClick={()=>setPage(name)}>{name}</button>)}<select aria-label="Ширина макета" value={width} onChange={e=>setWidth(e.target.value)}><option value="100%">Широкий</option><option value="768px">768 px</option><option value="390px">390 px</option></select></nav><p style={{padding:'0 16px'}}>Локальний стенд · синтетичні дані · записи до бази вимкнені</p><main style={{width,maxWidth:'100%',margin:'auto',border:'1px solid #2c303c'}}>{screens[page]}</main></>
 }

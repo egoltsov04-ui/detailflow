@@ -21,7 +21,7 @@ export function createPublicBookingHandler(makeClient:typeof createClient=create
     const now=Date.now(),horizon=new Date(now+31*86400_000).toISOString()
     const [services,staff,appointments,schedules]=await Promise.all([
       supabase.from('services').select('*').eq('tenant_id',tenant.id).eq('active',true).order('created_at'),
-      supabase.from('staff_profiles').select('id,full_name,specialty').eq('tenant_id',tenant.id).eq('active',true).order('created_at'),
+      supabase.from('staff_profiles').select('id,full_name,specialty,all_services,staff_services(service_id)').eq('tenant_id',tenant.id).eq('active',true).order('created_at'),
       readAllPages((from,to)=>supabase.from('appointments').select('staff_id,starts_at,ends_at').eq('tenant_id',tenant.id).in('status',['confirmed','in_progress']).gte('ends_at',new Date(now).toISOString()).lte('starts_at',horizon).order('id').range(from,to)),
       supabase.from('work_schedules').select('staff_id,weekday,starts_at,ends_at').eq('tenant_id',tenant.id)
     ])
@@ -38,7 +38,7 @@ export function createPublicBookingHandler(makeClient:typeof createClient=create
     const startsAt=new Date(clean(body?.startsAt,64)),totals=bookingTotals(chosen)
     if(!clientName||phone.replace(/\D/g,'').length<10||phone.replace(/\D/g,'').length>15||!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return response.status(400).json({error:'Вкажіть ім’я, дійсний телефон та email.'})
     if(chosen.length!==ids.length||chosen.some(s=>!Number.isFinite(Number(s.duration_minutes))||Number(s.duration_minutes)<=0||!Number.isFinite(s.price)||s.price<0)||totals.duration>24*60)return response.status(400).json({error:'Обрані послуги недоступні. Оновіть сторінку.'})
-    const member=availableStaff(data,startsAt,totals.duration,preferred,now)[0]
+    const member=availableStaff(data,startsAt,totals.duration,preferred,now,ids)[0]
     if(!member)return response.status(409).json({error:'Обраний час більше не доступний. Оберіть інший день, час або майстра.'})
     const endsAt=new Date(startsAt.getTime()+totals.duration*60_000)
     // Public requests must never overwrite an existing customer's name or email.

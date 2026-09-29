@@ -5,19 +5,21 @@ type Request = { method?: string; headers: Record<string, string | string[] | un
 type Response = { status: (code: number) => Response; json: (body: unknown) => void }
 const required = (name: string) => { const value = process.env[name]; if (!value) throw new Error(`Missing required environment variable: ${name}`); return value }
 
-export default async function handler(request: Request, response: Response) {
+export function createCheckoutHandler(makeClient:typeof createClient=createClient){return async function handler(request: Request, response: Response) {
   if (request.method !== 'POST') return response.status(405).json({ error: 'Method not allowed' })
   try {
     const token = typeof request.headers.authorization === 'string' ? request.headers.authorization.replace(/^Bearer\s+/i, '') : ''
     if (!token) return response.status(401).json({ error: 'Sign in required' })
-    const auth = createClient(required('VITE_SUPABASE_URL'), required('VITE_SUPABASE_ANON_KEY'))
+    const auth = makeClient(required('VITE_SUPABASE_URL'), required('VITE_SUPABASE_ANON_KEY'))
     const { data: userData, error: userError } = await auth.auth.getUser(token)
     if (userError || !userData.user) return response.status(401).json({ error: 'Invalid session' })
-    const plan = (request.body as { plan?: string } | undefined)?.plan as PlanCode
+    const body=request.body as {plan?:string;tenantId?:string}|undefined
+    const plan = body?.plan as PlanCode
+    if(typeof body?.tenantId!=='string')return response.status(400).json({error:'Оберіть студію'})
     if (!plan || !(plan in plans)) return response.status(400).json({ error: 'Unknown plan' })
-    const db = createClient(required('VITE_SUPABASE_URL'), required('SUPABASE_SERVICE_ROLE_KEY'))
-    const { data: membership } = await db.from('tenant_memberships').select('tenant_id,role').eq('user_id', userData.user.id).in('role', ['owner', 'admin']).limit(1).maybeSingle()
-    if (!membership) return response.status(403).json({ error: 'Only a studio owner or admin can pay for a plan' })
+    const db = makeClient(required('VITE_SUPABASE_URL'), required('SUPABASE_SERVICE_ROLE_KEY'))
+    const { data: membership } = await db.from('tenant_memberships').select('tenant_id,role').eq('user_id', userData.user.id).eq('tenant_id',body.tenantId).eq('role','owner').eq('active',true).maybeSingle()
+    if (!membership) return response.status(403).json({ error: 'Оплату тарифу виконує власник студії' })
     const product = plans[plan]
     const orderReference = `DF-${membership.tenant_id.slice(0, 8)}-${Date.now()}`
     const orderDate = Math.floor(Date.now() / 1000)
@@ -33,3 +35,5 @@ export default async function handler(request: Request, response: Response) {
     } })
   } catch (error) { return response.status(500).json({ error: error instanceof Error ? error.message : 'Unable to create payment' }) }
 }
+}
+export default createCheckoutHandler()

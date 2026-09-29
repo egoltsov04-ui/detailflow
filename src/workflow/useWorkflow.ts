@@ -13,7 +13,6 @@ export function useWorkflow(tenantId:string|null):WorkflowController {
    const db=supabase,ticket=++generation.current
    const current=()=>ticket===generation.current&&currentTenant.current===tenantId
    if(!db||!tenantId){setLoading(false);return}
-   const load=(table:string,order='id')=>readAllPages((from,to)=>db.from(table).select('*').eq('tenant_id',tenantId).order(order).order('id').range(from,to))
    try {
      const probe=await db.rpc('job_workflow_version')
      if(!current())return
@@ -22,11 +21,11 @@ export function useWorkflow(tenantId:string|null):WorkflowController {
        throw probe.error
      }
      setAvailable(true)
-     const results=await Promise.all([load('work_order_jobs','created_at'),load('staff_shifts','started_at'),load('staff_earnings','accrued_at'),load('work_job_events','created_at'),load('staff_payouts','created_at'),load('services','name')])
+     const snapshot=await db.rpc('get_workflow_snapshot',{studio:tenantId})
      if(!current())return
-     if(results.some(r=>r.error))throw new Error('snapshot')
-     const [jobs,shifts,earnings,events,payouts,services]=results.map(r=>r.data||[])
-     setData({jobs:jobs.map((j:any)=>({...j,price:Number(j.price),rate:Number(j.rate)})),shifts:shifts as any,earnings:earnings.map((e:any)=>({...e,amount:Number(e.amount),paid_amount:Number(e.paid_amount)})),events:events as any,payouts:payouts.map((p:any)=>({...p,amount:Number(p.amount)})),services:services.filter((s:any)=>s.active).map((s:any)=>({...s,price:Number(s.price)}))})
+     if(snapshot.error)throw snapshot.error
+     const {jobs,shifts,earnings,events,payouts,services}=snapshot.data
+     setData({can_view_finance:snapshot.data.can_view_finance,jobs:jobs.map((j:any)=>({...j,price:Number(j.price),rate:Number(j.rate||0)})),shifts:shifts as any,earnings:earnings.map((e:any)=>({...e,amount:Number(e.amount),paid_amount:Number(e.paid_amount)})),events:events as any,payouts:payouts.map((p:any)=>({...p,amount:Number(p.amount)})),services:services.filter((s:any)=>s.active).map((s:any)=>({...s,price:Number(s.price)}))})
      setError('')
    }catch{if(current())setError('Не вдалося оновити дані. Перевірте з’єднання та натисніть «Оновити».')}
    finally{if(current())setLoading(false)}

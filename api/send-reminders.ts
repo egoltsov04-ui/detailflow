@@ -13,7 +13,7 @@ const required = (name: string) => {
 
 export default async function handler(request: Request, response: Response) {
   if (request.method !== 'POST' && request.method !== 'GET') return response.status(405).json({ error: 'Method not allowed' })
-  if (request.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) return response.status(401).json({ error: 'Unauthorized' })
+  if (!process.env.CRON_SECRET || request.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) return response.status(401).json({ error: 'Unauthorized' })
 
   try {
     const supabase = createClient(required('VITE_SUPABASE_URL'), required('SUPABASE_SERVICE_ROLE_KEY'))

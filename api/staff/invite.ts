@@ -21,7 +21,7 @@ export function createStaffMailHandler(makeClient:typeof createClient=createClie
     const db=makeClient(required('VITE_SUPABASE_URL'),required('SUPABASE_SERVICE_ROLE_KEY'))
     const {data:staff}=await db.from('staff_profiles').select('id,tenant_id,full_name,active,user_id,invite_email,invite_sent_at').eq('id',staffId).maybeSingle()
     if(!staff)return response.status(404).json({error:'Master not found'})
-    const {data:membership}=await db.from('tenant_memberships').select('tenant_id').eq('tenant_id',staff.tenant_id).eq('user_id',authData.user.id).in('role',['owner','admin']).maybeSingle()
+    const {data:membership}=await db.from('tenant_memberships').select('tenant_id').eq('tenant_id',staff.tenant_id).eq('user_id',authData.user.id).in('role',['owner','admin']).eq('active',true).maybeSingle()
     if(!membership)return response.status(403).json({error:'Only an owner or admin can invite masters'})
     let accountEmail:string|undefined
     if(staff.user_id){const {data,error}=await db.auth.admin.getUserById(staff.user_id);if(error||!data.user?.email)return response.status(409).json({error:'Не вдалося перевірити прив’язаний акаунт.'});accountEmail=data.user.email}

@@ -1,0 +1,2 @@
+.pwa-controls{position:fixed;right:16px;bottom:88px;z-index:85;display:grid;gap:8px;width:min(330px,calc(100vw - 32px));padding:16px;border:1px solid #444d39;border-radius:16px;background:#232730;box-shadow:0 12px 40px #0005}.pwa-controls span{font-size:13px;color:#ced3df}.pwa-controls button{min-height:40px}
+@media print{.pwa-controls{display:none}}
