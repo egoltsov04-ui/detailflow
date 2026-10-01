@@ -53,8 +53,8 @@ test('administrator invitations require active owner and recovery uses bound act
  const env={VITE_SUPABASE_URL:'https://test.supabase.co',VITE_SUPABASE_ANON_KEY:'public-test',SUPABASE_SERVICE_ROLE_KEY:'secret-test',APP_URL:'https://example.com'}
  const prior=Object.fromEntries(Object.keys(env).map(k=>[k,process.env[k]]));Object.assign(process.env,env);context.after(()=>{for(const[k,v]of Object.entries(prior)){if(v===undefined)delete process.env[k];else process.env[k]=v}})
  const {createAdministratorHandler}=await loadHandler('api/staff/administrator.ts')
- let ownerActive=false,adminActive=true,deliveryError=null,role='owner';const sent=[],writes=[],filters=[]
- const db={from(table){let query={};const chain={select(){return chain},eq(k,v){query[k]=v;filters.push([k,v]);return chain},maybeSingle:async()=>({data:query.role==='owner'?(ownerActive&&role==='owner'?{role}:null):(adminActive?{user_id:'admin-id'}:null)}),insert:async value=>{writes.push(value);return {error:null}}};return chain},auth:{admin:{getUserById:async id=>({data:{user:{id,email:'bound-admin@example.com'}}}),inviteUserByEmail:async(email,options)=>{sent.push({email,options,kind:'invite'});return {data:{user:{id:'new-admin'}},error:deliveryError}}}}}
+ let ownerActive=false,adminActive=true,deliveryError=null,role='owner',existingId=null;const sent=[],writes=[],filters=[]
+ const db={rpc:async(name,args)=>{if(name==='reserve_administrator_invitation')return {data:{id:'invite-id',user_id:existingId},error:null};writes.push({tenant_id:'studio',user_id:args.user_input,role:'admin',active:true,finance_access:false});return {data:null,error:null}},from(table){let query={};const chain={select(){return chain},eq(k,v){query[k]=v;filters.push([k,v]);return chain},maybeSingle:async()=>({data:query.role==='owner'?(ownerActive&&role==='owner'?{role}:null):(query.active===undefined?{user_id:'admin-id',role:'admin',active:adminActive}:(adminActive?{user_id:'admin-id'}:null))}),insert:async value=>{writes.push(value);return {error:null}}};return chain},auth:{admin:{getUserById:async id=>({data:{user:{id,email:'bound-admin@example.com'}}}),inviteUserByEmail:async(email,options)=>{sent.push({email,options,kind:'invite'});return {data:{user:{id:'new-admin'}},error:deliveryError}}}}}
  const auth={auth:{getUser:async()=>({data:{user:{id:'requester'}}}),resetPasswordForEmail:async(email,options)=>{sent.push({email,options,kind:'recovery'});return {error:deliveryError}}}}
  const handler=createAdministratorHandler((url,key)=>key==='public-test'?auth:db)
  async function invoke(body){let code,result;await handler({method:'POST',headers:{authorization:'Bearer test',host:'attacker.example'},body:{tenantId:'studio',...body}},{status(n){code=n;return this},json(v){result=v}});return {code,result}}
@@ -66,4 +66,7 @@ test('administrator invitations require active owner and recovery uses bound act
  deliveryError={message:'SMTP unavailable'};assert.equal((await invoke({action:'invite',name:'Admin',email:'new-admin@example.com'})).code,400);assert.equal(writes.length,0)
  deliveryError=null;assert.equal((await invoke({action:'invite',name:'Admin',email:'new-admin@example.com'})).code,200)
  assert.deepEqual(writes[0],{tenant_id:'studio',user_id:'new-admin',role:'admin',active:true,finance_access:false});assert.ok(filters.some(([k,v])=>k==='active'&&v===true))
+ existingId='admin-id';adminActive=false;const before=sent.length
+ assert.equal((await invoke({action:'invite',name:'Admin',email:'new-admin@example.com'})).code,403);assert.equal(sent.length,before)
+ adminActive=true;assert.equal((await invoke({action:'invite',name:'Admin',email:'new-admin@example.com'})).code,200);assert.equal(sent.at(-1).kind,'recovery')
 })

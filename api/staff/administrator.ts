@@ -28,10 +28,22 @@ export function createAdministratorHandler(makeClient:typeof createClient=create
   if(body.action&&body.action!=='invite')return res.status(400).json({error:'Невідома дія'})
   const email=typeof body.email==='string'?body.email.trim().toLowerCase():'',name=typeof body.name==='string'?body.name.trim():''
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||name.length<2||name.length>120)return res.status(400).json({error:'Вкажіть ім’я та email адміністратора'})
-  const invitation=await db.auth.admin.inviteUserByEmail(email,{data:{full_name:name},redirectTo})
-  if(invitation.error||!invitation.data.user)return res.status(400).json({error:invitation.error?.message||'Не вдалося надіслати запрошення'})
-  const membership=await db.from('tenant_memberships').insert({tenant_id:body.tenantId,user_id:invitation.data.user.id,role:'admin',active:true,finance_access:false})
-  if(membership.error)return res.status(500).json({error:'Лист надіслано, але доступ не збережено. Підтримка має завершити прив’язку цього акаунта.'})
+  const reserved=await db.rpc('reserve_administrator_invitation',{studio:body.tenantId,owner_input:session.data.user.id,email_input:email,name_input:name})
+  if(reserved.error||!reserved.data)return res.status(400).json({error:reserved.error?.message||'Не вдалося зберегти запрошення'})
+  let invitedId=reserved.data.user_id
+  if(invitedId){
+   const existing=await db.from('tenant_memberships').select('active,role').eq('tenant_id',body.tenantId).eq('user_id',invitedId).maybeSingle()
+   if(existing.error)throw existing.error
+   if(existing.data&&(!existing.data.active||existing.data.role!=='admin'))return res.status(403).json({error:'Спочатку перевірте й активуйте доступ адміністратора у команді.'})
+   const linked=await db.rpc('attach_administrator_invitation',{invite_input:reserved.data.id,user_input:invitedId});if(linked.error)throw linked.error
+   const sent=await auth.auth.resetPasswordForEmail(email,{redirectTo});if(sent.error)throw sent.error
+  }else{
+   const invitation=await db.auth.admin.inviteUserByEmail(email,{data:{full_name:name},redirectTo})
+   if(invitation.error||!invitation.data.user)return res.status(400).json({error:invitation.error?.message||'Не вдалося надіслати запрошення'})
+   invitedId=invitation.data.user.id
+   const linked=await db.rpc('attach_administrator_invitation',{invite_input:reserved.data.id,user_input:invitedId})
+   if(linked.error)return res.status(202).json({message:'Лист надіслано. Прив’язка до студії завершиться автоматично після підтвердження email.'})
+  }
   return res.status(200).json({message:'Адміністратора запрошено. Доступ до фінансів вимкнено.'})
  }catch(e){return res.status(500).json({error:e instanceof Error?e.message:(e as {message?:string})?.message||'Помилка запрошення'})}
 }}

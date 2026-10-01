@@ -4,7 +4,7 @@ import {readFile} from 'node:fs/promises'
 import {stripTypeScriptTypes} from 'node:module'
 import {availableStaff,bookingTotals,studioDay,addBookingDays} from '../src/lib/bookingAvailability.ts'
 import {bookingEmail} from '../server/lib/bookingContact.ts'
-const data={studio:{name:'Test',address:null,timezone:'Europe/Kyiv'},services:[{id:'wash',name:'Wash',price:850,duration_minutes:60},{id:'inside',name:'Interior',price:1200,duration_minutes:90}],staff:[{id:'a',full_name:'A'},{id:'b',full_name:'B'}],schedules:[],appointments:[]}
+const data={studio:{name:'Test',address:null,timezone:'Europe/Kyiv'},services:[{id:'wash',name:'Wash',price:850,duration_minutes:60},{id:'inside',name:'Interior',price:1200,duration_minutes:90}],staff:[{id:'a',full_name:'A'},{id:'b',full_name:'B'}],schedules:['a','b'].map(staff_id=>({staff_id,weekday:1,starts_at:'09:00',ends_at:'19:00'})),appointments:[]}
 const now=Date.parse('2026-09-28T04:00:00Z'),start=new Date('2026-09-28T06:00:00Z')
 test('booking totals, timezone dates and date arithmetic',()=>{
  assert.deepEqual(bookingTotals(data.services),{price:2050,duration:150})
@@ -18,13 +18,14 @@ test('availability respects full duration, lead time and horizon',()=>{
  assert.equal(availableStaff(data,start,150,'',start.getTime()-60000).length,0)
  assert.equal(availableStaff(data,new Date('2026-11-01T07:00:00Z'),60,'',now).length,0)
  assert.equal(availableStaff(data,start,NaN,'',now).length,0)
+ assert.equal(availableStaff({...data,schedules:[]},start,60,'',now).length,0)
 })
 test('availability uses any free professional, overlapping shifts and boundary slots',()=>{
  const busy={...data,appointments:[{staff_id:'a',starts_at:'2026-09-28T06:00:00Z',ends_at:'2026-09-28T08:00:00Z'}]}
  assert.deepEqual(availableStaff(busy,start,60,'',now).map(s=>s.id),['b'])
  assert.equal(availableStaff(busy,start,60,'a',now).length,0)
  assert.equal(availableStaff(busy,new Date('2026-09-28T08:00:00Z'),60,'a',now).length,1)
- const shifts={...data,schedules:[{staff_id:'a',weekday:2,starts_at:'09:00',ends_at:'19:00'}]}
+ const shifts={...data,schedules:[{staff_id:'a',weekday:2,starts_at:'09:00',ends_at:'19:00'},data.schedules[1]]}
  assert.deepEqual(availableStaff(shifts,start,60,'',now).map(s=>s.id),['b'])
  assert.equal(availableStaff({...busy,appointments:[{...busy.appointments[0],staff_id:null}]},start,60,'',now).length,0)
  const overnight={...data,schedules:[{staff_id:'a',weekday:1,starts_at:'09:00',ends_at:'23:59'}]}
@@ -42,7 +43,7 @@ test('public API validates tenant catalog and server time, saves multiple servic
  const prev={VITE_SUPABASE_URL:process.env.VITE_SUPABASE_URL,SUPABASE_SERVICE_ROLE_KEY:process.env.SUPABASE_SERVICE_ROLE_KEY};Object.assign(process.env,{VITE_SUPABASE_URL:'https://test.supabase.co',SUPABASE_SERVICE_ROLE_KEY:'fake'})
  t.after(()=>{for(const [k,v]of Object.entries(prev)){if(v===undefined)delete process.env[k];else process.env[k]=v}})
  const writes=[];let failServices=false;let busy=[]
- const db={from(table){let operation='select';const chain={select(){return chain},eq(){return chain},in(){return chain},gte(){return chain},lte(){return chain},order(){return chain},range(){return chain},insert(values){operation='insert';writes.push({table,operation,values});return chain},upsert(values,options){operation='upsert';writes.push({table,operation,values,options});return chain},delete(){operation='delete';writes.push({table,operation});return chain},maybeSingle(){return chain},single(){return chain},then(resolve){const rows=table==='tenants'?{id:'tenant',...data.studio}:table==='services'?data.services:table==='staff_profiles'?data.staff:table==='work_schedules'?[]:table==='appointments'&&operation==='select'?busy:{id:table+'-id'};return Promise.resolve({data:rows,error:table==='appointment_services'&&failServices?{code:'failed'}:null}).then(resolve)}};return chain}}
+ const db={from(table){let operation='select';const chain={select(){return chain},eq(){return chain},in(){return chain},gte(){return chain},lte(){return chain},order(){return chain},range(){return chain},insert(values){operation='insert';writes.push({table,operation,values});return chain},upsert(values,options){operation='upsert';writes.push({table,operation,values,options});return chain},delete(){operation='delete';writes.push({table,operation});return chain},maybeSingle(){return chain},single(){return chain},then(resolve){const rows=table==='tenants'?{id:'tenant',...data.studio}:table==='services'?data.services:table==='staff_profiles'?data.staff:table==='work_schedules'?data.schedules:table==='appointments'&&operation==='select'?busy:{id:table+'-id'};return Promise.resolve({data:rows,error:table==='appointment_services'&&failServices?{code:'failed'}:null}).then(resolve)}};return chain}}
  const handler=createPublicBookingHandler(()=>db)
  async function request(body,method='POST'){let status,result;await handler({method,body,query:{slug:'test'}},{status(code){status=code;return this},json(value){result=value}});return {status,result}}
  const payload={slug:'test',clientName:'Test',phone:'+380 00 000 00 01',email:'test@example.com',car:'BMW X5',serviceIds:['wash','inside'],staffId:'',startsAt:start.toISOString()}

@@ -8,7 +8,7 @@
     "build": "vite build",
     "lint": "tsc --noEmit && tsc --noEmit -p tsconfig.api.json",
     "pretest": "node scripts/build-workflow-migration.mjs && node scripts/build-platform-migration.mjs",
-    "test": "node --experimental-strip-types --test --test-isolation=none scripts/regression.test.mjs scripts/workflow-db.test.mjs scripts/workflow-recovery.test.mjs scripts/support-db.test.mjs scripts/staff-mail.test.mjs scripts/public-booking.test.mjs scripts/finance.test.mjs scripts/service-variants.test.mjs scripts/platform-upgrade.test.mjs scripts/platform-web.test.mjs"
+    "test": "node --experimental-strip-types --test --test-isolation=none scripts/regression.test.mjs scripts/workflow-db.test.mjs scripts/workflow-recovery.test.mjs scripts/support-db.test.mjs scripts/staff-mail.test.mjs scripts/public-booking.test.mjs scripts/finance.test.mjs scripts/service-variants.test.mjs scripts/platform-upgrade.test.mjs scripts/platform-web.test.mjs scripts/phase-one.test.mjs scripts/notifications.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",
@@ -19,12 +19,14 @@
     "react": "latest",
     "react-dom": "latest",
     "typescript": "latest",
-    "vite": "latest"
+    "vite": "latest",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",
     "@types/node": "latest",
     "@types/react": "latest",
-    "@types/react-dom": "latest"
+    "@types/react-dom": "latest",
+    "@types/web-push": "^3.6.4"
   }
 }

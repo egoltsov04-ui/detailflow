@@ -1,3 +1,4 @@
+export class EmailDeliveryError extends Error { uncertain:boolean; constructor(message:string,uncertain:boolean){super(message);this.uncertain=uncertain} }
 type SendPulseRecipient = { email: string; name?: string }
 
 export type SendPulseEmail = {
@@ -19,6 +20,7 @@ const required = (name: string) => {
 const sendPulseRequest = async (path: string, init: RequestInit = {}) => {
   const response = await fetch(`${baseUrl()}${path}`, {
     ...init,
+    signal: AbortSignal.timeout(8000),
     headers: {
       Authorization: `Bearer ${required('SENDPULSE_API_KEY')}`,
       Accept: 'application/json',
@@ -29,31 +31,33 @@ const sendPulseRequest = async (path: string, init: RequestInit = {}) => {
   const body = await response.text()
   if (!response.ok) {
     const quotaHint = response.status === 429 ? ' SendPulse rejected the request because of a quota or rate limit.' : ''
-    throw new Error(`SendPulse API request failed (${response.status}): ${body || response.statusText}.${quotaHint}`)
+    throw new EmailDeliveryError(`SendPulse rejected delivery (${response.status}).${quotaHint}`,response.status>=500)
   }
 
   try {
-    return body ? JSON.parse(body) as Record<string, unknown> : {}
-  } catch {
-    return { raw: body }
+    const result=body ? JSON.parse(body) as Record<string, unknown> : {};if(result.result===false)throw new EmailDeliveryError('SendPulse rejected delivery',false);return result
+  } catch(error) {
+    if(error instanceof EmailDeliveryError)throw error;throw new EmailDeliveryError('Unrecognized SendPulse delivery response',true)
   }
 }
 
 export const verifyAuth = () => sendPulseRequest('/user/info')
 
-export const sendEmail = (email: SendPulseEmail) => {
+export const sendEmail = async (email: SendPulseEmail) => {
   const fromEmail = required('SENDPULSE_API_FROM_EMAIL')
-  return sendPulseRequest('/smtp/emails', {
+  const result=await sendPulseRequest('/smtp/emails', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       email: {
         subject: email.subject,
-        html: email.html,
+        html: Buffer.from(email.html,'utf8').toString('base64'),
         text: email.text,
         from: { email: fromEmail, name: email.fromName || process.env.SENDPULSE_API_FROM_NAME || 'Detailflow' },
         to: email.to,
       },
     }),
   })
+  if(result.result!==true||typeof result.id!=='string'||!result.id)throw new EmailDeliveryError('Unrecognized SendPulse delivery response',true)
+  return result
 }

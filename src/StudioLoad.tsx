@@ -1,0 +1,13 @@
+import {useState} from 'react'
+import {DateInput} from './components/FormInputs'
+import {studioDay} from './lib/bookingAvailability'
+import {studioDateTime} from './lib/formValues'
+import {dayCapacity,shiftInterval} from './lib/capacity'
+import {t,localeTag} from './i18n/core'
+import type {Booking} from './data'
+import './planning.css'
+export default function StudioLoad({bookings,staff,schedules,timezone}:{bookings:Booking[];staff:{id:string|number;name:string}[];schedules:{staffId:string|number;weekday:number;startsAt:string;endsAt:string}[];timezone:string}){
+ const [day,setDay]=useState(()=>studioDay(new Date(),timezone)),weekday=new Date(day+'T12:00:00Z').getUTCDay(),clock=(n:number)=>new Date(n*60000).toLocaleTimeString(localeTag(),{timeZone:timezone,hour:'2-digit',minute:'2-digit'})
+ const unassigned=bookings.filter(b=>b.date===day&&!b.staffId&&b.tech==='Не призначено'&&!['Скасовано','Не прийшов','Очікує підтвердження'].includes(b.status)).length
+ return <section className="content"><div className="panel"><div className="page-title"><h2>{t('Завантаження за графіком')}</h2><DateInput required value={day} onChange={e=>{if(e.target.value)setDay(e.target.value)}}/></div><p>{t('Вільні інтервали розраховані за збереженим графіком. Кожне вікно — щонайменше 30 хвилин.')}</p>{staff.map(s=>{const shifts=schedules.filter(r=>String(r.staffId)===String(s.id)&&r.weekday===weekday).map(r=>shiftInterval(day,r.startsAt,r.endsAt,timezone)),invalidSchedule=shifts.some(r=>!r),busy=bookings.filter(b=>(b.staffId?String(b.staffId)===String(s.id):b.tech===s.name)&&!['Скасовано','Не прийшов','Очікує підтвердження'].includes(b.status)).map(b=>{const start=b.startsAt?new Date(b.startsAt).getTime()/60000:studioDateTime(b.date,b.time,timezone).getTime()/60000;return {start,end:b.endsAt?new Date(b.endsAt).getTime()/60000:start+b.durationMinutes}}),load=dayCapacity(shifts.filter(r=>r!==null),busy);return <article className="capacity-row" key={s.id}><b>{s.name} · {invalidSchedule?t('Перевірте графік'):load.total?load.percent+'%':t('Графік не задано')}</b>{invalidSchedule&&<p role="status">{t('Час графіка недоступний у цю дату. Перевірте перехід на літній час.')}</p>}{!invalidSchedule&&load.total>0&&<><progress max={100} value={load.percent}/><span>{t('Зайнято')}: {Math.round(load.used)} / {Math.round(load.total)} {t('хв')}</span><span>{t('Вільних 30-хвилинних слотів')}: {load.slots}</span><small>{t('Вільні інтервали')}: {load.free.filter(f=>f.end-f.start>=30).map(f=>clock(f.start)+'–'+clock(f.end)).join(', ')||t('Немає')}</small></>}</article>})}{unassigned>0&&<p>{t('Без призначеного майстра')}: {unassigned}. {t('Ці записи ще не займають персональний графік.')}</p>}</div></section>
+}

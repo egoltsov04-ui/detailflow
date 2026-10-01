@@ -10,7 +10,7 @@ function optionsFrom(children: ReactNode, disabled = false): Option[] {
   return Children.toArray(children).flatMap(child => {
     if (!isValidElement<{ value?: string | number; children?: ReactNode; disabled?: boolean }>(child)) return []
     const p = child.props
-    if (child.type === 'option') { const label = Children.toArray(p.children).join(''); return [{ value: String(p.value ?? label), label:t(label), disabled: disabled || !!p.disabled }] }
+    if (child.type === 'option') { const label = Children.toArray(p.children).join(''); return [{ value: String(p.value ?? label), label, disabled: disabled || !!p.disabled }] }
     return optionsFrom(p.children, disabled || !!p.disabled)
   })
 }
@@ -71,11 +71,11 @@ export function Select({ children, value, defaultValue, onChange, disabled, clas
     }
   }
   return <span className={`select-control ${className}`} ref={root}>
-    <button ref={trigger} id={id} type="button" className="select-trigger" role="combobox" aria-label={label} aria-expanded={open} aria-haspopup="listbox" aria-controls={`${uid}-list`} aria-activedescendant={open ? `${uid}-${options.findIndex(o => o.value === active)}` : undefined} aria-required={props.required} aria-invalid={invalid || undefined} disabled={disabled} onClick={() => open ? setOpen(false) : show()} onKeyDown={keys}><span>{selected?.label || 'Оберіть значення'}</span><ChevronDown size={16}/></button>
+    <button ref={trigger} id={id} type="button" className="select-trigger" role="combobox" aria-label={label} aria-expanded={open} aria-haspopup="listbox" aria-controls={`${uid}-list`} aria-activedescendant={open ? `${uid}-${options.findIndex(o => o.value === active)}` : undefined} aria-required={props.required} aria-invalid={invalid || undefined} disabled={disabled} onClick={() => open ? setOpen(false) : show()} onKeyDown={keys}><span>{selected?.label || t("Оберіть значення")}</span><ChevronDown size={16}/></button>
     <select {...props} className="select-native" ref={native} aria-hidden="true" tabIndex={-1} disabled={disabled} value={selectedValue} onChange={e => { setInternal(e.target.value); onChange?.(e) }} onInvalid={e => { e.preventDefault(); setInvalid(true); trigger.current?.focus(); show() }}>{children}</select>
     {invalid && <small className="field-error">{t("Оберіть значення зі списку.")}</small>}
     {open && createPortal(<div className="select-popover" ref={popup} style={position} onKeyDown={keys}>
-      {options.length > 6 && <div className="select-search"><Search size={16}/><input aria-label={`Пошук: ${label}`} placeholder="Пошук…" value={query} onChange={e => { setQuery(e.target.value); setActive(options.find(o => !o.disabled && o.label.toLocaleLowerCase().includes(e.target.value.toLocaleLowerCase()))?.value || '') }} role="combobox" aria-expanded="true" aria-controls={`${uid}-list`} aria-activedescendant={`${uid}-${options.findIndex(o => o.value === active)}`}/></div>}
+      {options.length > 6 && <div className="select-search"><Search size={16}/><input aria-label={`Пошук: ${label}`} placeholder={t("Пошук…")} value={query} onChange={e => { setQuery(e.target.value); setActive(options.find(o => !o.disabled && o.label.toLocaleLowerCase().includes(e.target.value.toLocaleLowerCase()))?.value || '') }} role="combobox" aria-expanded="true" aria-controls={`${uid}-list`} aria-activedescendant={`${uid}-${options.findIndex(o => o.value === active)}`}/></div>}
       <div id={`${uid}-list`} role="listbox" aria-label={label} className="select-options">
         {filtered.map(o => <div key={o.value} id={`${uid}-${options.indexOf(o)}`} role="option" aria-selected={o.value === selectedValue} aria-disabled={o.disabled || undefined} data-active={o.value === active} className="select-option" onPointerMove={() => !o.disabled && setActive(o.value)} onMouseDown={e => e.preventDefault()} onClick={() => choose(o)}><span>{o.label}</span>{o.value === selectedValue && <Check size={17}/>}</div>)}
         {!filtered.length && <p className="select-empty">{t("Нічого не знайдено")}</p>}

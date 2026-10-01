@@ -49,3 +49,13 @@ test('linked payout keeps Kyiv date across refreshes at the month boundary',()=>
  assert.equal(summarizeFinance(after,[],'2026-09-01','2026-09-30').salaryPaid,0)
  assert.equal(summarizeFinance([], [{...earning,status:'paid',paidAmount:undefined}],'','').due,0)
 })
+
+test('financial dates and earnings use the studio zone at month boundaries',()=>{
+ const stamp='2026-09-30T22:30:00Z',p={...payout,created_at:stamp},e={...earning,accruedAt:stamp}
+ assert.equal(financeDay(stamp,'Europe/Kyiv'),'2026-10-01')
+ assert.equal(financeDay(stamp,'Europe/London'),'2026-09-30')
+ const london=financeLedger([],[],[p],'Europe/London'),kyiv=financeLedger([],[],[p],'Europe/Kyiv')
+ assert.equal(summarizeFinance(london,[e],'2026-09-01','2026-09-30','Europe/London').accrued,300)
+ assert.equal(summarizeFinance(kyiv,[e],'2026-09-01','2026-09-30','Europe/Kyiv').accrued,0)
+ assert.equal(london[0].date,'2026-09-30');assert.equal(kyiv[0].date,'2026-10-01')
+})

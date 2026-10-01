@@ -1,3 +1,4 @@
+import {t} from '../i18n/core.ts'
 export type DateKind = 'date' | 'datetime-local' | 'time'
 export function localDate(date = new Date()): string {
   return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`
@@ -46,11 +47,11 @@ export function numberError(value: string, min?: number|string, max?: number|str
   if(value==='')return ''
   if(!/^-?(?:\d+\.?\d*|\.\d+)$/.test(value)||!Number.isFinite(Number(value)))return 'Введіть число, наприклад 1250,50.'
   const number=Number(value)
-  if(min!==undefined&&number<Number(min))return `Мінімальне значення: ${min}.`
-  if(max!==undefined&&number>Number(max))return `Максимальне значення: ${max}.`
+  if(min!==undefined&&number<Number(min))return `${t("Мінімальне значення")}: ${min}.`
+  if(max!==undefined&&number>Number(max))return `${t("Максимальне значення")}: ${max}.`
   if(step!=='any'){
     const increment=Number(step??1), units=(number-Number(min??0))/increment
-    if(increment>0&&Math.abs(units-Math.round(units))>1e-7)return `Вкажіть значення з кроком ${increment}.`
+    if(increment>0&&Math.abs(units-Math.round(units))>1e-7)return `${t("Вкажіть значення з кроком")} ${increment}.`
   }
   return ''
 }

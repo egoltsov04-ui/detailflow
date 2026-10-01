@@ -11,14 +11,14 @@ export function InvitationPassword({complete}:{complete:()=>void}) {
   async function submit(event:FormEvent) {
     event.preventDefault()
     if(!supabase||busy)return
-    if(password!==repeat){setError('Паролі не збігаються.');return}
+    if(password!==repeat){setError(t("Паролі не збігаються."));return}
     setBusy(true);setError('')
     try {
       const result=await supabase.auth.updateUser({password})
       if(result.error){setError(result.error.message);return}
       complete()
-    } catch {setError('Не вдалося зберегти пароль. Спробуйте ще раз.')}
+    } catch {setError(t("Не вдалося зберегти пароль. Спробуйте ще раз."))}
     finally {setBusy(false)}
   }
-  return <main className="access-portal"><form className="access-form panel" onSubmit={submit}><p>{t("Активація акаунта")}</p><h1>{t("Створіть пароль")}</h1><span>{t("Після збереження відкриється ваш робочий кабінет.")}</span><label>{t("Новий пароль")}<input autoComplete="new-password" required minLength={8} type="password" value={password} onChange={event=>setPassword(event.target.value)}/></label><label>{t("Повторіть пароль")}<input autoComplete="new-password" required minLength={8} type="password" value={repeat} onChange={event=>setRepeat(event.target.value)}/></label>{error&&<p role="alert">{error}</p>}<button className="primary" disabled={busy}>{busy?t("Зберігаємо…"):'Зберегти та увійти'}</button><button type="button" className="text-btn" onClick={()=>void supabase?.auth.signOut()}>{t("Вийти")}</button></form></main>
+  return <main className="access-portal"><form className="access-form panel" onSubmit={submit}><p>{t("Активація акаунта")}</p><h1>{t("Створіть пароль")}</h1><span>{t("Після збереження відкриється ваш робочий кабінет.")}</span><label>{t("Новий пароль")}<input autoComplete="new-password" required minLength={8} type="password" value={password} onChange={event=>setPassword(event.target.value)}/></label><label>{t("Повторіть пароль")}<input autoComplete="new-password" required minLength={8} type="password" value={repeat} onChange={event=>setRepeat(event.target.value)}/></label>{error&&<p role="alert">{t(error)}</p>}<button className="primary" disabled={busy}>{busy?t("Зберігаємо…"):t("Зберегти та увійти")}</button><button type="button" className="text-btn" onClick={()=>void supabase?.auth.signOut()}>{t("Вийти")}</button></form></main>
 }

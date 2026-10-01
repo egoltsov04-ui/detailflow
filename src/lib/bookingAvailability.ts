@@ -49,7 +49,7 @@ export function availableStaff(data:BookingData,start:Date,duration:number,prefe
     if(preferred&&member.id!==preferred)return false
     if(member.all_services===false&&serviceIds.some(id=>!member.staff_services?.some(s=>s.service_id===id)))return false
     const shifts=data.schedules.filter(s=>s.staff_id===member.id)
-    const today=shifts.length?shifts.filter(s=>s.weekday===weekday):[{starts_at:'09:00',ends_at:'19:00'}]
+    const today=shifts.filter(s=>s.weekday===weekday)
     return today.some(s=>from>=minutes(s.starts_at)&&to<=minutes(s.ends_at))&&!data.appointments.some(b=>(!b.staff_id||b.staff_id===member.id)&&start<new Date(b.ends_at)&&end>new Date(b.starts_at))
   })
 }

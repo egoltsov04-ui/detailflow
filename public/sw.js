@@ -25,3 +25,11 @@ self.addEventListener('fetch', event => {
     return response;
   }));
 });
+self.addEventListener('push', event => {
+ let payload={};try{payload=event.data?.json()||{}}catch{}
+ event.waitUntil(self.registration.showNotification(typeof payload.title==='string'?payload.title:'Detailflow', {body:typeof payload.body==='string'?payload.body:'',icon:'/icons/app-192.png',badge:'/icons/app-192.png',tag:typeof payload.tag==='string'?payload.tag:'detailflow',data:{url:'/app'}}));
+});
+self.addEventListener('notificationclick', event => {
+ event.notification.close();
+ event.waitUntil(self.clients.matchAll({type:'window',includeUncontrolled:true}).then(async windows=>{const existing=windows.find(client=>new URL(client.url).origin===self.location.origin&&new URL(client.url).pathname==='/app');if(existing)return existing.focus();return self.clients.openWindow('/app')}));
+});

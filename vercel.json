@@ -65,5 +65,10 @@
         }
       ]
     }
-  ]
+  ],
+  "functions": {
+    "api/send-reminders.ts": {
+      "maxDuration": 60
+    }
+  }
 }

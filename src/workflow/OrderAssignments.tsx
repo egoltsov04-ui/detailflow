@@ -9,7 +9,7 @@ type Member={id:string|number;name:string;allServices?:boolean;serviceIds?:strin
 export default function OrderAssignments({orderId,closed,workflow,staff}:{orderId:string;closed:boolean;workflow:WorkflowController;staff:Member[]}) {
   const jobs=workflow.data.jobs.filter(j=>j.work_order_id===orderId).sort((a,b)=>a.position-b.position||a.created_at.localeCompare(b.created_at))
   if(closed)return null
-  if(!jobs.length)return <p className="muted">{workflow.loading?'Завантажуємо роботи для призначення…':'Роботи не завантажено. Натисніть «Оновити» або відкрийте «Роботи та перевірка».'}</p>
+  if(!jobs.length)return <p className="muted">{workflow.loading?t("Завантажуємо роботи для призначення…"):t("Роботи не завантажено. Натисніть «Оновити» або відкрийте «Роботи та перевірка».")}</p>
   return <div className="order-job-assignments">{jobs.map(job=><JobAssignment key={job.id} job={job} workflow={workflow} staff={staff}/>)}</div>
 }
 
@@ -21,13 +21,13 @@ function JobAssignment({job,workflow:w,staff}:{job:Job;workflow:WorkflowControll
     if(lock.current||!editable||staffId===(job.staff_id||''))return
     if(staffId&&!qualified.some(s=>String(s.id)===staffId))return
     lock.current=true;setBusy(true);setMessage('');setFailed(false)
-    try{await w.save(job.work_order_id,jobAssignmentInput(job,staffId),job.version);setMessage(staffId?'Майстра призначено.':'Призначення знято.')}
-    catch(error){setFailed(true);setMessage(error instanceof Error?error.message:'Не вдалося призначити майстра. Спробуйте ще раз.')}
+    try{await w.save(job.work_order_id,jobAssignmentInput(job,staffId),job.version);setMessage(staffId?t("Майстра призначено."):t("Призначення знято."))}
+    catch(error){setFailed(true);setMessage(error instanceof Error?error.message:t("Не вдалося призначити майстра. Спробуйте ще раз."))}
     finally{lock.current=false;setBusy(false)}
   }
   return <div className="order-job-assignment" draggable={false} onDragStart={e=>e.stopPropagation()}>
-    <label><span>{job.title}</span>{editable?<Select aria-label={`Майстер: ${job.title}`} disabled={busy||w.loading||!!w.error||!staff.length} value={job.staff_id||''} onChange={e=>void assign(e.target.value)}><option value="">{t("Призначити майстра")}</option>{job.staff_id&&!qualified.some(s=>String(s.id)===job.staff_id)&&<option value={job.staff_id}>{member?.name||t("Поточний майстер недоступний")}</option>}{qualified.map(s=><option key={s.id} value={String(s.id)}>{s.name}{w.data.shifts.some(sh=>sh.staff_id===String(s.id)&&!sh.ended_at&&!sh.paused_at)?' · на зміні':''}</option>)}</Select>:<b>{member?.name||'Майстра не призначено'}</b>}</label>
-    {busy?<small role="status">Зберігаємо призначення…</small>:message&&<small role={failed?'alert':'status'}>{message}</small>}
+    <label><span>{job.title}</span>{editable?<Select aria-label={`Майстер: ${job.title}`} disabled={busy||w.loading||!!w.error||!staff.length} value={job.staff_id||''} onChange={e=>void assign(e.target.value)}><option value="">{t("Призначити майстра")}</option>{job.staff_id&&!qualified.some(s=>String(s.id)===job.staff_id)&&<option value={job.staff_id}>{member?.name||t("Поточний майстер недоступний")}</option>}{qualified.map(s=><option key={s.id} value={String(s.id)}>{s.name}{w.data.shifts.some(sh=>sh.staff_id===String(s.id)&&!sh.ended_at&&!sh.paused_at)?t(" · на зміні"):''}</option>)}</Select>:<b>{member?.name||t("Майстра не призначено")}</b>}</label>
+    {busy?<small role="status">{t("Зберігаємо призначення…")}</small>:message&&<small role={failed?'alert':'status'}>{t(message)}</small>}
     {editable&&!qualified.length&&<small>{t("Немає майстрів із відповідною спеціалізацією. Змініть перелік послуг у розділі «Команда».")}</small>}
   </div>
 }

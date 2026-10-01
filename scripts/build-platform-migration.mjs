@@ -16,3 +16,9 @@ commit;
 `
 writeFileSync('supabase/deploy/platform_033_039.sql',output)
 console.log('Prepared supabase/deploy/platform_033_039.sql')
+
+// The next release is applied independently after the platform baseline.
+const phaseFiles=readdirSync('supabase/migrations').filter(f=>/^04[0-4]_.*\.sql$/.test(f)).sort()
+if(phaseFiles.length!==5)throw new Error('Expected migrations 040 through 044')
+writeFileSync('supabase/deploy/phase_one_040_044.sql','-- Detailflow phase 1, apply after platform_033_039.sql. Repeatable.\n-- Run this entire file as one transaction.\nbegin;\n'+phaseFiles.map(file=>{const sql=readFileSync('supabase/migrations/'+file,'utf8').trim();return '-- '+file+'\n'+sql.replace(/^begin;/i,'').replace(/commit;$/i,'')}).join('\n')+'\ncommit;\n')
+console.log('Prepared supabase/deploy/phase_one_040_044.sql')

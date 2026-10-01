@@ -5,29 +5,29 @@ export type FinanceEarning = {id:string;staffId:string;amount:number;paidAmount?
 export type FinancePayout = {id:string;earning_id:string;amount:number;created_at:string;method:string}
 export type FinanceRow = FinanceCash & {source:'cash'|'expense'|'payout';salary:boolean}
 export const cents=(amount:number)=>Math.round(amount*100)
-export function financeDay(value:string){
+export function financeDay(value:string,timezone='Europe/Kyiv'){
   if(/^\d{4}-\d{2}-\d{2}$/.test(value))return value
   const date=new Date(value)
   if(!Number.isFinite(date.getTime()))return ''
-  const parts=Object.fromEntries(new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Kyiv',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(date).map(p=>[p.type,p.value]))
+  const parts=Object.fromEntries(new Intl.DateTimeFormat('en-CA',{timeZone:timezone,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(date).map(p=>[p.type,p.value]))
   return `${parts.year}-${parts.month}-${parts.day}`
 }
 export const inPeriod=(date:string,from:string,to:string)=>!!date&&(!from||date>=from)&&(!to||date<=to)
 const salaryCategory=(value:string)=>/зарплат|заробіт|оплата праці/i.test(value)
-export function financeLedger(cash:FinanceCash[],expenses:FinanceExpense[],payouts:FinancePayout[]=[]):FinanceRow[]{
-  const payoutDates=new Map(payouts.map(p=>[p.id,financeDay(p.created_at)]))
-  const rows:FinanceRow[]=cash.filter(r=>!r.isAccrual).map(r=>({...r,id:`cash:${r.id}`,date:(r.payoutId&&payoutDates.get(r.payoutId))||financeDay(r.date),source:'cash',salary:!!r.payoutId||salaryCategory(r.category)}))
-  rows.push(...expenses.map(r=>({...r,id:`expense:${r.id}`,date:financeDay(r.date),direction:'expense' as const,source:'expense' as const,salary:salaryCategory(r.category)})))
+export function financeLedger(cash:FinanceCash[],expenses:FinanceExpense[],payouts:FinancePayout[]=[],timezone='Europe/Kyiv'):FinanceRow[]{
+  const payoutDates=new Map(payouts.map(p=>[p.id,financeDay(p.created_at,timezone)]))
+  const rows:FinanceRow[]=cash.filter(r=>!r.isAccrual).map(r=>({...r,id:`cash:${r.id}`,date:(r.payoutId&&payoutDates.get(r.payoutId))||financeDay(r.date,timezone),source:'cash',salary:!!r.payoutId||salaryCategory(r.category)}))
+  rows.push(...expenses.map(r=>({...r,id:`expense:${r.id}`,date:financeDay(r.date,timezone),direction:'expense' as const,source:'expense' as const,salary:salaryCategory(r.category)})))
   const linked=new Set(cash.filter(r=>!r.isAccrual).map(r=>r.payoutId).filter(Boolean))
   // The payout and its cash entry can arrive on different refreshes. Count once by ID.
-  for(const p of payouts)if(!linked.has(p.id))rows.push({id:`payout:${p.id}`,payoutId:p.id,date:financeDay(p.created_at),direction:'expense',source:'payout',salary:true,amount:p.amount,category:'Зарплата майстрів',title:'Виплата за роботу',method:({cash:'Готівка',card:'Картка',transfer:'Переказ'} as Record<string,string>)[p.method]||p.method})
+  for(const p of payouts)if(!linked.has(p.id))rows.push({id:`payout:${p.id}`,payoutId:p.id,date:financeDay(p.created_at,timezone),direction:'expense',source:'payout',salary:true,amount:p.amount,category:'Зарплата майстрів',title:'Виплата за роботу',method:({cash:'Готівка',card:'Картка',transfer:'Переказ'} as Record<string,string>)[p.method]||p.method})
   return rows.sort((a,b)=>b.date.localeCompare(a.date)||String(a.id).localeCompare(String(b.id)))
 }
-export function summarizeFinance(ledger:FinanceRow[],earnings:FinanceEarning[],from:string,to:string){
+export function summarizeFinance(ledger:FinanceRow[],earnings:FinanceEarning[],from:string,to:string,timezone='Europe/Kyiv'){
   const rows=ledger.filter(r=>inPeriod(r.date,from,to)),valid=earnings.filter(e=>e.status!=='void')
   const sum=(r:FinanceRow[])=>r.reduce((n,r)=>n+cents(r.amount),0)/100
   const income=sum(rows.filter(r=>r.direction==='income')),expense=sum(rows.filter(r=>r.direction==='expense')),salaryPaid=sum(rows.filter(r=>r.direction==='expense'&&r.salary))
-  const accrued=valid.filter(e=>inPeriod(financeDay(e.accruedAt),from,to)).reduce((n,e)=>n+cents(e.amount),0)/100
+  const accrued=valid.filter(e=>inPeriod(financeDay(e.accruedAt,timezone),from,to)).reduce((n,e)=>n+cents(e.amount),0)/100
   const due=valid.reduce((n,e)=>n+Math.max(0,cents(e.amount)-cents(e.paidAmount??(e.status==='paid'?e.amount:0))),0)/100
   const categories=new Map<string,number>()
   for(const r of rows.filter(r=>r.direction==='expense')){const key=r.salary?'Зарплата':r.category||'Інше';categories.set(key,(categories.get(key)||0)+cents(r.amount))}

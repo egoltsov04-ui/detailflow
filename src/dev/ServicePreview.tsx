@@ -1,3 +1,4 @@
+import PlanningPreview from './PlanningPreview'
 import PlatformPreview from './PlatformPreview'
 import LanguageSwitcher from '../i18n/LanguageSwitcher'
 import ServiceVariantsPreview from './ServiceVariantsPreview'
@@ -34,6 +35,7 @@ export default function ServicePreview(){
  const [page,setPage]=useState('Поля'),[date,setDate]=useState(localDate()),[time,setTime]=useState('09:00'),[due,setDue]=useState(''),[number,setNumber]=useState('1250.5'),[percent,setPercent]=useState('30'),[saved,setSaved]=useState(''),[orders,setOrders]=useState<WorkOrder[]>([initial]),[shift,setShift]=useState(true),[width,setWidth]=useState('100%')
  async function update(id:WorkOrder['id'],patch:Partial<WorkOrder>){setOrders(rows=>rows.map(row=>row.id===id?{...row,...patch}:row));return ''}
  const screens:Record<string,React.ReactNode>={
+  'Планування':<PlanningPreview/>,
   'CRM і чеки':<PlatformPreview/>,
   'Огляд':<Dashboard bookings={seedBookings} staff={staff.map(s=>({...s,role:'Майстер',load:50}))} revenue={2000} name="Тест" onCreate={()=>setPage('Запис')} onStatus={()=>{}} calendar={()=>setPage('Календар')} open={setPage}/>,
   'Календар':<Calendar bookings={seedBookings.map(b=>({...b,date:date||localDate()}))} onCreate={()=>setPage('Запис')} onStatus={()=>{}}/>,
