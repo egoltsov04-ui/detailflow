@@ -20,6 +20,18 @@ export function createReminderHandler(makeClient:typeof createClient=createClien
   for(const job of claimed.data||[]){
    let status:'sent'|'failed'|'uncertain'|'cancelled'='cancelled',reason:string|null=null,provider:string|null=null,attempted=false
    try{
+    if(job.kind==='delivery_test'){
+     // Only operators can insert queue rows. Tests consume the final attempt so
+     // a rejected request is never retried automatically.
+     const email=job.payload?.email
+     if(job.attempts!==5||typeof email!=='string'||email.length>254||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||new Date(job.expires_at).getTime()<=Date.now()){
+      reason='Invalid or expired delivery test'
+     }else{
+      attempted=true
+      const result=await deliver({to:[{email}],subject:'Detailflow — перевірка пошти',text:'Це тестове повідомлення Detailflow для перевірки доставки через SendPulse. Жодних дій не потрібно.',html:'<p>Це тестове повідомлення <strong>Detailflow</strong> для перевірки доставки через SendPulse. Жодних дій не потрібно.</p>'})
+      provider=typeof result.id==='string'?result.id:null;status='sent'
+     }
+    }else{
     const found=await db.from('appointments').select('id,tenant_id,status,starts_at,ends_at,notes,source,client_id,clients(full_name,email,followup_enabled),appointment_services(service_id,service_name),tenants(name,slug,timezone,phone,reminder_settings(email_enabled,reminder_24h_enabled,reminder_2h_enabled,repeat_enabled))').eq('id',job.payload.appointment_id).eq('tenant_id',job.tenant_id).maybeSingle()
     if(found.error)throw found.error
     const a=found.data,client=one(a?.clients),studio=one(a?.tenants),settings=one(studio?.reminder_settings),repeat=job.kind==='return_visit',email=repeat?client?.email:bookingEmail(a?.notes,a?.source,client?.email)
@@ -32,6 +44,7 @@ export function createReminderHandler(makeClient:typeof createClient=createClien
      attempted=true;const result=await deliver({to:[{email}],subject:repeat?`Повторний візит — ${studio.name}`:`Нагадування про запис — ${studio.name}`,text,html:`<p>${escape(text)}</p>`,fromName:studio.name})
      provider=typeof result.id==='string'?result.id:null;status='sent'
     }else reason='Recipient, appointment or reminder settings changed'
+    }
    }catch(error){status=!attempted?'failed':error instanceof EmailDeliveryError&&!error.uncertain?'failed':'uncertain';reason=!attempted?'Could not prepare delivery':status==='uncertain'?'Delivery acknowledgement unknown; check provider before retry':'Provider rejected delivery'}
    const done=await db.rpc('finish_notification',{job_input:job.id,token_input:job.claim_token,status_input:status,error_input:reason,provider_input:provider});if(done.error||done.data!==true)throw new Error('Could not save delivery result');counts[status]++
   }

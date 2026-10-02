@@ -21,6 +21,21 @@ test('notification processor cancels changed bookings, retries rejection and pre
  deliveryError=null;assert.equal((await invoke()).body.sent,1);assert.equal(results.at(-1).provider_input,'provider-id')
  saveError=true;assert.equal((await invoke()).code,503);assert.equal(results.at(-1).status_input,'sent')
 })
+test('operator delivery test uses one final attempt, validates destination and records uncertain outcomes',async t=>{
+ env(t,{VITE_SUPABASE_URL:'https://test.supabase.co',SUPABASE_SERVICE_ROLE_KEY:'service',CRON_SECRET:'cron-test',SENDPULSE_API_KEY:'mail',SENDPULSE_API_FROM_EMAIL:'studio@example.com'})
+ const create=await handler();let sent=0,finish,deliveryError=null
+ const job={id:'test',tenant_id:'studio',claim_token:'token',kind:'delivery_test',attempts:5,payload:{email:'test@example.com'},expires_at:new Date(Date.now()+3600000).toISOString()}
+ const db={rpc:async(name,args)=>{if(name==='claim_notifications')return {data:[job]};if(name==='finish_notification'){finish=args;return {data:true}}return {}},from(){throw new Error('Delivery tests must not create or read client bookings')}}
+ const invoke=create(()=>db,async message=>{sent++;assert.deepEqual(message.to,[{email:'test@example.com'}]);if(deliveryError)throw deliveryError;return {id:'test-provider'}})
+ async function run(){await invoke({method:'POST',headers:{authorization:'Bearer cron-test'}},{status(){return this},json(){}})}
+ await run();assert.equal(sent,1);assert.equal(finish.status_input,'sent');assert.equal(finish.provider_input,'test-provider')
+ job.attempts=1;await run();assert.equal(sent,1);assert.equal(finish.status_input,'cancelled');job.attempts=5
+ job.payload.email='invalid';await run();assert.equal(sent,1);job.payload.email='test@example.com'
+ job.expires_at='2000-01-01';await run();assert.equal(sent,1);job.expires_at=new Date(Date.now()+3600000).toISOString()
+ deliveryError=new EmailDeliveryError('Rejected',false);await run();assert.equal(finish.status_input,'failed')
+ deliveryError=new Error('Timeout');await run();assert.equal(finish.status_input,'uncertain')
+})
+
 test('SendPulse encodes HTML and rejects provider refusal without exposing response data',async t=>{
  env(t,{SENDPULSE_API_KEY:'mail-test',SENDPULSE_API_FROM_EMAIL:'studio@example.com'});let body,status=200,result={result:true,id:'provider'}
  t.mock.method(globalThis,'fetch',async(url,init)=>{body=JSON.parse(init.body);return {ok:status===200,status,statusText:'Error',text:async()=>JSON.stringify(result)}})
