@@ -1,3 +1,4 @@
+import AnalyticsPreview from './AnalyticsPreview'
 import BillingPage from '../BillingPage'
 import PlanningPreview from './PlanningPreview'
 import PlatformPreview from './PlatformPreview'
@@ -51,6 +52,7 @@ export default function ServicePreview(){
   'Замовлення':<WorkOrders services={[{id:'wash',name:'Комплексна мийка',price:800,duration_minutes:60,description:'Кузов, диски та салон',variants:[{id:'m',name:'M',price:800,duration_minutes:60},{id:'xl',name:'XL',price:1200,duration_minutes:90}]},{id:'polish',name:'Полірування',price:2000,duration_minutes:120}]} items={orders} clients={clients} staff={staff} add={async item=>{setOrders(rows=>[...rows,item]);return ''}} update={update} remove={ok} recordPayment={async(item,payment)=>update(item.id,{deposit:item.deposit+payment.amount})} approve={async item=>{const error=transitionError(item,'ready');return error||update(item.id,{status:'ready'})}}/>,
   'Майстер':<MasterCabinet staff={staff[0]} orders={orders} shifts={shift?[{id:'1',staffId:'1',startedAt:new Date().toISOString(),endedAt:null}]:[]} earnings={orders.filter(o=>o.status==='ready').map(o=>({id:String(o.id),staffId:'1',workOrderId:String(o.id),amount:600,status:'accrued',accruedAt:new Date().toISOString()}))} toggleShift={async()=>{setShift(v=>!v);return ''}} updateOrder={update}/>,
   'Аналітика та фінанси':<FinancePreview/>,
+  'Аналітика студії':<AnalyticsPreview/>,
   'Фінанси':<CashFlow items={[]} clients={clients} add={ok} remove={ok}/>,
   'Варіанти послуг':<ServiceVariantsPreview/>,
   'Каталог':<Catalog services={[[initial.title,'Полірування','4 год',2000]]} products={[]} packages={[]} addService={()=>{}} updateService={ok} removeService={()=>{}} addPackage={ok} removePackage={ok}/>,

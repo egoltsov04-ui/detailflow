@@ -1491,6 +1491,48 @@ Email не вказано|Email not provided
 Додати оплачений період|Add a paid period
 Не вдалося завантажити студії. Спробуйте ще раз.|Could not load studios. Please try again.
 Вкажіть причину зміни (щонайменше 5 символів).|Enter a reason for the change (at least 5 characters).
+Аналітика студії|Studio analytics
+Майстри|Specialists
+Час послуг|Service time
+Вартість робіт, ₴|Work value, UAH
+Години|Hours
+Роботи з таймером|Timed jobs
+Вартість за годину, ₴|Value per hour, UAH
+Виміряно|Measured
+План, хв|Planned, min
+Факт, хв|Actual, min
+Перевищення плану|Over plan
+Візити|Visits
+Середній чек, ₴|Average order value, UAH
+Візити за всю історію|All-time visits
+Історична вартість, ₴|Historical value, UAH
+Сезонність|Seasonality
+Попит|Demand
+День тижня|Weekday
+Година|Hour
+Записи|Bookings
+Скасовано|Cancelled
+Оновити звіт|Refresh report
+Період до трьох років. Часовий пояс студії.|Up to three years. Studio timezone.
+Для звіту підключіть студію.|Connect a studio to view reports.
+Звіт недоступний. Перевірте підключення, фінансові права та оновлення бази.|Report unavailable. Check your connection, finance permissions and database updates.
+Експорт Excel (XML)|Export Excel (XML)
+Друк / PDF|Print / PDF
+Завершені замовлення|Completed orders
+Вартість завершених замовлень|Completed order value
+Повторні клієнти, %|Repeat customers, %
+Завершено із запізненням|Completed late
+Замовлення з указаним терміном готовності|Orders with a due date
+Вартість завершених робіт — не отримані оплати. Грошові надходження та прибуток дивіться в огляді фінансів.|Completed work value is not cash received. See the finance overview for receipts and profit.
+Повторні клієнти мають попередній завершений візит або кілька візитів у періоді. Історична вартість — сума завершених замовлень до кінця періоду, без прогнозу LTV.|Repeat customers have an earlier completed visit or multiple visits in the period. Historical value is completed order value through the period end, without an LTV forecast.
+Години — активний час підтверджених робіт. Вартість за годину враховує лише роботи з таймером. План зберігається для нових робіт із каталогу; для старих робіт може бути відсутній.|Hours are active time on approved jobs. Value per hour includes only timed jobs. Planned time is saved for new catalog jobs and may be missing for older jobs.
+Немає даних за цей період|No data for this period
+Попит за днями та годинами|Demand by weekday and hour
+Кількість записів за часом початку. Скасовані записи виключено; це не відсоток завантаження.|Booking count by start time. Cancelled bookings are excluded; this is not a utilization percentage.
+Роботи|Jobs
+Історія змін підписки|Subscription change history
+Не вдалося завантажити історію.|Could not load history.
+Змін підписки ще немає.|No subscription changes yet.
 `;
 
 export const messages:Record<string,string>=Object.fromEntries(rows.trim().split('\n').map(row=>{const [uk,en]=row.split('|');return [uk,en]}))

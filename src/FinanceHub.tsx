@@ -1,3 +1,4 @@
+import BusinessAnalytics from './BusinessAnalytics'
 import {useStudioTimezone} from './lib/StudioTimezone'
 import {t,localeTag} from './i18n/core'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
@@ -9,8 +10,8 @@ import './finance.css'
 
 const money=(n:number)=>new Intl.NumberFormat(localeTag(),{maximumFractionDigits:2}).format(n)+' ₴'
 const label=(day:string)=>new Date(`${day.length===7?day+'-01':day}T12:00:00`).toLocaleDateString(localeTag(),day.length===7?{month:'short',year:'2-digit'}:{day:'numeric',month:'short'})
-type Props={cash:FinanceCash[];expenses:FinanceExpense[];earnings:FinanceEarning[];payouts?:FinancePayout[];cashEditor:ReactNode;expenseEditor:ReactNode;payroll:ReactNode}
-export default function FinanceHub({cash,expenses,earnings,payouts=[],cashEditor,expenseEditor,payroll}:Props){
+type Props={tenantId?:string|null;cash:FinanceCash[];expenses:FinanceExpense[];earnings:FinanceEarning[];payouts?:FinancePayout[];cashEditor:ReactNode;expenseEditor:ReactNode;payroll:ReactNode}
+export default function FinanceHub({tenantId,cash,expenses,earnings,payouts=[],cashEditor,expenseEditor,payroll}:Props){
   const timezone=useStudioTimezone(), today=financeDay(new Date().toISOString(),timezone)
   const [tab,setTab]=useState('Огляд'),[from,setFrom]=useState(today.slice(0,7)+'-01'),[to,setTo]=useState(today),[direction,setDirection]=useState('all'),[limit,setLimit]=useState(30)
   const ledger=useMemo(()=>financeLedger(cash,expenses,payouts,timezone),[cash,expenses,payouts,timezone])
@@ -19,7 +20,8 @@ export default function FinanceHub({cash,expenses,earnings,payouts=[],cashEditor
   const journal=data.rows.filter(r=>direction==='all'||(direction==='salary'?r.direction==='expense'&&r.salary:r.direction===direction))
   function preset(which:string){let start=today.slice(0,7)+'-01',end=today;if(which==='today')start=today;if(which==='week'){const d=new Date(today+'T12:00:00Z');d.setUTCDate(d.getUTCDate()-6);start=d.toISOString().slice(0,10)}if(which==='previous'){const d=new Date(today.slice(0,7)+'-01T12:00:00Z');d.setUTCDate(0);end=d.toISOString().slice(0,10);start=end.slice(0,7)+'-01'}if(which==='all'){start='';end=''}setFrom(start);setTo(end);setLimit(30)}
   return <section className="content finance-hub"><header className="page-title"><div><p>{t("Повна картина грошей студії")}</p><h1>{t("Аналітика та фінанси")}</h1></div><span className="finance-currency">UAH · ₴</span></header>
-    <nav className="finance-tabs" aria-label={t("Розділи фінансів")}>{['Огляд','Операції','Зарплати','Витрати'].map(name=><button key={name} aria-pressed={tab===name} className={tab===name?'active':''} onClick={()=>setTab(name)}>{t(name)}</button>)}</nav>
+    <nav className="finance-tabs" aria-label={t("Розділи фінансів")}>{['Огляд','Аналітика студії','Операції','Зарплати','Витрати'].map(name=><button key={name} aria-pressed={tab===name} className={tab===name?'active':''} onClick={()=>setTab(name)}>{t(name)}</button>)}</nav>
+    {tab==='Аналітика студії'&&<BusinessAnalytics tenantId={tenantId}/>}
     {tab==='Огляд'&&<>
       <div className="panel finance-period"><div className="finance-presets">{[['today','Сьогодні'],['week','7 днів'],['month','Цей місяць'],['previous','Минулий місяць'],['all','Увесь час']].map(([value,title])=><button className="text-btn" key={value} onClick={()=>preset(value)}>{t(title)}</button>)}</div><div className="finance-dates"><label>{t("Від")}<DateInput type="date" max={to||undefined} value={from} onChange={e=>{setFrom(e.target.value);setLimit(30)}}/></label><span aria-hidden="true">—</span><label>{t("До")}<DateInput type="date" min={from||undefined} value={to} onChange={e=>{setTo(e.target.value);setLimit(30)}}/></label></div></div>
       <div className="finance-kpis"><Kpi title={t("Надходження")} value={data.income} note={t("Фактично отримані оплати")} icon={<ArrowDownLeft/>}/><Kpi title={t("Усі витрати")} value={data.expense} note={`${t("У тому числі зарплати")}: ${money(data.salaryPaid)}`} icon={<ArrowUpRight/>}/><Kpi title={t("Прибуток за оплатами")} value={data.profit} note={t("Надходження мінус усі витрати")} icon={<ChartNoAxesCombined/>} accent/><Kpi title={t("Зарплату нараховано")} value={data.accrued} note={t("За підтверджені роботи в періоді")} icon={<WalletCards/>}/></div>
