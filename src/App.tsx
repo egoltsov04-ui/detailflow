@@ -1,3 +1,4 @@
+import {observeSession} from './lib/session'
 import {canManageBilling} from './lib/plans'
 import {StudioTimezone,useStudioTimezone} from './lib/StudioTimezone'
 import PushControls from './components/PushControls'
@@ -152,9 +153,7 @@ export default function App() {
   },[tenantId,page])
   useEffect(() => {
     if (!supabase) return
-    void supabase.auth.getSession().then(({ data }) => {setUser(data.session?.user ?? null);setSessionReady(true)})
-    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {setUser(session?.user ?? null);setSessionReady(true);if(event==='PASSWORD_RECOVERY')setInvitation(true)})
-    return () => listener.subscription.unsubscribe()
+    return observeSession(supabase.auth,(session,event)=>{setUser(session?.user??null);setSessionReady(true);if(event==='PASSWORD_RECOVERY')setInvitation(true)})
   }, [])
   useEffect(() => {
     if (!supabase || !user) { if(supabase){setBookings([]);setClients([]);setServiceList([]);setStaffList([]);setExpenses([]);setInventory([]);setInventoryMovements([]);setTasks([]);setWorkOrders([]);setLeads([]);setServicePackages([]);setSales([]);setInvoices([]);setWorkSchedules([]);setCashTransactions([]);setLegacyAccruals([]);setStaffShifts([]);setStaffEarnings([]);setStudioProfile({name:'Студія',address:'',slug:'',timezone:'Europe/Kyiv'})} setTenantId(null);setUserRole(null); setConnection(supabase ? 'checking' : 'local'); return }

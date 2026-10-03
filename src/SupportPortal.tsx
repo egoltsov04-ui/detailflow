@@ -9,7 +9,7 @@ import './support.css'
 
 type Application={id:string;full_name:string;email:string;email_confirmed:boolean;studio_name:string;phone:string;messenger:string;contact:string;status:'pending'|'approved'|'rejected';created_at:string;review_note:string|null}
 export default function SupportPortal(){
- const [view,setView]=useState('applications')
+ const [view,setView]=useState('studios')
  const [items,setItems]=useState<Application[]>([]),[error,setError]=useState(''),[loading,setLoading]=useState(true),[busy,setBusy]=useState(''),[filter,setFilter]=useState('pending'),[notes,setNotes]=useState<Record<string,string>>({}),[message,setMessage]=useState('')
  async function load(){
   if(!supabase)return

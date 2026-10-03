@@ -23,6 +23,8 @@ test('phase one calendar, onboarding and support enforce studio and role boundar
  const files=(await readdir(new URL('../supabase/migrations/',import.meta.url))).sort()
  for(const f of files){if(/^(013|029|030)_/.test(f))continue;if(f.startsWith('033_'))await db.exec('grant select,insert,update,delete on all tables in schema public to authenticated;');await db.exec(await read(f.startsWith('028_')?'supabase/deploy/workflow_028_030.sql':'supabase/migrations/'+f))}
  await db.exec(await read('supabase/deploy/phase_one_040_044.sql'))
+ await db.exec(await read('supabase/migrations/047_support_studio_search.sql'))
+ await db.exec(await read('supabase/migrations/047_support_studio_search.sql'))
  assert.equal((await db.query('select platform_readiness() ready')).rows[0].ready,true)
  const [owner,master,outsider,support,studio,other,staff,client,service]=Array.from({length:9},(_,i)=>`10000000-0000-4000-8000-${String(i+1).padStart(12,'0')}`)
  await db.query('insert into auth.users(id) values($1),($2),($3),($4)',[owner,master,outsider,support])
@@ -46,7 +48,7 @@ test('phase one calendar, onboarding and support enforce studio and role boundar
  const setup=(await db.query('select studio_setup($1,$2::jsonb,true) value',[studio,JSON.stringify({name:'Studio',address:'Kyiv, test address',phone:'+380991234567',timezone:'Europe/Kyiv'})])).rows[0].value
  assert.equal(setup.completed,true)
  await assert.rejects(db.query("select support_set_subscription($1,'pro','active',now()+interval '1 month','Support adjustment')",[studio]),/підтримки/)
- await login(support);assert.equal((await db.query("select jsonb_array_length(support_list_studios('Studio')) n")).rows[0].n,1)
+ await login(support);assert.equal((await db.query('select support_list_studios($1) studios',[studio])).rows[0].studios[0].id,studio);assert.equal((await db.query("select jsonb_array_length(support_list_studios('Studio')) n")).rows[0].n,1)
  await assert.rejects(db.query("select support_set_subscription($1,'pro','active',now()+interval '1 month','')",[studio]),/причину/)
  await db.query("select support_set_subscription($1,'pro','active',now()+interval '1 month','Confirmed manual activation')",[studio])
  await login(owner);assert.equal((await db.query('select plan from subscriptions where tenant_id=$1',[studio])).rows[0].plan,'pro')

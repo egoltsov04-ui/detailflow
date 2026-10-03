@@ -16,7 +16,7 @@ export function createPushHandler(makeClient:typeof createClient=createClient){r
   if(body.action!=='subscribe'||!process.env.VAPID_PUBLIC_KEY||!process.env.VAPID_PRIVATE_KEY)return res.status(400).json({error:'Push is not available'})
   const access=await client.rpc('resolve_my_access');if(access.error||!['owner','admin','master'].includes(access.data?.role))return res.status(403).json({error:'Active studio account required'})
   const keys=body.subscription?.keys;if(!/^[A-Za-z0-9_-]{87}$/.test(keys?.p256dh||'')||!/^[A-Za-z0-9_-]{22}$/.test(keys?.auth||''))return res.status(400).json({error:'Invalid push keys'})
-  const r=await db.rpc('register_push_subscription',{user_input:userId,endpoint_input:endpoint,keys_input:keys,locale_input:['uk','ru','en'].includes(body.locale)?body.locale:'uk'});if(r.error)throw r.error
+  const r=await db.rpc('register_push_subscription',{user_input:userId,endpoint_input:endpoint,keys_input:keys,locale_input:['uk','en'].includes(body.locale)?body.locale:'uk'});if(r.error)throw r.error
   if(r.data==='conflict')return res.status(409).json({error:'Disable the previous browser subscription first'})
   if(r.data==='limit')return res.status(400).json({error:'Device limit reached'})
   if(r.data!=='ok')throw new Error('Subscription was not saved')

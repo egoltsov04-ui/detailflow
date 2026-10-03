@@ -3,16 +3,24 @@ import assert from 'node:assert/strict'
 import {readFile} from 'node:fs/promises'
 import {stripTypeScriptTypes} from 'node:module'
 import {runInNewContext} from 'node:vm'
-import {t} from '../src/i18n/core.ts'
+import {t,getLocale} from '../src/i18n/core.ts'
 import {messages} from '../src/i18n/messages.ts'
 import {hmacMd5} from '../server/lib/wayforpay.ts'
 const read=p=>readFile(new URL('../'+p,import.meta.url),'utf8')
 async function loadHandler(path){const source=(await read(path)).replace("'@supabase/supabase-js'",JSON.stringify(import.meta.resolve('@supabase/supabase-js'))).replace("'../../server/lib/wayforpay.js'",JSON.stringify(new URL('../server/lib/wayforpay.ts',import.meta.url).href));return import('data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(source)).toString('base64'))}
 test('translations preserve unknown user content, spacing and source status values',()=>{
- for(const [key,pair] of Object.entries(messages)){assert.equal(pair.length,2,key);assert.ok(pair.every(v=>typeof v==='string'&&v.length>0),key)}
- assert.equal(t('Усі клієнти','en'),'All clients');assert.equal(t(' Клієнти ','ru'),' Клиенты ')
+ for(const [key,pair] of Object.entries(messages)){assert.ok(typeof pair==='string'&&pair.length>0,key)}
+ assert.equal(t('Усі клієнти','en'),'All clients');assert.equal(t(' Клієнти ','en'),' Clients ')
  assert.equal(t('BMW X5 · AA 1234 AA','en'),'BMW X5 · AA 1234 AA');assert.equal(t('__proto__','en'),'__proto__')
  assert.equal(t('Зберегти','uk'),'Зберегти')
+})
+test('legacy language preference switches to Ukrainian and support finds IDs in messages',async()=>{
+ const {studioSearch,accessActive}=await import('../src/lib/supportStudios.ts');
+ const original=Object.getOwnPropertyDescriptor(globalThis,'localStorage');let value='ru';Object.defineProperty(globalThis,'localStorage',{configurable:true,value:{getItem:()=>value,setItem:(_key,next)=>value=next}});
+ try{assert.equal(getLocale(),'uk');assert.equal(value,'uk');value='en';assert.equal(getLocale(),'en')}finally{if(original)Object.defineProperty(globalThis,'localStorage',original);else delete globalThis.localStorage}
+ assert.equal(studioSearch('Detailflow: Start. Студія: 3179E3EA-42A8-4DFE-921E-2F219C6DF435.'),'3179e3ea-42a8-4dfe-921e-2f219c6df435');assert.equal(studioSearch('  Studio  '),'Studio');
+ assert.equal(accessActive({status:'active',current_period_end:'2000-01-01',trial_ends_at:null}),false);
+ assert.equal(accessActive({status:'trialing',current_period_end:null,trial_ends_at:'2099-01-01'}),true);
 })
 test('service worker keeps API, external requests and authenticated responses out of cache',async()=>{
  const events={},cacheWrites=[],store=new Map(),cache={addAll:async paths=>paths.forEach(p=>store.set(p,{offline:p})),match:async r=>store.get(typeof r==='string'?r:r.url),put:async(r,v)=>{cacheWrites.push(r.url);store.set(r.url,v)}}
@@ -71,3 +79,12 @@ test('administrator invitations require active owner and recovery uses bound act
  assert.equal((await invoke({action:'invite',name:'Admin',email:'new-admin@example.com'})).code,403);assert.equal(sent.length,before)
  adminActive=true;assert.equal((await invoke({action:'invite',name:'Admin',email:'new-admin@example.com'})).code,200);assert.equal(sent.at(-1).kind,'recovery')
 })
+
+test('automatic session restore respects sign-out, recovery, refresh and disposal',async()=>{
+ const {observeSession}=await import('../src/lib/session.ts');let finish,callback,unsubscribed=false;const values=[];
+ const auth={getSession:()=>new Promise(resolve=>finish=resolve),onAuthStateChange:fn=>{callback=fn;return {data:{subscription:{unsubscribe(){unsubscribed=true}}}}}};
+ const stop=observeSession(auth,(session,event)=>values.push([session,event]));callback('SIGNED_OUT',null);finish({data:{session:{user:{id:'stale'}}},error:null});await new Promise(resolve=>setImmediate(resolve));assert.deepEqual(values,[[null,'SIGNED_OUT']]);
+ callback('PASSWORD_RECOVERY',{user:{id:'recovery'}});assert.equal(values.at(-1)[1],'PASSWORD_RECOVERY');callback('TOKEN_REFRESHED',{user:{id:'refreshed'}});assert.equal(values.at(-1)[0].user.id,'refreshed');stop();assert.equal(unsubscribed,true);callback('SIGNED_IN',{});assert.equal(values.length,3);
+ const restored=[];const close=observeSession({...auth,getSession:async()=>({data:{session:{user:{id:'saved'}}},error:null})},s=>restored.push(s));await new Promise(resolve=>setImmediate(resolve));assert.equal(restored[0].user.id,'saved');close();
+ const errors=[];const dispose=observeSession({...auth,getSession:async()=>{throw new Error('storage unavailable')}},s=>errors.push(s));await new Promise(resolve=>setImmediate(resolve));assert.deepEqual(errors,[null]);dispose();
+});
