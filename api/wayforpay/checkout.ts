@@ -18,9 +18,12 @@ export function createCheckoutHandler(makeClient:typeof createClient=createClien
     if(typeof body?.tenantId!=='string')return response.status(400).json({error:'Оберіть студію'})
     if (!plan || !(plan in plans)) return response.status(400).json({ error: 'Unknown plan' })
     const db = makeClient(required('VITE_SUPABASE_URL'), required('SUPABASE_SERVICE_ROLE_KEY'))
-    const { data: membership } = await db.from('tenant_memberships').select('tenant_id,role').eq('user_id', userData.user.id).eq('tenant_id',body.tenantId).eq('role','owner').eq('active',true).maybeSingle()
-    if (!membership) return response.status(403).json({ error: 'Оплату тарифу виконує власник студії' })
+    const { data: membership } = await db.from('tenant_memberships').select('tenant_id,role').eq('user_id', userData.user.id).eq('tenant_id',body.tenantId).in('role',['owner','admin']).eq('active',true).maybeSingle()
+    if (!membership || !['owner','admin'].includes(membership.role)) return response.status(403).json({ error: 'Тариф доступний власнику та адміністратору студії' })
     const product = plans[plan]
+    const usage=await db.from('staff_profiles').select('id',{count:'exact',head:true}).eq('tenant_id',membership.tenant_id).eq('active',true)
+    if(usage.error)throw usage.error
+    if(product.staffLimit!==null&&(usage.count??0)>product.staffLimit)return response.status(409).json({error:'Для цього тарифу спочатку деактивуйте зайві профілі майстрів.'})
     const orderReference = `DF-${membership.tenant_id.slice(0, 8)}-${Date.now()}`
     const orderDate = Math.floor(Date.now() / 1000)
     const amount = product.amount.toFixed(2)

@@ -25,7 +25,7 @@ import Analytics from '../Analytics'
 import BookingRequests from '../BookingRequests'
 import { localDate } from '../lib/formValues'
 import { transitionError } from '../lib/workOrderFlow'
-import { Dashboard, Calendar, Clients, Team, Inventory, Expenses, BookingModal, Billing, SettingsPage } from '../App'
+import { Dashboard, Calendar, Clients, Team, Inventory, Expenses, BookingModal, SettingsPage } from '../App'
 import { seedBookings } from '../data'
 
 const staff=[{id:1,name:'Тестовий майстер',color:'#a7d65c',speciality:'Мийка та полірування'}]
@@ -45,7 +45,7 @@ export default function ServicePreview(){
   'Залишки':<Inventory items={[{id:1,name:'Автошампунь',unit:'л',quantity:10,lastUnitCost:100,minQuantity:2,sellingPrice:200}]} movements={[]} add={()=>{}} writeOff={yes} updateMinimum={()=>{}}/>,
   'Витрати':<Expenses items={[]} add={()=>{}} remove={()=>{}}/>,
   'Запис':<BookingModal initialDate={date} bookings={[]} clients={clients.map(c=>({...c,visits:0,total:0}))} staff={staff.map(s=>({...s,role:'Майстер',load:0}))} services={[[initial.title,'Полірування','4 год',2000]]} close={()=>setPage('Календар')} save={async()=>{setPage('Календар');return ''}}/>,
-  'Тариф':<BillingPage tenantId={null} owner/>,
+  'Тариф':<BillingPage tenantId={null} role="admin"/>,
   'Налаштування':<SettingsPage/>,
   'Поля':<section className="content"><h1>Дата, час і числа</h1><form className="panel settings" onSubmit={e=>{e.preventDefault();setSaved(`${date} / ${time} / ${due} / ${number} / ${percent}`)}}><label>Дата<DateInput required type="date" value={date} onChange={e=>setDate(e.target.value)}/></label><label>Час<DateInput required type="time" value={time} onChange={e=>setTime(e.target.value)}/></label><label>Термін<DateInput type="datetime-local" value={due} onChange={e=>setDue(e.target.value)}/></label><label>Сума, ₴<NumberInput required type="number" min={0} step="0.01" value={number} onChange={e=>setNumber(e.target.value)}/></label><label>Відсоток, %<NumberInput type="number" min={0} max={100} value={percent} onChange={e=>setPercent(e.target.value)}/></label><button className="primary">Перевірити форму</button><output>{saved}</output></form></section>,
   'Замовлення':<WorkOrders services={[{id:'wash',name:'Комплексна мийка',price:800,duration_minutes:60,description:'Кузов, диски та салон',variants:[{id:'m',name:'M',price:800,duration_minutes:60},{id:'xl',name:'XL',price:1200,duration_minutes:90}]},{id:'polish',name:'Полірування',price:2000,duration_minutes:120}]} items={orders} clients={clients} staff={staff} add={async item=>{setOrders(rows=>[...rows,item]);return ''}} update={update} remove={ok} recordPayment={async(item,payment)=>update(item.id,{deposit:item.deposit+payment.amount})} approve={async item=>{const error=transitionError(item,'ready');return error||update(item.id,{status:'ready'})}}/>,

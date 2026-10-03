@@ -1456,6 +1456,22 @@ M — седан|M — седан|M — sedan
 Для підключення тарифу зверніться до менеджера Detailflow.|Для подключения тарифа свяжитесь с менеджером Detailflow.|Contact the Detailflow manager to activate your plan.
 Підключення та продовження — через менеджера. Узгодьте тариф і спосіб оплати в Telegram. Після підтвердження менеджер активує доступ; залишок періоду зберігається.|Подключение и продление — через менеджера. Согласуйте тариф и способ оплаты в Telegram. После подтверждения менеджер активирует доступ; остаток периода сохраняется.|Activation and renewal are handled by the manager. Agree on a plan and payment method on Telegram. After confirmation, the manager activates access while preserving remaining days.
 Оновити статус доступу|Обновить статус доступа|Refresh access status
+До 3 активних майстрів|До 3 активных мастеров|Up to 3 active professionals
+До 10 активних майстрів|До 10 активных мастеров|Up to 10 active professionals
+Без ліміту активних майстрів|Без лимита активных мастеров|Unlimited active professionals
+Без ліміту|Без лимита|Unlimited
+Тариф і продовження|Тариф и продление|Plan and renewal
+Активних майстрів|Активных мастеров|Active professionals
+Календар і онлайн-запис|Календарь и онлайн-запись|Calendar and online booking
+Замовлення, чек-листи та перевірка робіт|Заказы, чек-листы и проверка работ|Orders, checklists and work review
+CRM та імпорт клієнтів|CRM и импорт клиентов|CRM and client import
+Кабінети майстрів, зміни та зарплата|Кабинеты мастеров, смены и зарплата|Professional workspaces, shifts and pay
+Склад, фінанси, аналітика та чеки|Склад, финансы, аналитика и чеки|Inventory, finance, analytics and receipts
+Усі тарифи включають однакові функції. Відрізняється лише кількість активних майстрів. Власник і адміністратори не займають місця майстрів; запрошені активні профілі займають.|Все тарифы включают одинаковые функции. Отличается только число активных мастеров. Владелец и администраторы не занимают места мастеров; приглашённые активные профили занимают.|All plans include the same features. Only the number of active professionals differs. Owners and administrators do not use professional seats; active invited profiles do.
+Для цього тарифу спочатку деактивуйте зайві профілі майстрів.|Для этого тарифа сначала деактивируйте лишние профили мастеров.|Deactivate excess professional profiles before switching to this plan.
+Тариф доступний власнику та адміністратору студії|Тариф доступен владельцу и администратору студии|Plans are available to the studio owner and administrator
+Не вдалося завантажити тариф. Оновіть сторінку або зверніться до підтримки.|Не удалось загрузить тариф. Обновите страницу или обратитесь в поддержку.|Could not load the plan. Refresh the page or contact support.
+Період доступу завершено. Власник або адміністратор має продовжити тариф|Срок доступа закончился. Владельцу или администратору нужно продлить тариф.|Access has expired. The owner or administrator needs to renew the plan.
 `;
 
 export const messages:Record<string,[string,string]>=Object.fromEntries(rows.trim().split('\n').map(row=>{const [uk,ru,en]=row.split('|');return [uk,[ru,en]]}))

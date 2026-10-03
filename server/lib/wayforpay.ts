@@ -1,10 +1,7 @@
+import {subscriptionPlans} from '../../src/lib/plans.ts'
 import { createHmac, timingSafeEqual } from 'node:crypto'
 
-export const plans = {
-  start: { label: 'Detailflow Start — 1 місяць', amount: 690 },
-  studio: { label: 'Detailflow Studio — 1 місяць', amount: 1490 },
-  pro: { label: 'Detailflow Pro — 1 місяць', amount: 2990 },
-} as const
+export const plans = Object.fromEntries(subscriptionPlans.map(p=>[p.id,{label:`Detailflow ${p.name} — 1 місяць`,amount:p.price,staffLimit:p.staffLimit}])) as Record<(typeof subscriptionPlans)[number]['id'],{label:string;amount:number;staffLimit:number|null}>
 
 export type PlanCode = keyof typeof plans
 

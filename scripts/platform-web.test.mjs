@@ -30,18 +30,19 @@ test('service worker keeps API, external requests and authenticated responses ou
  offline=true;assert.deepEqual(await request('https://example.com/app?code=private',{mode:'navigate'}),{offline:'/offline.html'})
  assert.equal(cacheWrites.length,1)
 })
-test('payment endpoint verifies active owner, signature and atomic database result',async context=>{
+test('payment endpoint verifies active studio manager, signature and atomic database result',async context=>{
  const env={VITE_SUPABASE_URL:'https://test.supabase.co',VITE_SUPABASE_ANON_KEY:'public-test',SUPABASE_SERVICE_ROLE_KEY:'secret-test',WAYFORPAY_SECRET_KEY:'test-signature',WAYFORPAY_MERCHANT_ACCOUNT:'merchant',WAYFORPAY_MERCHANT_DOMAIN:'example.com',WAYFORPAY_APP_URL:'https://example.com'}
  const prior=Object.fromEntries(Object.keys(env).map(k=>[k,process.env[k]]));Object.assign(process.env,env);context.after(()=>{for(const[k,v]of Object.entries(prior)){if(v===undefined)delete process.env[k];else process.env[k]=v}})
  const {createCheckoutHandler}=await loadHandler('api/wayforpay/checkout.ts'),{createCallbackHandler}=await loadHandler('api/wayforpay/callback.ts')
- let active=true,rpcError=null;const filters=[],writes=[],calls=[]
- const db={from(table){const chain={select(){return chain},eq(k,v){filters.push([k,v]);return chain},maybeSingle:async()=>({data:active?{tenant_id:'studio',role:'owner'}:null}),insert:async value=>{writes.push({table,value});return {error:null}}};return chain},rpc:async(name,args)=>{calls.push({name,args});return {error:rpcError}}}
+ let active=true,role='owner',staffCount=0,rpcError=null;const filters=[],writes=[],calls=[]
+ const db={from(table){const chain={select(){return chain},in(k,v){filters.push([k,v]);return chain},eq(k,v){filters.push([k,v]);return chain},then(resolve){return Promise.resolve({count:staffCount,error:null}).then(resolve)},maybeSingle:async()=>({data:active?{tenant_id:'studio',role}:null}),insert:async value=>{writes.push({table,value});return {error:null}}};return chain},rpc:async(name,args)=>{calls.push({name,args});return {error:rpcError}}}
  const auth={auth:{getUser:async()=>({data:{user:{id:'owner'}}})}}
  const makeClient=(_,key)=>key==='public-test'?auth:db
  const checkout=createCheckoutHandler(makeClient),callback=createCallbackHandler(makeClient)
  async function invoke(handler,body){let code,result;await handler({method:'POST',headers:{authorization:'Bearer test'},body},{status(n){code=n;return this},json(v){result=v}});return {code,result}}
  active=false;assert.equal((await invoke(checkout,{tenantId:'studio',plan:'start'})).code,403);assert.equal(writes.length,0)
  active=true;const purchase=await invoke(checkout,{tenantId:'studio',plan:'start',amount:1});assert.equal(purchase.code,200);assert.equal(purchase.result.fields.amount,'690.00');assert.ok(filters.some(([k,v])=>k==='active'&&v===true))
+ role='master';assert.equal((await invoke(checkout,{tenantId:'studio',plan:'start'})).code,403);role='admin';assert.equal((await invoke(checkout,{tenantId:'studio',plan:'start'})).code,200);staffCount=4;assert.equal((await invoke(checkout,{tenantId:'studio',plan:'start'})).code,409);assert.equal((await invoke(checkout,{tenantId:'studio',plan:'studio'})).code,200);
  const payload={merchantAccount:'merchant',orderReference:'DF-test',amount:690,currency:'UAH',transactionStatus:'Approved',authCode:'test',cardPan:'test',reasonCode:1100}
  payload.merchantSignature=hmacMd5([payload.merchantAccount,payload.orderReference,payload.amount,payload.currency,payload.authCode,payload.cardPan,payload.transactionStatus,payload.reasonCode])
  assert.equal((await invoke(callback,{...payload,amount:1})).code,400);assert.equal(calls.length,0)
