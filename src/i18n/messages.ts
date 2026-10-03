@@ -1533,6 +1533,21 @@ Email не вказано|Email not provided
 Історія змін підписки|Subscription change history
 Не вдалося завантажити історію.|Could not load history.
 Змін підписки ще немає.|No subscription changes yet.
+Експорт XLSX|Export XLSX
+Завантажити PDF|Download PDF
+Не вдалося створити файл. Спробуйте ще раз.|Could not create the file. Please try again.
+Попередній період|Previous period
+Вартість у попередньому періоді|Previous period value
+Порівняння періодів|Period comparison
+Немає бази порівняння|No comparison baseline
+Динаміка вартості робіт|Work value trend
+Середня частка замовлення, ₴|Average order share, UAH
+Скасовані замовлення|Cancelled orders
+Середня частка замовлення — вартість робіт майстра, поділена на кількість його замовлень. Скасування показують причетність до замовлення, а не провину майстра.|Average order share is the specialist’s work value divided by their order count. Cancellations indicate assignment, not fault.
+Плановий час, хв|Planned time, min
+Необов’язково. Для каталогу план визначається автоматично.|Optional. Catalog jobs receive an automatic estimate.
+Вкажіть цілу кількість хвилин|Enter a whole number of minutes
+План має бути від 1 до 43200 хвилин|Planned time must be between 1 and 43200 minutes
 `;
 
 export const messages:Record<string,string>=Object.fromEntries(rows.trim().split('\n').map(row=>{const [uk,en]=row.split('|');return [uk,en]}))

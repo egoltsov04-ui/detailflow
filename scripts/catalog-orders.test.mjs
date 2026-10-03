@@ -47,11 +47,40 @@ test('catalog orders are atomic, preserve service pay rates, variants, deposits 
  assert.equal(jobs.length,2);assert.equal(jobs[0].service_id,service);assert.equal(jobs[0].title,'Wash · XL');assert.equal(Number(jobs[0].price),150);assert.equal(Number(jobs[0].rate),30)
  const saved=(await db.query('select total,deposit from work_orders where id=$1',[request])).rows[0]
  assert.equal(Number(saved.total),350);assert.equal(Number(saved.deposit),300)
+ // Plans capture the chosen variant, not the service's base duration.
+ assert.deepEqual((await db.query('select planned_minutes from work_order_jobs where work_order_id=$1 order by price',[request])).rows.map(j=>j.planned_minutes),[90,60])
+ await db.exec(await read('supabase/migrations/050_phase_two_completion.sql'))
+ await login(owner)
+ const job=(await db.query('select get_workflow_snapshot($1) data',[studio])).rows[0].data.jobs[0]
+ await db.query('select save_work_job($1,$2::jsonb,$3)',[request,{id:job.id,title:job.title,service_id:job.service_id,staff_id:staff,price:job.price,pay_mode:'auto',checklist:[{title:'Check'}],planned_minutes:75},job.version])
+ const updated=(await db.query('select get_workflow_snapshot($1) data',[studio])).rows[0].data.jobs.find(j=>j.id===job.id)
+ assert.equal(updated.planned_minutes,75)
+ await assert.rejects(db.query('select save_work_job($1,$2::jsonb,$3)',[request,{id:job.id,planned_minutes:-1},updated.version]),/План|хвилин/)
+ await login(master)
+ await assert.rejects(db.query("select business_analytics_v2($1,'2026-01-01','2026-12-31')",[studio]),/Access denied/)
+ await login(owner)
+ const emptyReport=(await db.query("select business_analytics_v2($1,'2026-01-01','2026-12-31') data",[studio])).rows[0].data
+ assert.equal(emptyReport.orders,0)
  await login(owner)
  const second='50000000-0000-4000-8000-000000000002'
  await assert.rejects(make(second,{...order,services:[{service_id:service,variant_id:'xl',expected_price:1}]}),/Ціна/)
  assert.equal((await db.query('select count(*)::int n from work_orders where id=$1',[second])).rows[0].n,0)
  await login(master);await assert.rejects(make(second),/доступу/)
+ await db.exec('reset role;set session_replication_role=replica')
+ await db.query("update work_order_jobs set status='approved',approved_at='2026-10-02T12:00Z',worked_seconds=3600 where work_order_id=$1",[request])
+ await db.query("update work_orders set status='ready',approved_at='2026-10-02T12:00Z' where id=$1",[request])
+ await db.query("insert into work_orders(id,tenant_id,client_id,title,status,total,status_changed_at) values($1,$2,$3,'Cancelled','cancelled',100,'2026-10-03T12:00Z')",[second,studio,client])
+ await db.query("insert into work_order_jobs(tenant_id,work_order_id,staff_id,title,price) values($1,$2,$3,'Cancelled A',100),($1,$2,$3,'Cancelled B',100)",[studio,second,staff])
+ await db.exec('set session_replication_role=origin');await login(owner)
+ const comparison=(await db.query("select business_analytics_v2($1,'2026-10-01','2026-10-31') data",[studio])).rows[0].data
+ assert.equal(comparison.masters[0].orders,1);assert.equal(comparison.masters[0].average_order,350);assert.equal(comparison.masters[0].cancelled_orders,1)
+ // Large report: every visit contributes, beyond PostgREST's default row limit.
+ await db.exec('reset role;set session_replication_role=replica')
+ await db.query("insert into work_orders(tenant_id,client_id,title,status,total,approved_at) select $1,$2,'Volume test','ready',10,'2026-10-04T12:00Z' from generate_series(1,10000)",[studio,client])
+ await db.exec('set session_replication_role=origin');await login(owner)
+ const reportStarted=performance.now(),large=(await db.query("select business_analytics_v2($1,'2026-10-01','2026-10-31') data",[studio])).rows[0].data
+ assert.equal(large.orders,10001);assert.equal(large.revenue,100350);assert.equal(large.clients[0].visits,10001)
+ console.log('10,000-order report:',Math.round(performance.now()-reportStarted),'ms')
  await db.exec('reset role');await db.query("update subscriptions set trial_ends_at=now()-interval '1 day' where tenant_id=$1",[studio]);await login(owner)
- await assert.rejects(make(second),/Період доступу/)
+ await assert.rejects(make('50000000-0000-4000-8000-000000000003'),/Період доступу/)
 })

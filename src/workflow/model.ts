@@ -1,6 +1,7 @@
 import {t,localeTag} from '../i18n/core.ts'
 export type JobStatus = 'new'|'assigned'|'in_progress'|'waiting'|'review'|'approved'
 export type Job = {
+ planned_minutes?:number|null;
  id:string;tenant_id:string;work_order_id:string;staff_id:string|null;service_id:string|null;title:string;stage:string;position:number;status:JobStatus;
  can_view_pay?:boolean;price:number;pay_mode:'percent'|'fixed'|'hourly';rate:number;checklist:{id:string;title:string;done:boolean}[];
  attachments:{path:string;name:string}[];note:string;review_note:string;worked_seconds:number;running_since:string|null;

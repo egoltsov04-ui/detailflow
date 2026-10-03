@@ -40,6 +40,12 @@ test('billing roles, published plan limits, downgrade and expiration are enforce
   await assert.rejects(db.query("update payment_orders set status='approved' where tenant_id=$1",[studio]),/permission denied/)
  }
  await login(owner)
+ assert.equal((await db.query("select business_analytics_v2($1,'2026-01-01','2026-12-31') data",[studio])).rows[0].data.orders,0)
+ await login(admin)
+ await assert.rejects(db.query("select business_analytics_v2($1,'2026-01-01','2026-12-31')",[studio]),/Access denied/)
+ await db.exec('reset role');await db.query('update tenant_memberships set finance_access=true where user_id=$1',[admin]);await login(admin)
+ assert.equal((await db.query("select business_analytics_v2($1,'2026-01-01','2026-12-31') data",[studio])).rows[0].data.orders,0)
+ await login(owner)
  const add=()=>db.query("insert into staff_profiles(tenant_id,full_name) values($1,'Master') returning id",[studio])
  const first=(await add()).rows[0].id;await add();await add()
  await assert.rejects(add(),/ліміт/)
