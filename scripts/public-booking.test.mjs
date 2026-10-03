@@ -42,8 +42,8 @@ test('public API validates tenant catalog and server time, saves multiple servic
  const originalNow=Date.now;Date.now=()=>now;t.after(()=>Date.now=originalNow)
  const prev={VITE_SUPABASE_URL:process.env.VITE_SUPABASE_URL,SUPABASE_SERVICE_ROLE_KEY:process.env.SUPABASE_SERVICE_ROLE_KEY};Object.assign(process.env,{VITE_SUPABASE_URL:'https://test.supabase.co',SUPABASE_SERVICE_ROLE_KEY:'fake'})
  t.after(()=>{for(const [k,v]of Object.entries(prev)){if(v===undefined)delete process.env[k];else process.env[k]=v}})
- const writes=[];let failServices=false;let busy=[]
- const db={from(table){let operation='select';const chain={select(){return chain},eq(){return chain},in(){return chain},gte(){return chain},lte(){return chain},order(){return chain},range(){return chain},insert(values){operation='insert';writes.push({table,operation,values});return chain},upsert(values,options){operation='upsert';writes.push({table,operation,values,options});return chain},delete(){operation='delete';writes.push({table,operation});return chain},maybeSingle(){return chain},single(){return chain},then(resolve){const rows=table==='tenants'?{id:'tenant',...data.studio}:table==='services'?data.services:table==='staff_profiles'?data.staff:table==='work_schedules'?data.schedules:table==='appointments'&&operation==='select'?busy:{id:table+'-id'};return Promise.resolve({data:rows,error:table==='appointment_services'&&failServices?{code:'failed'}:null}).then(resolve)}};return chain}}
+ const writes=[];let failServices=false;let busy=[];let access=true
+ const db={rpc:async()=>({data:access,error:null}),from(table){let operation='select';const chain={select(){return chain},eq(){return chain},in(){return chain},gte(){return chain},lte(){return chain},order(){return chain},range(){return chain},insert(values){operation='insert';writes.push({table,operation,values});return chain},upsert(values,options){operation='upsert';writes.push({table,operation,values,options});return chain},delete(){operation='delete';writes.push({table,operation});return chain},maybeSingle(){return chain},single(){return chain},then(resolve){const rows=table==='tenants'?{id:'tenant',...data.studio}:table==='services'?data.services:table==='staff_profiles'?data.staff:table==='work_schedules'?data.schedules:table==='appointments'&&operation==='select'?busy:{id:table+'-id'};return Promise.resolve({data:rows,error:table==='appointment_services'&&failServices?{code:'failed'}:null}).then(resolve)}};return chain}}
  const handler=createPublicBookingHandler(()=>db)
  async function request(body,method='POST'){let status,result;await handler({method,body,query:{slug:'test'}},{status(code){status=code;return this},json(value){result=value}});return {status,result}}
  const payload={slug:'test',clientName:'Test',phone:'+380 00 000 00 01',email:'test@example.com',car:'BMW X5',serviceIds:['wash','inside'],staffId:'',startsAt:start.toISOString()}
@@ -66,7 +66,7 @@ test('public API validates tenant catalog and server time, saves multiple servic
  delete data.services[0].variants
  const count=writes.length;busy=[{staff_id:null,starts_at:start.toISOString(),ends_at:'2026-09-28T10:00:00Z'}]
  assert.equal((await request(payload)).status,409);assert.equal(writes.length,count)
- busy=[];failServices=true
+ busy=[];access=false;const beforeExpired=writes.length;assert.equal((await request(payload)).status,409);assert.equal((await request(null,'GET')).status,409);assert.equal(writes.length,beforeExpired);access=true;failServices=true
  assert.equal((await request(payload)).status,500)
  assert.deepEqual(writes.at(-1),{table:'appointments',operation:'delete'})
 })

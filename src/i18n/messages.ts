@@ -1445,5 +1445,17 @@ M — седан|M — седан|M — sedan
 Контроль якості|Контроль качества|Quality control
 На перерві|На перерыве|On break
 Спочатку перевірте й активуйте доступ адміністратора у команді.|Сначала проверьте и активируйте доступ администратора в команде.|First review and activate the administrator’s team access.
+Послуги з каталогу|Услуги из каталога|Catalog services
+Прибрати послугу|Убрать услугу|Remove service
+Спочатку додайте послуги в каталог.|Сначала добавьте услуги в каталог.|Add services to the catalog first.
+Можна призначити окремого майстра для кожної роботи після створення.|После создания можно назначить отдельного мастера на каждую работу.|You can assign a different professional to each job after creation.
+Період доступу завершено. Власник має продовжити тариф|Срок доступа закончился. Владельцу нужно продлить тариф.|Access has expired. The owner needs to renew the plan.
+Продовження додається до залишку доступу. Для завершеного періоду — від сьогодні.|Продление добавляется к остатку доступа. Если срок истёк — с сегодняшнего дня.|Renewal adds to remaining access. Expired periods start from today.
+Наприклад: оплату за тариф підтверджено менеджером у Telegram|Например: оплату тарифа подтвердил менеджер в Telegram|For example: plan payment confirmed by the manager in Telegram
+Звернутися в Telegram|Связаться в Telegram|Contact on Telegram
+Для підключення тарифу зверніться до менеджера Detailflow.|Для подключения тарифа свяжитесь с менеджером Detailflow.|Contact the Detailflow manager to activate your plan.
+Підключення та продовження — через менеджера. Узгодьте тариф і спосіб оплати в Telegram. Після підтвердження менеджер активує доступ; залишок періоду зберігається.|Подключение и продление — через менеджера. Согласуйте тариф и способ оплаты в Telegram. После подтверждения менеджер активирует доступ; остаток периода сохраняется.|Activation and renewal are handled by the manager. Agree on a plan and payment method on Telegram. After confirmation, the manager activates access while preserving remaining days.
+Оновити статус доступу|Обновить статус доступа|Refresh access status
 `;
+
 export const messages:Record<string,[string,string]>=Object.fromEntries(rows.trim().split('\n').map(row=>{const [uk,ru,en]=row.split('|');return [uk,[ru,en]]}))

@@ -18,6 +18,9 @@ export function createPublicBookingHandler(makeClient:typeof createClient=create
     const {data:tenant,error:tenantError}=await supabase.from('tenants').select('id,name,address,timezone').eq('slug',slug).maybeSingle()
     if(tenantError)throw tenantError
     if(!tenant)return response.status(404).json({error:'Студію не знайдено.'})
+    const access=await supabase.rpc('subscription_allows_new_work',{studio:tenant.id})
+    if(access.error)throw access.error
+    if(!access.data)return response.status(409).json({error:'Онлайн-запис тимчасово недоступний. Зв’яжіться зі студією, щоб домовитися про візит.'})
     const now=Date.now(),horizon=new Date(now+31*86400_000).toISOString()
     const [services,staff,appointments,schedules]=await Promise.all([
       supabase.from('services').select('*').eq('tenant_id',tenant.id).eq('active',true).order('created_at'),
@@ -64,6 +67,7 @@ export function createPublicBookingHandler(makeClient:typeof createClient=create
     }
     return response.status(201).json({ok:true,status:'pending'})
   }catch(error){
+    if((error as {message?:string})?.message?.includes('Період доступу завершено'))return response.status(409).json({error:'Онлайн-запис тимчасово недоступний. Зв’яжіться зі студією, щоб домовитися про візит.'})
     console.error('Public booking failed',error instanceof Error?error.name:(error as {code?:string})?.code)
     return response.status(500).json({error:'Не вдалося обробити запис. Спробуйте пізніше або зв’яжіться зі студією.'})
   }
