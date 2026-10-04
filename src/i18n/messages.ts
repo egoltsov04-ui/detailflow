@@ -1548,6 +1548,53 @@ Email не вказано|Email not provided
 Необов’язково. Для каталогу план визначається автоматично.|Optional. Catalog jobs receive an automatic estimate.
 Вкажіть цілу кількість хвилин|Enter a whole number of minutes
 План має бути від 1 до 43200 хвилин|Planned time must be between 1 and 43200 minutes
+Фото та відео роботи|Work photos and videos
+До початку робіт|Before work
+Після роботи|After work
+Додати фото або відео|Add photo or video
+Файли до роботи|Before-work files
+Файли після роботи|After-work files
+Попередні фото без етапу|Earlier photos without a stage
+Товщина покриття, мкм|Coating thickness, µm
+Для полірування: вкажіть деталь кузова та заміри до і після.|For polishing: enter the body panel and measurements before and after.
+Деталь кузова|Body panel
+До, мкм|Before, µm
+Після, мкм|After, µm
+Прибрати|Remove
+Додати замір|Add measurement
+Зберегти заміри|Save measurements
+Фото: JPG, PNG, WebP до 8 МБ. Відео: MP4, WebM, MOV до 50 МБ. До 40 файлів на роботу.|Photos: JPG, PNG, WebP up to 8 MB. Videos: MP4, WebM, MOV up to 50 MB. Up to 40 files per job.
+Фото до 8 МБ, відео до 50 МБ|Photos up to 8 MB, videos up to 50 MB
+Не вдалося завантажити файл|Could not upload the file
+Відкрити файл|Open file
+Оновити посилання|Refresh link
+Повторити завантаження|Retry loading
+Фотоархів|Media archive
+Історія робіт студії|Studio work history
+Пошук в архіві|Search archive
+Авто, клієнт, майстер, робота або номер замовлення|Vehicle, client, specialist, job or order number
+Етап матеріалів|Media stage
+Всі етапи|All stages
+Тип файлу|File type
+Фото та відео|Photos and videos
+Відео|Video
+Знайти|Search
+Не вдалося завантажити архів|Could not load the archive
+Матеріалів за цим запитом немає|No media matches this search
+мкм|µm
+Матеріали вже передано на перевірку|Evidence has already been submitted for review
+Перевірте етап і ліміт: 40 файлів на роботу|Check the stage and limit: 40 files per job
+Невірний шлях файлу|Invalid file path
+Спочатку завантажте файл|Upload the file first
+Додайте до 30 точок вимірювання|Add up to 30 measurement points
+Вкажіть деталь кузова|Enter the body panel
+Вкажіть хоча б один замір|Enter at least one measurement
+Заміри: від 0 до 5000 мкм|Measurements: 0 to 5000 µm
+Робота має збережені матеріали. Збережіть її в історії|This job has saved evidence. Keep it in the history
+Додано матеріали роботи|Work media added
+Оновлено заміри покриття|Coating measurements updated
+Матеріали перевіряються з підключеною базою|Evidence requires a connected database
+Повторити прив’язку завантаженого файлу|Retry attaching the uploaded file
 `;
 
 export const messages:Record<string,string>=Object.fromEntries(rows.trim().split('\n').map(row=>{const [uk,en]=row.split('|');return [uk,en]}))

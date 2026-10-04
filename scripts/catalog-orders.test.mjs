@@ -55,6 +55,32 @@ test('catalog orders are atomic, preserve service pay rates, variants, deposits 
  await db.query('select save_work_job($1,$2::jsonb,$3)',[request,{id:job.id,title:job.title,service_id:job.service_id,staff_id:staff,price:job.price,pay_mode:'auto',checklist:[{title:'Check'}],planned_minutes:75},job.version])
  const updated=(await db.query('select get_workflow_snapshot($1) data',[studio])).rows[0].data.jobs.find(j=>j.id===job.id)
  assert.equal(updated.planned_minutes,75)
+ // Evidence is attached by the assigned master and remains private to this studio.
+ await db.exec('reset role; alter table storage.objects add column if not exists metadata jsonb;')
+ const mediaPath=`${studio}/${job.id}/test.mp4`
+ await db.query("insert into storage.objects(bucket_id,name,owner_id,metadata) values('job-photos',$1,$2,'{\"mimetype\":\"video/mp4\",\"size\":1024}')",[mediaPath,master])
+ await db.exec(await read('supabase/migrations/051_job_evidence.sql'))
+ await login(master)
+ await assert.rejects(db.query('select save_job_evidence($1,$2,$3)',[job.id,updated.version,{action:'media',path:mediaPath,name:'Before.mp4',phase:'invalid'}]),/етап/)
+ await assert.rejects(db.query('select save_job_evidence($1,$2,$3)',[job.id,updated.version,{action:'media',path:'wrong/'+job.id+'/test.mp4',name:'Before.mp4',phase:'before'}]),/шлях/)
+ await db.query('select save_job_evidence($1,$2,$3)',[job.id,updated.version,{action:'media',path:mediaPath,name:'Before.mp4',phase:'before'}])
+ // Retrying the same upload does not create a duplicate even with the old version.
+ await db.query('select save_job_evidence($1,$2,$3)',[job.id,updated.version,{action:'media',path:mediaPath,name:'Before.mp4',phase:'before'}])
+ const evidence=(await db.query('select get_workflow_snapshot($1) data',[studio])).rows[0].data.jobs.find(j=>j.id===job.id)
+ assert.equal(evidence.attachments.length,1);assert.equal(evidence.attachments[0].mime,'video/mp4');assert.equal(evidence.attachments[0].staff_name,'Master')
+ await assert.rejects(db.query('select job_media_archive($1)',[studio]),/доступу/)
+ await assert.rejects(db.query('select save_job_evidence($1,$2,$3)',[job.id,evidence.version,{action:'paint',readings:[{panel:'Hood',before:-1,after:null}]}]),/Заміри/)
+ await db.query('select save_job_evidence($1,$2,$3)',[job.id,evidence.version,{action:'paint',readings:[{panel:'Hood',before:140.5,after:135}]}])
+ await login(owner)
+ const archive=(await db.query("select job_media_archive($1,'Master','before','video') data",[studio])).rows[0].data
+ assert.equal(archive.length,1);assert.equal(archive[0].readings[0].before,140.5);assert.equal(archive[0].order_id,request)
+ assert.deepEqual((await db.query("select job_media_archive($1,'','after','video') data",[studio])).rows[0].data,[])
+ await login('40000000-0000-4000-8000-000000000099')
+ await assert.rejects(db.query('select job_media_archive($1)',[studio]),/доступу/)
+ await assert.rejects(db.query('select save_job_evidence($1,$2,$3)',[job.id,evidence.version+1,{action:'paint',readings:[]}]),/доступу/)
+ await db.exec('reset role')
+ await assert.rejects(db.query('delete from work_order_jobs where id=$1',[job.id]),/матеріали/)
+ await login(owner)
  await assert.rejects(db.query('select save_work_job($1,$2::jsonb,$3)',[request,{id:job.id,planned_minutes:-1},updated.version]),/План|хвилин/)
  await login(master)
  await assert.rejects(db.query("select business_analytics_v2($1,'2026-01-01','2026-12-31')",[studio]),/Access denied/)
@@ -72,6 +98,7 @@ test('catalog orders are atomic, preserve service pay rates, variants, deposits 
  await db.query("insert into work_orders(id,tenant_id,client_id,title,status,total,status_changed_at) values($1,$2,$3,'Cancelled','cancelled',100,'2026-10-03T12:00Z')",[second,studio,client])
  await db.query("insert into work_order_jobs(tenant_id,work_order_id,staff_id,title,price) values($1,$2,$3,'Cancelled A',100),($1,$2,$3,'Cancelled B',100)",[studio,second,staff])
  await db.exec('set session_replication_role=origin');await login(owner)
+ await assert.rejects(db.query('select save_job_evidence($1,$2,$3)',[job.id,evidence.version+1,{action:'paint',readings:[]}]),/перевірку/)
  const comparison=(await db.query("select business_analytics_v2($1,'2026-10-01','2026-10-31') data",[studio])).rows[0].data
  assert.equal(comparison.masters[0].orders,1);assert.equal(comparison.masters[0].average_order,350);assert.equal(comparison.masters[0].cancelled_orders,1)
  // Large report: every visit contributes, beyond PostgREST's default row limit.

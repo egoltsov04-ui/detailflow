@@ -4,9 +4,11 @@ export type Job = {
  planned_minutes?:number|null;
  id:string;tenant_id:string;work_order_id:string;staff_id:string|null;service_id:string|null;title:string;stage:string;position:number;status:JobStatus;
  can_view_pay?:boolean;price:number;pay_mode:'percent'|'fixed'|'hourly';rate:number;checklist:{id:string;title:string;done:boolean}[];
- attachments:{path:string;name:string}[];note:string;review_note:string;worked_seconds:number;running_since:string|null;
+ attachments:JobMedia[];paint_readings?:PaintReading[];note:string;review_note:string;worked_seconds:number;running_since:string|null;
  submitted_at:string|null;approved_at:string|null;approved_by:string|null;version:number;created_at:string;updated_at:string;
 }
+export type JobMedia={path:string;name:string;phase?:'before'|'after';mime?:string;created_at?:string;staff_name?:string;vehicle?:string;client_name?:string}
+export type PaintReading={panel:string;before:number|null;after:number|null}
 export type Attendance={id:string;staff_id:string;started_at:string;ended_at:string|null;paused_at:string|null;pause_seconds:number;breaks:{from:string;to:string}[]}
 export type Earning={id:string;staff_id:string;work_order_id:string;job_id:string|null;amount:number;paid_amount:number;status:string;accrued_at:string;calculation:Record<string,unknown>}
 export type JobEvent={id:string;job_id:string;actor_id:string|null;event:string;detail:Record<string,unknown>;created_at:string}
@@ -15,7 +17,7 @@ export type Service={id:string;name:string;price:number}
 export type WorkflowData={can_view_finance?:boolean;jobs:Job[];shifts:Attendance[];earnings:Earning[];events:JobEvent[];payouts:Payout[];services:Service[]}
 export const emptyData:WorkflowData={jobs:[],shifts:[],earnings:[],events:[],payouts:[],services:[]}
 export const jobLabels:Record<JobStatus,string>={new:'Потрібно призначити',assigned:'Призначено',in_progress:'Виконується',waiting:'Пауза / доопрацювання',review:'На перевірці',approved:'Підтверджено'}
-export const eventLabels:Record<string,string>={assigned:'Призначення й умови збережено',start:'Розпочато роботу',pause:'Роботу призупинено',check:'Оновлено чек-лист',submit:'Здано на перевірку',return:'Повернуто на доопрацювання',approve:'Перевірено та нараховано',note:'Додано коментар',photo:'Додано фото'}
+export const eventLabels:Record<string,string>={assigned:'Призначення й умови збережено',start:'Розпочато роботу',pause:'Роботу призупинено',check:'Оновлено чек-лист',submit:'Здано на перевірку',return:'Повернуто на доопрацювання',approve:'Перевірено та нараховано',note:'Додано коментар',photo:'Додано фото',media:'Додано матеріали роботи',paint:'Оновлено заміри покриття'}
 export const money=(n:number)=>new Intl.NumberFormat(localeTag(),{maximumFractionDigits:2}).format(n)+' ₴'
 export function secondsWorked(job:Pick<Job,'worked_seconds'|'running_since'>,now=Date.now()){return job.worked_seconds+(job.running_since?Math.max(0,Math.floor((now-new Date(job.running_since).getTime())/1000)):0)}
 export function estimate(job:Pick<Job,'price'|'pay_mode'|'rate'|'worked_seconds'|'running_since'>,now=Date.now()){
