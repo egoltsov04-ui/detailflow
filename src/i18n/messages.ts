@@ -1595,6 +1595,45 @@ Email не вказано|Email not provided
 Оновлено заміри покриття|Coating measurements updated
 Матеріали перевіряються з підключеною базою|Evidence requires a connected database
 Повторити прив’язку завантаженого файлу|Retry attaching the uploaded file
+Перевірте повторний візит|Review a repeat visit
+Перегляньте тривалість послуги|Review service duration
+Перевірте собівартість і ціну|Review costs and pricing
+Обговоріть додаткову послугу|Discuss an additional service
+Перевірте день із нижчим попитом|Review a lower-demand weekday
+Клієнт не повернувся у звичний строк. Перевірте історію та доречність особистого контакту. Це сигнал, а не прогноз втрати клієнта.|The client has not returned within their usual interval. Review their history and whether personal contact is appropriate. This is a signal, not a churn prediction.
+Роботи регулярно тривають довше плану. Перевірте складність автомобілів, перерви таймера та тривалість у каталозі.|Jobs regularly take longer than planned. Check vehicle complexity, timer breaks and catalog duration.
+Більша тривалість може впливати на маржу. Спочатку перевірте витрати й обсяг робіт. Даних недостатньо для автоматичного розрахунку нової ціни.|Longer duration can affect margins. Review costs and scope first. There is not enough evidence to calculate a new price automatically.
+Ці послуги часто замовляють разом у вашій студії. Перевірте стан автомобіля й потребу клієнта перед пропозицією.|These services are often purchased together at your studio. Check the vehicle and the client's needs before making an offer.
+Записів менше, ніж в інші дні з історією. Перевірте графік, вихідні та доступність майстрів. Кількість записів не дорівнює завантаженню.|There are fewer bookings than on other weekdays with history. Check opening hours, holidays and staff availability. Booking count is not utilization.
+Основна послуга|Base service
+Звичний інтервал, днів|Typical interval, days
+Днів після візиту|Days since visit
+Підтверджені роботи з таймером|Approved timed jobs
+Спільні замовлення|Orders with both services
+Замовлення основної послуги|Orders with the base service
+Середня кількість записів за день тижня|Average bookings per weekday
+Тижні з записами|Weeks with bookings
+Для рекомендацій підключіть студію.|Connect a studio to see recommendations.
+Не вдалося оновити рекомендації|Could not refresh recommendations
+Не вдалося зберегти оцінку|Could not save feedback
+Рекомендації|Recommendations
+Підказки з історії вашої студії|Suggestions from your studio history
+Оновити рекомендації|Refresh recommendations
+Адаптивні правила · без зовнішнього AI|Adaptive rules · no external AI
+Нові роботи оновлюють розрахунки. Оцінки коригують пріоритет типів підказок після п’яти різних оцінених рекомендацій. Це не навчання мовної моделі й не гарантія результату.|New jobs update the calculations. Feedback adjusts category priority after five distinct rated recommendations. This does not train a language model or guarantee outcomes.
+Ціни, записи та повідомлення не змінюються автоматично. Дані інших студій не використовуються.|Prices, bookings and messages are never changed automatically. Other studios' data is not used.
+Днів історії|Days of history
+Коли з’являються рекомендації|When recommendations appear
+Повторний візит: щонайменше три візити та два інтервали від доби. Затримки: п’ять робіт із планом і таймером за 90 днів. Перевірка ціни: дванадцять таких робіт. Додаткова послуга: п’ять спільних замовлень і частка від 35%. Попит: від 40 записів і восьми тижнів спостережень.|Repeat visits: at least three visits and two gaps of a day or more. Delays: five timed jobs with a plan in 90 days. Price review: twelve such jobs. Add-ons: five joint orders and a share of at least 35%. Demand: at least 40 bookings and eight observed weeks.
+Оцінка спільна для студії: повторне натискання замінює її, а не додає голос. Можна скасувати оцінку. Позначка «Виконано» не підтверджує фінансовий результат.|Feedback is shared across the studio: voting again replaces the rating instead of adding a vote. You can undo it. Marking a suggestion done does not confirm a financial result.
+Показувати оцінені підказки|Show reviewed suggestions
+Сигнал для перевірки|Signal to review
+Пріоритет враховує оцінки студії|Priority reflects studio feedback
+Базовий пріоритет: ще мало оцінок|Base priority: not enough feedback yet
+Корисно|Useful
+Не корисно|Not useful
+Скасувати оцінку|Undo feedback
+Нових підказок поки немає. Потрібно більше історії або відхилень від звичного процесу; відсутність підказок не означає помилку.|No new suggestions yet. More history or deviations from the usual process are needed; an empty feed is not an error.
 `;
 
 export const messages:Record<string,string>=Object.fromEntries(rows.trim().split('\n').map(row=>{const [uk,en]=row.split('|');return [uk,en]}))

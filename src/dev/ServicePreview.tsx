@@ -53,6 +53,7 @@ export default function ServicePreview(){
   'Майстер':<MasterCabinet staff={staff[0]} orders={orders} shifts={shift?[{id:'1',staffId:'1',startedAt:new Date().toISOString(),endedAt:null}]:[]} earnings={orders.filter(o=>o.status==='ready').map(o=>({id:String(o.id),staffId:'1',workOrderId:String(o.id),amount:600,status:'accrued',accruedAt:new Date().toISOString()}))} toggleShift={async()=>{setShift(v=>!v);return ''}} updateOrder={update}/>,
   'Аналітика та фінанси':<FinancePreview/>,
   'Аналітика студії':<AnalyticsPreview/>,
+  'Рекомендації':<RecommendationsPreview/>,
   'Фінанси':<CashFlow items={[]} clients={clients} add={ok} remove={ok}/>,
   'Варіанти послуг':<ServiceVariantsPreview/>,
   'Каталог':<Catalog services={[[initial.title,'Полірування','4 год',2000]]} products={[]} packages={[]} addService={()=>{}} updateService={ok} removeService={()=>{}} addPackage={ok} removePackage={ok}/>,
@@ -71,3 +72,4 @@ export default function ServicePreview(){
  }
  return <><LanguageSwitcher/><nav aria-label="Тестові розділи" style={{display:'flex',flexWrap:'wrap',gap:8,padding:16}}>{Object.keys(screens).map(name=><button className={page===name?'primary':'text-btn'} key={name} onClick={()=>setPage(name)}>{name}</button>)}<select aria-label="Ширина макета" value={width} onChange={e=>setWidth(e.target.value)}><option value="100%">Широкий</option><option value="768px">768 px</option><option value="390px">390 px</option></select></nav><p style={{padding:'0 16px'}}>Локальний стенд · синтетичні дані · записи до бази вимкнені</p><main style={{width,maxWidth:'100%',margin:'auto',border:'1px solid #2c303c'}}>{screens[page]}</main></>
 }
+import RecommendationsPreview from './RecommendationsPreview'
