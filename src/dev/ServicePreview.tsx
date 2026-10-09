@@ -43,7 +43,7 @@ export default function ServicePreview(){
   'Календар':<Calendar bookings={seedBookings.map(b=>({...b,date:date||localDate()}))} onCreate={()=>setPage('Запис')} onStatus={()=>{}}/>,
   'Клієнти':<Clients items={clients.map(c=>({...c,visits:0,total:0}))} bookings={[]} add={()=>{}} remove={()=>{}} edit={ok}/>,
   'Команда':<Team items={staff.map(s=>({...s,role:'Майстер',load:50}))} selected={staff[0].name} select={()=>{}} bookings={[]} earnings={[]} shifts={[]} onStatus={()=>{}} add={ok} remove={()=>{}}/>,
-  'Залишки':<Inventory items={[{id:1,name:'Автошампунь',unit:'л',quantity:10,lastUnitCost:100,minQuantity:2,sellingPrice:200}]} movements={[]} add={()=>{}} writeOff={yes} updateMinimum={()=>{}}/>,
+  'Залишки':<Inventory items={[{id:1,name:'Автошампунь',unit:'л',quantity:10,lastUnitCost:100,minQuantity:2,sellingPrice:200}]} movements={[{id:"1",itemId:"1",itemName:"Автошампунь для делікатного миття автомобілів",unit:"л",type:"purchase",quantity:10,unitCost:100,note:"Тестова поставка матеріалів для перевірки мобільного відображення",createdAt:new Date().toISOString()}]} add={()=>{}} writeOff={yes} updateMinimum={()=>{}}/>,
   'Витрати':<Expenses items={[]} add={()=>{}} remove={()=>{}}/>,
   'Запис':<BookingModal initialDate={date} bookings={[]} clients={clients.map(c=>({...c,visits:0,total:0}))} staff={staff.map(s=>({...s,role:'Майстер',load:0}))} services={[[initial.title,'Полірування','4 год',2000]]} close={()=>setPage('Календар')} save={async()=>{setPage('Календар');return ''}}/>,
   'Тариф':<BillingPage tenantId={null} role="admin"/>,

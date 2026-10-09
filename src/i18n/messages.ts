@@ -1634,6 +1634,9 @@ Email не вказано|Email not provided
 Не корисно|Not useful
 Скасувати оцінку|Undo feedback
 Нових підказок поки немає. Потрібно більше історії або відхилень від звичного процесу; відсутність підказок не означає помилку.|No new suggestions yet. More history or deviations from the usual process are needed; an empty feed is not an error.
+Спочатку оберіть підтверджене замовлення.|Select an approved order first.
+Замовлення повністю оплачене. Знижка недоступна, оскільки вона зменшила б суму нижче вже отриманої оплати.|This order is fully paid. A discount would reduce the total below the payment already received.
+Максимальна знижка — неоплачений залишок:|Maximum discount — unpaid balance:
 `;
 
 export const messages:Record<string,string>=Object.fromEntries(rows.trim().split('\n').map(row=>{const [uk,en]=row.split('|');return [uk,en]}))

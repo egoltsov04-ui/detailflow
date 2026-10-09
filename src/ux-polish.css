@@ -67,3 +67,6 @@ body .master-shift.active{background:#2c303c;color:#fff}
 .settings-left>.settings{max-width:none;width:100%}
 
 .order-job-assignments{display:grid;gap:12px;margin:14px 0}.order-job-assignment{border-top:1px solid #39414c;padding-top:12px;min-width:0}.order-job-assignment label{display:grid;gap:8px;font-size:12px}.order-job-assignment label>span{overflow-wrap:anywhere;color:#c7cad1}.order-job-assignment small{display:block;margin-top:6px}.order-job-assignment [role=alert]{color:#ffadb9}
+/* Keep warehouse entries readable without sideways navigation on phones. */
+@media(max-width:700px){.inventory-table{overflow:visible;background:transparent;border:0}.inventory-table .table-head{display:none}.inventory-table .table-row{min-width:0;grid-template-columns:minmax(0,1fr);gap:12px;margin-bottom:12px;padding:16px;border:1px solid #343a43;border-radius:12px;background:#22262f}.inventory-table .table-row>span{overflow-wrap:anywhere;white-space:normal}.inventory-table .table-row>span[data-label]::before{content:attr(data-label);display:block;color:#a7b0bf;font-size:12px;margin-bottom:5px}}
+.inventory-page .search{display:flex;width:100%;min-width:0}.inventory-page .search svg{flex-shrink:0}
