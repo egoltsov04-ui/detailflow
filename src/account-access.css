@@ -7,3 +7,6 @@
 .master-workspace .master-shift{background:#a7d65c;color:#171a22}
 .master-workspace .master-shift.active{background:#2c303c;color:#fff;border:1px solid #a7d65c}
 @media(max-width:680px){.access-roles{grid-template-columns:1fr}.master-workspace .master-metrics{grid-template-columns:1fr}.master-workspace-header{padding:14px 18px}}
+
+/* The brand is the home link: one control, no overlapping absolute elements. */
+.access-home{color:#fff;text-decoration:none;min-height:44px;padding:8px;border-radius:8px;line-height:1.2;white-space:nowrap}.access-home i{flex-shrink:0}.access-home span{display:block}
