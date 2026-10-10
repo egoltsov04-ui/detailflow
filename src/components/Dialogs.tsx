@@ -1,3 +1,4 @@
+import {Modal,Card} from './UI'
 import {t} from '../i18n/core'
 import { Component, ReactNode, useEffect, useState } from 'react'
 
@@ -10,7 +11,7 @@ export function Dialogs(){
  const [queue,setQueue]=useState<Request[]>([]),active=queue[0]
  useEffect(()=>{receiver=request=>setQueue(q=>[...q,request]);return()=>{receiver=null}},[])
  function close(answer:boolean){active.resolve(answer);setQueue(q=>q.slice(1))}
- return active?<div className="overlay app-confirm"><div className="modal"><h2>{active.confirm?t("Підтвердьте дію"):t("Повідомлення")}</h2><p>{t(active.message)}</p><div className="dialog-actions">{active.confirm&&<button className="text-btn modal-close-action" onClick={()=>close(false)}>{t("Скасувати")}</button>}<button className="primary" onClick={()=>close(true)}>{active.confirm?t("Підтвердити"):t("Зрозуміло")}</button></div></div></div>:null
+ return active?<div className="overlay app-confirm"><Modal className="modal"><h2>{active.confirm?t("Підтвердьте дію"):t("Повідомлення")}</h2><p>{t(active.message)}</p><div className="dialog-actions">{active.confirm&&<button className="text-btn modal-close-action" onClick={()=>close(false)}>{t("Скасувати")}</button>}<button className="primary" onClick={()=>close(true)}>{active.confirm?t("Підтвердити"):t("Зрозуміло")}</button></div></Modal></div>:null
 }
 
 // Shared keyboard behavior for the existing modal forms, without changing their data flows.
@@ -18,7 +19,7 @@ export function ModalAccessibility(){
  useEffect(()=>{
   let current:HTMLElement|null=null,previous:HTMLElement|null=null,overflow=''
   const selector='button:not(:disabled), input:not(:disabled):not([aria-hidden="true"]), select:not(:disabled):not([aria-hidden="true"]), textarea:not(:disabled), [tabindex="0"]'
-  const update=()=>{const modals=document.querySelectorAll<HTMLElement>('.overlay .modal'),next=modals[modals.length-1]||null;if(current===next)return
+  const update=()=>{const modals=document.querySelectorAll<HTMLElement>('.overlay .modal'),next=modals[modals.length-1]||null;for(const modal of modals){const overlay=modal.closest<HTMLElement>('.overlay');if(overlay){overlay.style.visibility=modal===next?'':'hidden';overlay.inert=modal!==next}}if(current===next)return
    if(!current&&next){previous=document.activeElement as HTMLElement;overflow=document.body.style.overflow;document.body.style.overflow='hidden'}
    current=next
    if(next){next.setAttribute('role','dialog');next.setAttribute('aria-modal','true');next.setAttribute('aria-label',next.querySelector('h2')?.textContent||t('Форма'));const close=next.querySelector('.modal-close');if(close&&!close.getAttribute('aria-label'))close.setAttribute('aria-label',t('Закрити вікно'));const initial=next.querySelector<HTMLElement>('input:not(:disabled):not([aria-hidden="true"]),button[role="combobox"]:not(:disabled),select:not(:disabled):not([aria-hidden="true"])')||next.querySelector<HTMLElement>('.modal-close-action,button');initial?.focus()}
@@ -36,5 +37,5 @@ export function ModalAccessibility(){
 export class ErrorBoundary extends Component<{children:ReactNode},{failed:boolean}>{
  state={failed:false}
  static getDerivedStateFromError(){return {failed:true}}
- render(){return this.state.failed?<main className="access-portal"><section className="panel access-form"><h1>{t("Не вдалося відкрити сторінку")}</h1><p>{t("Оновіть сторінку. Якщо проблема повториться — зверніться до підтримки.")}</p><button className="primary" onClick={()=>window.location.reload()}>{t("Оновити")}</button></section></main>:this.props.children}
+ render(){return this.state.failed?<main className="access-portal"><Card className="panel access-form"><h1>{t("Не вдалося відкрити сторінку")}</h1><p>{t("Оновіть сторінку. Якщо проблема повториться — зверніться до підтримки.")}</p><button className="primary" onClick={()=>window.location.reload()}>{t("Оновити")}</button></Card></main>:this.props.children}
 }

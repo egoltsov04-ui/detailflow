@@ -1,3 +1,4 @@
+import {Modal,FormField} from './components/UI'
 import {useState,type FormEvent} from 'react'
 import {X,Plus,Trash2} from 'lucide-react'
 import {Select} from './components/Select'
@@ -28,18 +29,18 @@ export default function OrderModal({services,clients,staff,close,add}:{services:
    if(result)setError(result)
   }catch(e){setError(e instanceof Error?e.message:'Не вдалося створити замовлення.')}finally{setSaving(false)}
  }
- return <div className="overlay"><form className="modal order-modal" onSubmit={submit} aria-label={t('Нове замовлення')}>
+ return <div className="overlay"><Modal as="form" className="modal order-modal" onSubmit={submit} aria-label={t('Нове замовлення')}>
   <button type="button" className="modal-close" disabled={saving} onClick={close} aria-label={t('Закрити')}><X size={20}/></button><p>{t('Замовлення на роботи')}</p><h2>{t('Нове замовлення')}</h2>
-  <label>{t('Клієнт')}<Select required value={clientId} onChange={e=>{setClientId(e.target.value);setVehicle('')}}><option value="">{t('Оберіть клієнта')}</option>{clients.map(c=><option key={c.id} value={String(c.id)}>{c.name}</option>)}</Select></label>
-  <label>{t('Автомобіль')}<input value={vehicle} onChange={e=>setVehicle(e.target.value)} placeholder={client?.car||t('Марка, модель, номер')}/></label>
+  <FormField>{t('Клієнт')}<Select required value={clientId} onChange={e=>{setClientId(e.target.value);setVehicle('')}}><option value="">{t('Оберіть клієнта')}</option>{clients.map(c=><option key={c.id} value={String(c.id)}>{c.name}</option>)}</Select></FormField>
+  <FormField>{t('Автомобіль')}<input value={vehicle} onChange={e=>setVehicle(e.target.value)} placeholder={client?.car||t('Марка, модель, номер')}/></FormField>
   <fieldset className="order-service-list"><legend>{t('Послуги з каталогу')}</legend>{lines.map((line,i)=>{const service=services.find(s=>s.id===line.service);return <div className="order-service-line" key={line.key}>
-   <label>{t('Послуга')} {i+1}<Select required value={line.service} onChange={e=>setLines(rows=>rows.map(l=>l.key===line.key?{...l,service:e.target.value,variant:''}:l))}><option value="">{t('Оберіть послугу')}</option>{services.map(s=><option key={s.id} value={s.id}>{s.name}{!s.variants?.length?' · '+money(s.price):''}</option>)}</Select></label>
-   {!!service?.variants?.length&&<label>{t('Варіант послуги')}<Select required value={line.variant} onChange={e=>setLines(rows=>rows.map(l=>l.key===line.key?{...l,variant:e.target.value}:l))}><option value="">{t('Оберіть варіант')}</option>{service.variants.map(v=><option key={v.id} value={v.id}>{v.name} · {money(v.price)}</option>)}</Select></label>}
+   <FormField>{t('Послуга')} {i+1}<Select required value={line.service} onChange={e=>setLines(rows=>rows.map(l=>l.key===line.key?{...l,service:e.target.value,variant:''}:l))}><option value="">{t('Оберіть послугу')}</option>{services.map(s=><option key={s.id} value={s.id}>{s.name}{!s.variants?.length?' · '+money(s.price):''}</option>)}</Select></FormField>
+   {!!service?.variants?.length&&<FormField>{t('Варіант послуги')}<Select required value={line.variant} onChange={e=>setLines(rows=>rows.map(l=>l.key===line.key?{...l,variant:e.target.value}:l))}><option value="">{t('Оберіть варіант')}</option>{service.variants.map(v=><option key={v.id} value={v.id}>{v.name} · {money(v.price)}</option>)}</Select></FormField>}
    {service?.description&&<small>{service.description}</small>}{lines.length>1&&<button type="button" className="text-btn" onClick={()=>setLines(rows=>rows.filter(l=>l.key!==line.key))}><Trash2 size={16}/>{t('Прибрати послугу')}</button>}
   </div>})}<button type="button" className="secondary" disabled={lines.length>=20} onClick={()=>setLines(rows=>[...rows,{key:crypto.randomUUID(),service:'',variant:''}])}><Plus size={16}/>{t('Додати послугу')}</button>{!services.length&&<p>{t('Спочатку додайте послуги в каталог.')}</p>}</fieldset>
-  <label>{t('Відповідальний майстер')}<Select value={staffId} onChange={e=>setStaffId(e.target.value)}><option value="">{t('Не призначено')}</option>{staff.map(s=><option key={s.id} value={String(s.id)}>{s.name}</option>)}</Select><small>{t('Можна призначити окремого майстра для кожної роботи після створення.')}</small></label>
-  <div className="order-money"><div><span>{t('Разом')}</span><h2>{selectionError?'—':money(total)}</h2></div><label>{t('Передоплата, ₴')}<NumberInput type="number" min="0" max={total} step="0.01" value={deposit} onChange={e=>setDeposit(e.target.value)}/></label></div>
-  <label>{t('Термін готовності')}<DateInput type="datetime-local" value={dueAt} onChange={e=>setDueAt(e.target.value)}/></label><label>{t('Внутрішня примітка')}<textarea value={notes} onChange={e=>setNotes(e.target.value)}/></label>
+  <FormField>{t('Відповідальний майстер')}<Select value={staffId} onChange={e=>setStaffId(e.target.value)}><option value="">{t('Не призначено')}</option>{staff.map(s=><option key={s.id} value={String(s.id)}>{s.name}</option>)}</Select><small>{t('Можна призначити окремого майстра для кожної роботи після створення.')}</small></FormField>
+  <div className="order-money"><div><span>{t('Разом')}</span><h2>{selectionError?'—':money(total)}</h2></div><FormField>{t('Передоплата, ₴')}<NumberInput type="number" min="0" max={total} step="0.01" value={deposit} onChange={e=>setDeposit(e.target.value)}/></FormField></div>
+  <FormField>{t('Термін готовності')}<DateInput type="datetime-local" value={dueAt} onChange={e=>setDueAt(e.target.value)}/></FormField><FormField>{t('Внутрішня примітка')}<textarea value={notes} onChange={e=>setNotes(e.target.value)}/></FormField>
   {error&&<p role="alert" className="form-error">{t(error)}</p>}<button className="primary" disabled={saving||!services.length}>{saving?t('Зберігаємо…'):t('Створити замовлення')}</button>
- </form></div>
+ </Modal></div>
 }

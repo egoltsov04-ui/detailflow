@@ -1,5 +1,37 @@
 // Display strings only. Database status codes, option values and customer data stay unchanged.
 const rows=`
+Оплати замовлень|Order payments
+Відкрийте замовлення, щоб переглянути деталі або внести оплату.|Open an order to view details or record a payment.
+Замовлень за цим фільтром немає.|No orders match these filters.
+Ім’я, телефон, авто або номер|Name, phone, car or plate
+Автоматичне завершення зміни|Automatic shift closure
+Автоматично завершені зміни|Automatically closed shifts
+Видалити тег|Remove tag
+Витрачено|Spent
+Відкрити замовлення|Open order
+Додати тег|Add tag
+Замовлення та історія|Orders and history
+Заявки до запису: дзвінки, Instagram, сайт|Enquiries before booking: calls, Instagram, website
+Кінець дня студії, необов’язково|Studio closing time, optional
+Кінець робочого дня|End of the working day
+Ліміти збережено|Limits saved
+Майстер не закрив зміну вчасно. Перевірте робочий час перед нарахуванням.|The professional did not close the shift in time. Check working time before approving earnings.
+Максимальна зміна, год|Maximum shift, hours
+Максимальна перерва, хв|Maximum break, minutes
+Не були понад, днів|No visit for, days
+Давно не були|Inactive clients
+Нові|New
+Постійні|Returning
+Контакти й авто|Contacts and vehicles
+Не вдалося завантажити ліміти змін|Could not load shift limits
+Останній візит|Last visit
+Перевірте суму оплати|Check the payment amount
+Перевищено ліміт зміни|Shift limit exceeded
+Перевищено ліміт перерви|Break limit exceeded
+Після першого досягнутого ліміту перерва та зміна закриваються, поточна робота стає на паузу.|When the first limit is reached, the break and shift close and the current job pauses.
+Результати пошуку|Search results
+Створити запис|Create booking
+Фільтри|Filters
 Очікування|Waiting
 Підтверджені|Approved
 Попередній день|Previous day

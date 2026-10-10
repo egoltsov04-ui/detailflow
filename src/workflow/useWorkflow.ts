@@ -21,6 +21,8 @@ export function useWorkflow(tenantId:string|null):WorkflowController {
        throw probe.error
      }
      setAvailable(true)
+     const closed=await db.rpc('close_overdue_shifts',{studio:tenantId})
+     if(closed.error)throw closed.error
      const snapshot=await db.rpc('get_workflow_snapshot',{studio:tenantId})
      if(!current())return
      if(snapshot.error)throw snapshot.error

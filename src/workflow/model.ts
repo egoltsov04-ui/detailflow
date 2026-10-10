@@ -9,7 +9,7 @@ export type Job = {
 }
 export type JobMedia={path:string;name:string;phase?:'before'|'after';mime?:string;created_at?:string;staff_name?:string;vehicle?:string;client_name?:string}
 export type PaintReading={panel:string;before:number|null;after:number|null}
-export type Attendance={id:string;staff_id:string;started_at:string;ended_at:string|null;paused_at:string|null;pause_seconds:number;breaks:{from:string;to:string}[]}
+export type Attendance={auto_closed_at?:string|null;auto_closed_reason?:string|null;id:string;staff_id:string;started_at:string;ended_at:string|null;paused_at:string|null;pause_seconds:number;breaks:{from:string;to:string}[]}
 export type Earning={id:string;staff_id:string;work_order_id:string;job_id:string|null;amount:number;paid_amount:number;status:string;accrued_at:string;calculation:Record<string,unknown>}
 export type JobEvent={id:string;job_id:string;actor_id:string|null;event:string;detail:Record<string,unknown>;created_at:string}
 export type Payout={id:string;earning_id:string;amount:number;method:string;note:string;created_at:string}

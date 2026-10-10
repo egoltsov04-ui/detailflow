@@ -275,6 +275,11 @@
       "source": "/app/booking-requests",
       "destination": "/app/work/requests",
       "permanent": false
+    },
+    {
+      "source": "/app/work/list",
+      "destination": "/app/work/kanban",
+      "permanent": false
     }
   ]
 }

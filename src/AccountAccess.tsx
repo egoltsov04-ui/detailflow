@@ -1,9 +1,10 @@
+import {Card,FormField} from './components/UI'
 import {t} from './i18n/core'
 import { FormEvent, useState } from 'react'
 import { supabase } from './lib/supabase'
 
 export function AccessNotice({title,description,retry}:{title:string;description:string;retry?:()=>void}) {
-  return <main className="access-portal"><section className="access-form panel"><p>Detailflow</p><h1>{title}</h1><span>{description}</span>{retry&&<button className="primary" onClick={retry}>{t("Спробувати ще раз")}</button>}<button className="text-btn" onClick={()=>void supabase?.auth.signOut()}>{t("Вийти з акаунта")}</button></section></main>
+  return <main className="access-portal"><Card className="access-form panel"><p>Detailflow</p><h1>{title}</h1><span>{description}</span>{retry&&<button className="primary" onClick={retry}>{t("Спробувати ще раз")}</button>}<button className="text-btn" onClick={()=>void supabase?.auth.signOut()}>{t("Вийти з акаунта")}</button></Card></main>
 }
 
 export function InvitationPassword({complete}:{complete:()=>void}) {
@@ -20,5 +21,5 @@ export function InvitationPassword({complete}:{complete:()=>void}) {
     } catch {setError(t("Не вдалося зберегти пароль. Спробуйте ще раз."))}
     finally {setBusy(false)}
   }
-  return <main className="access-portal"><form className="access-form panel" onSubmit={submit}><p>{t("Активація акаунта")}</p><h1>{t("Створіть пароль")}</h1><span>{t("Після збереження відкриється ваш робочий кабінет.")}</span><label>{t("Новий пароль")}<input autoComplete="new-password" required minLength={8} type="password" value={password} onChange={event=>setPassword(event.target.value)}/></label><label>{t("Повторіть пароль")}<input autoComplete="new-password" required minLength={8} type="password" value={repeat} onChange={event=>setRepeat(event.target.value)}/></label>{error&&<p role="alert">{t(error)}</p>}<button className="primary" disabled={busy}>{busy?t("Зберігаємо…"):t("Зберегти та увійти")}</button><button type="button" className="text-btn" onClick={()=>void supabase?.auth.signOut()}>{t("Вийти")}</button></form></main>
+  return <main className="access-portal"><Card as="form" className="access-form panel" onSubmit={submit}><p>{t("Активація акаунта")}</p><h1>{t("Створіть пароль")}</h1><span>{t("Після збереження відкриється ваш робочий кабінет.")}</span><FormField>{t("Новий пароль")}<input autoComplete="new-password" required minLength={8} type="password" value={password} onChange={event=>setPassword(event.target.value)}/></FormField><FormField>{t("Повторіть пароль")}<input autoComplete="new-password" required minLength={8} type="password" value={repeat} onChange={event=>setRepeat(event.target.value)}/></FormField>{error&&<p role="alert">{t(error)}</p>}<button className="primary" disabled={busy}>{busy?t("Зберігаємо…"):t("Зберегти та увійти")}</button><button type="button" className="text-btn" onClick={()=>void supabase?.auth.signOut()}>{t("Вийти")}</button></Card></main>
 }

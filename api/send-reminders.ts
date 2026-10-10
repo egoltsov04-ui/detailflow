@@ -14,6 +14,7 @@ export function createReminderHandler(makeClient:typeof createClient=createClien
  if(!url||!key)return res.status(503).json({error:'Delivery is not configured'})
  try{
   const db=makeClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}})
+  const attendance=await db.rpc('close_overdue_shifts');if(attendance.error)throw attendance.error
   if(emailConfigured){const queued=await db.rpc('enqueue_client_reminders');if(queued.error)throw queued.error}
   const claimed=emailConfigured?await db.rpc('claim_notifications',{channel_input:'email',limit_input:3}):{data:[],error:null};if(claimed.error)throw claimed.error
   const counts={sent:0,failed:0,uncertain:0,cancelled:0}
