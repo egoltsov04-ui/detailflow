@@ -1,5 +1,12 @@
 // Display strings only. Database status codes, option values and customer data stay unchanged.
 const rows=`
+Очікування|Waiting
+Підтверджені|Approved
+Попередній день|Previous day
+Наступний день|Next day
+Дні тижня|Days of the week
+На цей день записів немає|No bookings for this day
+Запис підтверджено|Booking confirmed
 Огляд|Overview
 Календар|Calendar
 Замовлення|Orders
@@ -1637,6 +1644,41 @@ Email не вказано|Email not provided
 Спочатку оберіть підтверджене замовлення.|Select an approved order first.
 Замовлення повністю оплачене. Знижка недоступна, оскільки вона зменшила б суму нижче вже отриманої оплати.|This order is fully paid. A discount would reduce the total below the payment already received.
 Максимальна знижка — неоплачений залишок:|Maximum discount — unpaid balance:
+Канбан|Kanban
+Список|List
+Клієнти й авто|Clients and vehicles
+Чеки й рахунки|Receipts and invoices
+Зміни й зарплата|Shifts and pay
+Дані студії|Studio details
+Пости студії|Studio bays
+Кількість постів|Number of bays
+Назва поста|Bay name
+Пост студії|Studio bay
+Без поста|No bay
+Пости збережено|Bays saved
+Налаштувати|Configure
+Вільний|Available
+Очікує початку|Waiting to start
+Планову тривалість не задано|Planned duration is not set
+Прострочено|Overdue
+Залишилось|Remaining
+Прогрес роботи|Work progress
+Студія зараз|Studio now
+Уся аналітика →|All analytics →
+Надходження сьогодні|Payments received today
+Надходження за 7 днів|Payments received in 7 days
+Зайняті пости|Occupied bays
+Термін минув|Past due
+Мій день|My day
+Основна навігація|Main navigation
+Розділи|Sections
+Записати на час|Schedule a visit
+Без дати|Without a date
+Записи показані за датою візиту; роботи без запису — за терміном готовності.|Appointments are shown by visit date; unscheduled work is shown by its due date.
+Додайте пости в налаштуваннях студії.|Add bays in studio settings.
+Зайнятий пост не можна прибрати. Спочатку завершіть роботу або перенесіть замовлення на інший пост.|An occupied bay cannot be removed. Complete the work or move the order to another bay first.
+Не вдалося завантажити пости студії. Перевірте підключення та оновлення бази.|Could not load studio bays. Check the connection and database updates.
 `;
 
-export const messages:Record<string,string>=Object.fromEntries(rows.trim().split('\n').map(row=>{const [uk,en]=row.split('|');return [uk,en]}))
+export const messages:Record<string,string>=Object.fromEntries(rows.trim().split('\n').map(row=>{
+const [uk,en]=row.split('|');return [uk,en]}))

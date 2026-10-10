@@ -42,6 +42,43 @@ test('catalog orders are atomic, preserve service pay rates, variants, deposits 
  const make=(id,payload=order)=>db.query('select create_catalog_order($1,$2,$3::jsonb) data',[studio,id,payload])
  const made=(await make(request)).rows[0].data
  assert.equal((await make(request)).rows[0].data.id,made.id)
+ await db.query('select configure_studio_posts($1,2)',[studio])
+ const posts=(await db.query('select id from studio_posts where studio_id=$1 order by position',[studio])).rows
+ await db.query('select assign_order_post($1,$2)',[request,posts[1].id])
+ const withPost=(await db.query('select get_studio_orders($1) data',[studio])).rows[0].data.find(o=>o.id===request)
+ assert.equal(withPost.post_id,posts[1].id);assert.equal(withPost.planned_duration_minutes,150)
+ await assert.rejects(db.query('select configure_studio_posts($1,1)',[studio]),/Спочатку звільніть/)
+ // Applying the migration twice preserves assignments and settings.
+ await db.exec('reset role');await db.exec(await read('supabase/migrations/054_studio_posts.sql'));await login(owner)
+ assert.equal((await db.query('select get_studio_orders($1) data',[studio])).rows[0].data.find(o=>o.id===request).post_id,posts[1].id)
+ const conflictId='50000000-0000-4000-8000-000000000088'
+ await make(conflictId,{...order,deposit:0})
+ await assert.rejects(db.query('select assign_order_post($1,$2)',[conflictId,posts[1].id]),/зайнятий/)
+ await db.query('select assign_order_post($1,$2)',[conflictId,posts[0].id])
+ await assert.rejects(db.query('select assign_order_post($1,$2)',[conflictId,'40000000-0000-4000-8000-000000000099']),/іншій студії/)
+ // Actual master workflow starts the parent timer once; pause/resume preserves it.
+ await login(master);await db.query("select manage_master_shift($1,'start')",[staff])
+ let timerJobId
+ const postJob=async()=>(await db.query('select get_workflow_snapshot($1) data',[studio])).rows[0].data.jobs.filter(j=>j.work_order_id===conflictId&&(!timerJobId||j.id===timerJobId)).sort((a,b)=>a.position-b.position)[0]
+ let firstStart
+ for(const action of ['start','pause','start']){
+  const job=await postJob();timerJobId=job.id;await db.query('select act_work_job($1,$2,$3,$4)',[job.id,action,{},job.version])
+  await db.exec('reset role');const timer=(await db.query('select started_at from work_orders where id=$1',[conflictId])).rows[0].started_at
+  assert.ok(timer);if(action==='start'&&!firstStart)firstStart=String(timer);else assert.equal(String(timer),firstStart)
+  await login(master)
+ }
+ const running=await postJob();await db.query("select act_work_job($1,'pause','{}',$2)",[running.id,running.version]);await db.query("select manage_master_shift($1,'end')",[staff])
+ await db.exec('reset role;set session_replication_role=replica')
+ await db.query('delete from work_order_jobs where work_order_id=$1',[conflictId]);await db.query('delete from work_orders where id=$1',[conflictId])
+ await db.exec('set session_replication_role=origin');await login(owner)
+ await login(master)
+ await assert.rejects(db.query('select assign_order_post($1,$2)',[request,posts[0].id]),/Немає доступу/)
+ assert.equal((await db.query('select * from studio_posts')).rows.length,0)
+ await login(owner)
+ await db.query('select assign_order_post($1,null)',[request])
+ await db.query('select configure_studio_posts($1,0)',[studio])
+ assert.equal((await db.query('select * from studio_posts')).rows.length,0)
+
  await db.exec('reset role')
  const jobs=(await db.query('select service_id,price,rate,title from work_order_jobs where work_order_id=$1 order by price',[request])).rows
  assert.equal(jobs.length,2);assert.equal(jobs[0].service_id,service);assert.equal(jobs[0].title,'Wash · XL');assert.equal(Number(jobs[0].price),150);assert.equal(Number(jobs[0].rate),30)

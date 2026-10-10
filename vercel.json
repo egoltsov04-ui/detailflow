@@ -19,6 +19,10 @@
     {
       "source": "/admin/:path*",
       "destination": "/index.html"
+    },
+    {
+      "source": "/app/:path*",
+      "destination": "/index.html"
     }
   ],
   "headers": [
@@ -70,5 +74,207 @@
     "api/send-reminders.ts": {
       "maxDuration": 60
     }
-  }
+  },
+  "redirects": [
+    {
+      "source": "/overview",
+      "destination": "/app/overview",
+      "permanent": false
+    },
+    {
+      "source": "/calendar",
+      "destination": "/app/work/calendar",
+      "permanent": false
+    },
+    {
+      "source": "/orders",
+      "destination": "/app/work/kanban",
+      "permanent": false
+    },
+    {
+      "source": "/work-orders",
+      "destination": "/app/work/kanban",
+      "permanent": false
+    },
+    {
+      "source": "/clients",
+      "destination": "/app/clients",
+      "permanent": false
+    },
+    {
+      "source": "/leads",
+      "destination": "/app/clients/requests",
+      "permanent": false
+    },
+    {
+      "source": "/media",
+      "destination": "/app/clients/media",
+      "permanent": false
+    },
+    {
+      "source": "/finance",
+      "destination": "/app/finance/payments",
+      "permanent": false
+    },
+    {
+      "source": "/payments",
+      "destination": "/app/finance/payments",
+      "permanent": false
+    },
+    {
+      "source": "/expenses",
+      "destination": "/app/finance/expenses",
+      "permanent": false
+    },
+    {
+      "source": "/sales",
+      "destination": "/app/finance/sales",
+      "permanent": false
+    },
+    {
+      "source": "/invoices",
+      "destination": "/app/finance/invoices",
+      "permanent": false
+    },
+    {
+      "source": "/receipts",
+      "destination": "/app/finance/documents",
+      "permanent": false
+    },
+    {
+      "source": "/team",
+      "destination": "/app/team",
+      "permanent": false
+    },
+    {
+      "source": "/tasks",
+      "destination": "/app/team/tasks",
+      "permanent": false
+    },
+    {
+      "source": "/warehouse",
+      "destination": "/app/warehouse",
+      "permanent": false
+    },
+    {
+      "source": "/inventory",
+      "destination": "/app/warehouse",
+      "permanent": false
+    },
+    {
+      "source": "/analytics",
+      "destination": "/app/analytics",
+      "permanent": false
+    },
+    {
+      "source": "/reports",
+      "destination": "/app/analytics",
+      "permanent": false
+    },
+    {
+      "source": "/settings",
+      "destination": "/app/settings",
+      "permanent": false
+    },
+    {
+      "source": "/services",
+      "destination": "/app/settings/services",
+      "permanent": false
+    },
+    {
+      "source": "/billing",
+      "destination": "/app/settings/billing",
+      "permanent": false
+    },
+    {
+      "source": "/booking-requests",
+      "destination": "/app/work/requests",
+      "permanent": false
+    },
+    {
+      "source": "/app/calendar",
+      "destination": "/app/work/calendar",
+      "permanent": false
+    },
+    {
+      "source": "/app/orders",
+      "destination": "/app/work/kanban",
+      "permanent": false
+    },
+    {
+      "source": "/app/work-orders",
+      "destination": "/app/work/kanban",
+      "permanent": false
+    },
+    {
+      "source": "/app/leads",
+      "destination": "/app/clients/requests",
+      "permanent": false
+    },
+    {
+      "source": "/app/media",
+      "destination": "/app/clients/media",
+      "permanent": false
+    },
+    {
+      "source": "/app/finance",
+      "destination": "/app/finance/payments",
+      "permanent": false
+    },
+    {
+      "source": "/app/payments",
+      "destination": "/app/finance/payments",
+      "permanent": false
+    },
+    {
+      "source": "/app/expenses",
+      "destination": "/app/finance/expenses",
+      "permanent": false
+    },
+    {
+      "source": "/app/sales",
+      "destination": "/app/finance/sales",
+      "permanent": false
+    },
+    {
+      "source": "/app/invoices",
+      "destination": "/app/finance/invoices",
+      "permanent": false
+    },
+    {
+      "source": "/app/receipts",
+      "destination": "/app/finance/documents",
+      "permanent": false
+    },
+    {
+      "source": "/app/tasks",
+      "destination": "/app/team/tasks",
+      "permanent": false
+    },
+    {
+      "source": "/app/inventory",
+      "destination": "/app/warehouse",
+      "permanent": false
+    },
+    {
+      "source": "/app/reports",
+      "destination": "/app/analytics",
+      "permanent": false
+    },
+    {
+      "source": "/app/services",
+      "destination": "/app/settings/services",
+      "permanent": false
+    },
+    {
+      "source": "/app/billing",
+      "destination": "/app/settings/billing",
+      "permanent": false
+    },
+    {
+      "source": "/app/booking-requests",
+      "destination": "/app/work/requests",
+      "permanent": false
+    }
+  ]
 }
