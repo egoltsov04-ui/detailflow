@@ -14,6 +14,9 @@ async function baseline(db){
  grant usage on schema public,auth,storage to authenticated,anon;grant execute on function auth.uid() to authenticated,anon;`)
  await db.exec((await read('supabase/schema.sql')).replace('create extension if not exists pgcrypto;',''))
  for(const file of (await readdir(new URL('../supabase/migrations/',import.meta.url))).sort()){
+ // Historical migration contract; the full new plan chain is exercised by plan-entitlements.test.mjs.
+ if(parseInt(file)>55)continue;
+
   if(Number(file.slice(0,3))>=28)break
   if(file.startsWith('013_'))continue
   await db.exec(await read('supabase/migrations/'+file))

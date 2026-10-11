@@ -21,7 +21,10 @@ test('phase one calendar, onboarding and support enforce studio and role boundar
  await db.exec(`create role anon;create role authenticated;create role service_role;create schema auth;create table auth.users(id uuid primary key,raw_user_meta_data jsonb default '{}',email text,email_confirmed_at timestamptz,encrypted_password text,last_sign_in_at timestamptz);create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;create schema storage;create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);create table storage.objects(id uuid primary key default gen_random_uuid(),bucket_id text,name text,owner_id text);alter table storage.objects enable row level security;grant usage on schema public,auth,storage to authenticated,anon,service_role;`)
  await db.exec((await read('supabase/schema.sql')).replace('create extension if not exists pgcrypto;',''))
  const files=(await readdir(new URL('../supabase/migrations/',import.meta.url))).sort()
- for(const f of files){if(/^(013|029|030)_/.test(f))continue;if(f.startsWith('033_'))await db.exec('grant select,insert,update,delete on all tables in schema public to authenticated;');await db.exec(await read(f.startsWith('028_')?'supabase/deploy/workflow_028_030.sql':'supabase/migrations/'+f))}
+ for(const f of files){
+ // Historical migration contract; the full new plan chain is exercised by plan-entitlements.test.mjs.
+ if(parseInt(f)>55)continue;
+if(/^(013|029|030)_/.test(f))continue;if(f.startsWith('033_'))await db.exec('grant select,insert,update,delete on all tables in schema public to authenticated;');await db.exec(await read(f.startsWith('028_')?'supabase/deploy/workflow_028_030.sql':'supabase/migrations/'+f))}
  await db.exec(await read('supabase/deploy/phase_one_040_044.sql'))
  await db.exec(await read('supabase/migrations/047_support_studio_search.sql'))
  await db.exec(await read('supabase/migrations/047_support_studio_search.sql'))

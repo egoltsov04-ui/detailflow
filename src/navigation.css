@@ -8,3 +8,4 @@
 .qa-more{position:fixed;bottom:84px;right:12px;z-index:26;display:grid;gap:18px;min-width:220px}
 
 .work-orders .order-board{grid-template-columns:repeat(7,minmax(280px,1fr));max-width:100%;overflow-x:auto;padding-bottom:14px;scrollbar-color:#a7d65c #22262f}.work-orders .order-column{min-width:0}.work-orders{min-width:0}.app-shell>.sidebar.open{top:0}
+.app-shell>.overlay{z-index:100}.app-shell:has(>.overlay)>.owner-bottom-nav{visibility:hidden}

@@ -1,5 +1,162 @@
 // Display strings only. Database status codes, option values and customer data stay unchanged.
 const rows=`
+Мій робочий графік|My working hours
+Вкажіть години, у які клієнти можуть записатися онлайн.|Set the hours when clients can book online.
+Стандартна ціна|Standard price
+До завершення поточного періоду|Until the current period ends
+Як підключити студію?|How do I connect my studio?
+Заповніть заявку: назву студії, свої контакти та зручний месенджер. Підтвердіть email. Менеджер зв’яжеться з вами та активує доступ до робочого простору.|Submit your studio name, contact details and preferred messenger. Confirm your email. A manager will contact you and activate your workspace.
+Як майстер отримує доступ?|How does a detailer get access?
+Власник додає майстра до команди та надсилає запрошення на email. За посиланням майстер створює пароль, заповнює профіль і переходить до свого кабінету. Створювати окрему студію не потрібно.|The owner adds the detailer and sends an email invitation. The detailer sets a password, completes their profile and opens their workspace. No separate studio is needed.
+Чи можна працювати самостійно?|Can I work on my own?
+Так. На тарифі Solo власник сам виконує роботи: почати, завершити, прийняти оплату. Без окремого акаунта майстра та нарахування зарплати.|Yes. With Solo, the owner starts and completes work and receives payment. No separate detailer account or payroll is needed.
+Як перенести клієнтів із таблиці?|How do I import clients from a spreadsheet?
+Завантажте шаблон, заповніть контакти й автомобілі та імпортуйте CSV. Перед збереженням перевірте колонки та рядки. Наявних клієнтів зіставляємо за телефоном.|Download the template, add contacts and vehicles, then import the CSV. Review columns and rows before saving. Existing clients are matched by phone number.
+Що буде з даними, якщо я не продовжу?|What happens to my data if I do not renew?
+Збережені дані залишаються доступними, нові записи й активація майстрів потребують продовження.|Saved data remains accessible. New bookings and detailer activation require renewal.
+Окремі рядки й ручна перевірка часу|Separate rows and manual availability checks
+Календар, онлайн-запис і завантаження постів|Calendar, online booking and bay occupancy
+Нагадування|Reminders
+Потрібно пам’ятати й писати вручну|Remembering and sending messages manually
+Черга нагадувань за 24 і 2 години|Scheduled reminders 24 and 2 hours before visits
+Суму та склад робіт збираєте окремо|Compiling work items and totals separately
+Документ із підтвердженого замовлення|A document from the approved order
+Історія клієнта|Client history
+Контакти, авто та роботи в різних файлах|Contacts, vehicles and work in separate files
+Контакти, автомобілі та візити в одній картці|Contacts, vehicles and visits in one profile
+Від запису до робіт|From booking to work
+Оберіть послугу та час. Клієнт, авто і вартість уже в замовленні.|Choose a service and time. The client, vehicle and price are already in the order.
+Майстер виконує|The detailer works
+Завдання, таймер, фото до й після та заміри покриття — у його кабінеті.|Tasks, a timer, before and after photos and paint readings in their workspace.
+Власник перевіряє|The owner reviews
+Підтвердіть результат або поверніть роботу з поясненням.|Approve the result or return the work with a reason.
+Чек і нарахування|Receipt and earnings
+Сформуйте документ, прийміть оплату та бачте підтверджений заробіток майстра.|Create the document, receive payment and see the detailer's approved earnings.
+Тарифи|Plans
+Головна|Home
+Для детейлінг-студій|For detailing studios
+Облік студії без таблиць|Run your studio without spreadsheets
+Від запису до перевірки роботи й нарахування майстру. Клієнти, автомобілі та команда в одному робочому просторі.|From booking to quality review and detailer earnings. Clients, vehicles and your team in one workspace.
+Імпорт з Google Таблиці за кілька кліків · Підключення через менеджера в Telegram|Import from Google Sheets in a few clicks · Connect through a manager on Telegram
+Огляд: увага, розклад і пости студії|Overview: attention items, schedule and studio bays
+Реальний інтерфейс · демонстраційні дані|Actual interface · demo data
+Імпорт|Import
+Без початку з нуля|Keep what you already have
+Ваші клієнти вже є в таблиці?|Are your clients already in a spreadsheet?
+Перенесіть контакти, автомобілі та примітки. Перевірте дані перед збереженням — без повторного введення кожного клієнта.|Import contacts, vehicles and notes. Review the data before saving, without entering each client again.
+Excel або CSV з прикладами та поясненнями колонок.|Excel or CSV with examples and column instructions.
+Додайте свої дані|Add your data
+Один рядок — клієнт і його авто. Для кількох авто повторіть телефон.|One row per client and vehicle. Repeat the phone number for multiple vehicles.
+Перевірте й імпортуйте|Review and import
+Зіставте колонки, виправте помилки та підтвердіть імпорт.|Match columns, correct errors and confirm the import.
+Порівняння|Comparison
+Час перейти від таблиць до роботи|Move from spreadsheets to work
+Таблиця vs Detailflow|Spreadsheet vs Detailflow
+Щоденна робота|Daily work
+Таблиця|Spreadsheet
+Як працює|How it works
+Більше, ніж CRM|More than a CRM
+Увесь шлях автомобіля|The complete vehicle workflow
+Збільшити екран|Enlarge screenshot
+Кожному — свій робочий простір|A workspace for every role
+Роль у студії|Studio role
+Бачте завантаження постів, призначайте роботи, перевіряйте результат і контролюйте фінанси та залишки матеріалів.|See bay occupancy, assign work, review results and track finances and supplies.
+Виходьте на зміну, виконуйте призначені роботи, додавайте фото й отримуйте нарахування після перевірки.|Start your shift, complete assigned work, add photos and receive earnings after approval.
+Для вашого формату роботи|For the way you work
+Від одного майстра до команди|From one detailer to a team
+Пробний період — 14 днів після активації менеджером.|A 14-day trial starts after activation by a manager.
+Запитання перед стартом|Questions before you start
+Підключення|Get started
+Відкрито пілот для перших студій|Pilot open to the first studios
+Спробуйте на своїй студії|Try it in your studio
+Залиште заявку. Менеджер допоможе з першим налаштуванням і перенесенням клієнтів.|Submit a request. A manager will help with initial setup and client import.
+Адміністратори|Administrators
+ГБ|GB
+Повні фінанси та аналітика|Full finances and analytics
+Базові доходи, витрати та огляд|Basic income, expenses and overview
+Пріоритетна підтримка|Priority support
+Дешевше за одну мийку|Less than the price of one wash
+Один повернутий клієнт окупає підписку|One returning client covers the subscription
+Ціна засновника|Founder price
+Використання сховища|Storage usage
+Майстер, що працює сам|A detailer working alone
+1 майстер — власник|1 detailer — the owner
+Команда з 2–5 майстрів|A team of 2–5 detailers
+До 5 активних майстрів|Up to 5 active detailers
+6+ майстрів та адміністратори|6+ detailers and administrators
+Чеки та нагадування за 24 і 2 години|Receipts and reminders 24 and 2 hours before visits
+Не вдалося перевірити тариф|Could not verify the plan
+Аналітика|Analytics
+Перевіряємо тариф…|Checking your plan…
+Доступно на тарифі Студія|Available on the Studio plan
+Ваші дані збережені. Зверніться до менеджера, щоб змінити тариф.|Your data is saved. Contact a manager to change your plan.
+Немає з’єднання|No connection
+Активні|Active
+Ціну збережено|Price saved
+Ціна засновника, ₴|Founder price, ₴
+Порожнє поле повертає стандартну ціну тарифу.|Leave blank to restore the standard plan price.
+Зафіксувати на весь час|Lock this price indefinitely
+міс.|mo.
+Навігація по сторінці|Page navigation
+Завершити|Complete
+Почати|Start
+Немає підключення|No connection
+Файл прибрано з роботи, але сховище не очищено. Повторіть очищення.|The file was removed from the job, but storage cleanup failed. Retry cleanup.
+Ліміт сховища вичерпано. Видаліть зайві файли або змініть тариф.|Storage limit reached. Remove unneeded files or change your plan.
+Повторити очищення сховища|Retry storage cleanup
+Планова тривалість|Planned duration
+Продовжити роботу|Resume work
+Почати роботи|Start work
+Оновлюємо час початку…|Updating start time…
+Повернено|Returned
+Повернені|Returned
+Активна робота та найближчі сьогодні|Active work and next jobs today
+Усі мої роботи →|All my jobs →
+Замінити|Replace
+Видалити файл із роботи?|Remove this file from the job?
+Оберіть JPG, PNG, WebP, MP4, WebM або MOV|Choose JPG, PNG, WebP, MP4, WebM or MOV
+Завантаження файлу|File upload
+Підтвердіть зміну доступу|Confirm access change
+Захищений вхід підтримки|Secure support sign-in
+Для підтримки потрібні пароль і код із застосунку автентифікації. Сесія діє 30 хвилин, блокування після 15 хвилин бездіяльності.|Support requires a password and authenticator code. Sessions last 30 minutes and lock after 15 minutes of inactivity.
+Додайте цей QR-код у застосунок автентифікації.|Add this QR code to your authenticator app.
+QR-код двофакторного входу|Two-factor authentication QR code
+Ключ для ручного введення|Manual setup key
+Код автентифікації|Authenticator code
+Не вдалося підтвердити пароль|Could not verify the password
+Невірний код. Спробуйте ще раз.|Incorrect code. Please try again.
+Перевіряємо…|Verifying…
+Стан платформи|Platform overview
+Активні платні студії|Active paid studios
+Пробні студії|Trial studios
+Закінчується ≤ 7 днів|Expires within 7 days
+Конверсія пробного періоду|Trial conversion
+Студії, що почали пробний період у вибрані дати та перейшли на оплату до кінця періоду. Внутрішні студії не враховуються.|Studios that started their trial in the selected period and converted to paid by its end. Internal studios are excluded.
+Нові заявки|New applications
+Нова|New
+Зв’язались|Contacted
+Оброблено|Processed
+Оплати перевіряються з підключеною базою|Payments require a connected database
+Оплату збережено, доступ продовжено|Payment recorded and access extended
+Сортувати за|Sort by
+Остання активність|Last activity
+За спаданням|Descending
+За зростанням|Ascending
+Тариф і доступ|Plan and access
+Платежі й історія|Payments and history
+Дата оплати|Payment date
+Зберегти оплату та продовжити|Record payment and extend access
+Зміна доступу|Access change
+Потрібні права підтримки та двофакторний вхід|Support permissions and two-factor authentication are required
+Підтвердіть пароль повторно|Verify your password again
+Вкажіть суму, спосіб, дату та період оплати|Enter the amount, method, payment date and period
+Ідентифікатор платежу вже використано|This payment identifier is already in use
+Файл не знайдено|File not found
+Вкажіть результат зв’язку|Enter the outcome of the contact
+Заявку вже оброблено|This application has already been processed
+Невірний фільтр|Invalid filter
+Активовано|Activated
+Відхилено|Rejected
 Оплати замовлень|Order payments
 Відкрийте замовлення, щоб переглянути деталі або внести оплату.|Open an order to view details or record a payment.
 Замовлень за цим фільтром немає.|No orders match these filters.
@@ -1684,6 +1841,12 @@ Email не вказано|Email not provided
 Дані студії|Studio details
 Пости студії|Studio bays
 Кількість постів|Number of bays
+Ця функція потребує тарифу Студія або Pro.|This feature requires the Studio or Pro plan.
+Досягнуто ліміту майстрів. Змініть тариф або деактивуйте зайвий профіль.|The detailer limit has been reached. Change your plan or deactivate an unused profile.
+Досягнуто ліміту адміністраторів. Змініть тариф або деактивуйте зайвий доступ.|The administrator limit has been reached. Change your plan or deactivate unused access.
+На тарифі Solo працює лише власник студії.|Only the studio owner can work on the Solo plan.
+Для тарифу Solo потрібен активний власник студії.|The Solo plan requires an active studio owner.
+Продовжіть підписку, щоб створювати нові записи й активувати майстрів.|Renew your subscription to create new bookings and activate detailers.
 Назва поста|Bay name
 Пост студії|Studio bay
 Без поста|No bay

@@ -19,6 +19,9 @@ test('workflow migration, tenant isolation, review, payroll and attendance',asyn
  grant execute on function auth.uid() to authenticated,anon;`)
  await db.exec((await sqlFile('supabase/schema.sql')).replace('create extension if not exists pgcrypto;',''))
  for(const file of (await readdir(new URL('../supabase/migrations/',import.meta.url))).sort()){
+ // Historical migration contract; the full new plan chain is exercised by plan-entitlements.test.mjs.
+ if(parseInt(file)>55)continue;
+
    if(file.startsWith('013_'))continue // This historical file contains a typo; 014 is its replacement.
    if(file.startsWith('028_'))await db.exec(`
      insert into auth.users(id) values('10000000-0000-4000-8000-000000000001');

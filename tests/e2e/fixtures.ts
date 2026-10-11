@@ -6,11 +6,11 @@ const member={id:staff,tenant_id:studio,user_id:owner,full_name:'Тестови�
 const service={id:'service',name:'Комплексне полірування',price:1500,duration_minutes:120,active:true,category:'Полірування',description:'Відновлення блиску кузова',variants:[]}
 const baseOrder={id:order,tenant_id:studio,client_id:client,clients:clients[0],staff_id:staff,staff_profiles:member,title:'Комплексне полірування',vehicle_label:'Mercedes-Benz GLE · TEST 001',service_summary:'Полірування кузова',status:'review',total:1500,deposit:500,created_at:now,status_changed_at:now,checklist:[],post_id:'post',started_at:now,planned_duration_minutes:120,appointment_id:'appointment'}
 const job={id:'job',tenant_id:studio,work_order_id:order,staff_id:staff,service_id:'service',title:service.name,stage:'Виконання',position:0,status:'review',price:1500,pay_mode:'percent',rate:30,checklist:[{id:'check',title:'Кузов підготовлено',done:true}],attachments:[],note:'',review_note:'',worked_seconds:7200,running_since:null,version:1,created_at:now,updated_at:now,submitted_at:now}
-export async function mockService(page:Page,role:'owner'|'master'|'super_admin'|'guest'='owner'){
+export async function mockService(page:Page,role:'owner'|'master'|'super_admin'|'guest'='owner',scenario:{status?:string;reason?:string;attachments?:any[];aal?:string;plan?:string}={}){
  const calls:{name:string;body:any}[]=[]
  let orders=[baseOrder,{...baseOrder,id:'ready-order',appointment_id:null,status:'ready',vehicle_label:'BMW X5 · READY',post_id:null},{...baseOrder,id:'archived-order',appointment_id:null,status:'issued',vehicle_label:'Archived Volvo',status_changed_at:'2020-01-01',post_id:null}]
- let jobs=[job],cards=structuredClone(clients)
- await page.addInitScript(({owner,role})=>{localStorage.setItem('detailflow.locale','uk');if(role!=='guest'){const exp=Math.floor(Date.now()/1000)+36000;const token=btoa(JSON.stringify({alg:'HS256',typ:'JWT'}))+'.'+btoa(JSON.stringify({sub:owner,exp,role:'authenticated'}))+'.test-signature';localStorage.setItem('sb-stxfbarigoutglfqqhwi-auth-token',JSON.stringify({access_token:token,refresh_token:'test-refresh',expires_at:exp,expires_in:36000,token_type:'bearer',user:{id:owner,email:'test@example.com',aud:'authenticated',role:'authenticated',user_metadata:{},app_metadata:{provider:'email'},created_at:new Date().toISOString()}}))}}, {owner,role})
+ let jobs:any[]=[{...job,status:scenario.status||job.status,review_note:scenario.reason||'',attachments:scenario.attachments||[]}],cards=structuredClone(clients)
+ await page.addInitScript(({owner,role,aal})=>{localStorage.setItem('detailflow.locale','uk');if(role!=='guest'){const exp=Math.floor(Date.now()/1000)+36000;const token=btoa(JSON.stringify({alg:'HS256',typ:'JWT'}))+'.'+btoa(JSON.stringify({sub:owner,exp,aal:aal||'aal2',amr:[{method:'password',timestamp:Math.floor(Date.now()/1000)}],role:'authenticated'}))+'.test-signature';localStorage.setItem('sb-stxfbarigoutglfqqhwi-auth-token',JSON.stringify({access_token:token,refresh_token:'test-refresh',expires_at:exp,expires_in:36000,token_type:'bearer',user:{id:owner,email:'test@example.com',aud:'authenticated',role:'authenticated',user_metadata:{},app_metadata:{provider:'email'},created_at:new Date().toISOString()}}))}}, {owner,role,aal:scenario.aal})
  await page.routeWebSocket(/supabase/,ws=>ws.close())
  await page.route('**/*',async route=>{const req=route.request(),url=new URL(req.url());let data:any
  const respond=(body:any)=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body),headers:{'access-control-allow-origin':'*'}})
@@ -18,7 +18,19 @@ export async function mockService(page:Page,role:'owner'|'master'|'super_admin'|
  if(url.pathname==='/api/public/booking')return respond({studio:{name:'Test Detailflow',address:'Київ',timezone:'Europe/Kyiv'},services:[service],staff:[member],schedules:Array.from({length:7},(_,weekday)=>({staff_id:staff,weekday,starts_at:'08:00',ends_at:'20:00'})),appointments:[]})
  if(url.hostname==='127.0.0.1'||url.hostname==='localhost')return route.continue()
  if(!url.hostname.endsWith('.supabase.co'))return route.abort()
- if(url.pathname.startsWith('/auth/'))return respond({user:{id:owner,email:'test@example.com'}})
+ if(url.pathname.startsWith('/storage/')){
+  if(url.pathname.includes('/upload/sign/'))return respond({url:'/object/upload/sign/job-photos/test?token=test-token'})
+  if(url.pathname.includes('/object/sign/'))return respond({signedURL:'/object/public/job-photos/demo.png'})
+  if(req.method()==='DELETE')return respond([{name:'removed'}])
+  if(req.method()==='PUT')return respond({Key:'job-photos/test'})
+  return route.fulfill({status:200,contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jX9sAAAAASUVORK5CYII=','base64')})
+ }
+ if(url.pathname.startsWith('/auth/')){
+ const user={id:owner,email:'test@example.com',factors:[{id:'totp',factor_type:'totp',status:'verified',friendly_name:'Support'}]}
+ if(url.pathname.endsWith('/challenge'))return respond({id:'challenge',expires_at:Math.floor(Date.now()/1000)+300})
+ if(url.pathname.includes('/token')||url.pathname.endsWith('/verify')){const exp=Math.floor(Date.now()/1000)+3600,token=btoa(JSON.stringify({alg:'HS256'}))+'.'+btoa(JSON.stringify({sub:owner,exp,aal:'aal2',amr:[{method:'password',timestamp:Math.floor(Date.now()/1000)}],role:'authenticated'}))+'.test';return respond({access_token:token,refresh_token:'test-refresh',expires_in:3600,expires_at:exp,token_type:'bearer',user})}
+ return respond(user)
+ }
  const name=url.pathname.split('/').at(-1)!,body=req.postDataJSON();calls.push({name,body})
  if(url.pathname.includes('/rpc/')){
  switch(name){
@@ -28,13 +40,19 @@ export async function mockService(page:Page,role:'owner'|'master'|'super_admin'|
  case 'get_studio_orders':data=orders;break
  case 'get_team_profiles':data=[member];break
  case 'get_workflow_snapshot':data={can_view_finance:role!=='master',jobs,shifts:[{id:'shift',staff_id:staff,started_at:now,ended_at:null,paused_at:null,pause_seconds:0,breaks:[]}],earnings:[],events:[],payouts:[],services:[service]};break
+ case 'get_studio_entitlements':data={id:scenario.plan||'studio'};break
  case 'get_studio_billing':data={subscription:{plan:'studio',status:'active',current_period_end:'2027-01-01',trial_ends_at:null,staff_limit:10},staff_count:1,orders:[]};break
  case 'studio_setup':data={completed:true};break
+ case 'support_studios_page':data={rows:[{id:studio,name:'Нова студія без підписки',slug:'test',timezone:'Europe/Kyiv',phone:'+380000000000',email:'qa@example.com',plan:null,status:null,staff_count:1,client_count:1}],total:1};break
+ case 'support_platform_summary':data={paid_by_plan:{solo:2,studio:1},mrr:1970,trial:1,ending:1,cohort:4,converted:2};break
+ case 'support_applications_queue':data=[{id:'request',full_name:'Новий власник',studio_name:'Нова студія',email:'new@example.com',email_confirmed:true,phone:'+380000000000',messenger:'Telegram',contact:'@new',status:'pending',created_at:now}];break
  case 'support_list_studios':data=[{id:studio,name:'Нова студія без підписки',slug:'test',timezone:'Europe/Kyiv',phone:'+380000000000',email:'qa@example.com',plan:null,status:null,staff_count:1,client_count:1}];break
  case 'staff_calendar':data={timezone:'Europe/Kyiv',schedules:[],appointments:[]};break
  case 'save_client_card':cards=cards.map(c=>({...c,full_name:body.card.name,tags:body.card.tags}));data=client;break
  case 'record_order_payment':orders=orders.map(o=>o.id===body.order_input?{...o,deposit:o.deposit+body.amount_input}:o);data=null;break
- case 'act_work_job':jobs=jobs.map(j=>({...j,status:body.action_input==='approve'?'approved':j.status}));data=null;break
+ case 'act_work_job':jobs=jobs.map(j=>({...j,status:({approve:'approved',start:'in_progress',pause:'waiting',submit:'review'} as Record<string,string>)[body.action_input]||j.status,review_note:body.action_input==='submit'?'':j.review_note,version:j.version+1}));data=null;break
+ case 'solo_work_action':jobs=jobs.map(j=>({...j,status:body.action_input==='start'?'in_progress':'approved',version:j.version+1}));data=null;break
+ case 'save_job_evidence':jobs=jobs.map(j=>({...j,version:j.version+1,attachments:body.payload.action==='remove'?j.attachments.filter((a:any)=>a.path!==body.payload.path):body.payload.action==='media'?[...j.attachments.filter((a:any)=>a.path!==body.payload.replace_path),{...body.payload,mime:'image/png'}]:j.attachments}));data=null;break
  case 'create_manual_booking':data={id:'created-appointment',client_id:client};break
  default:data=[]
  }

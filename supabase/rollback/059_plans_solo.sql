@@ -1,0 +1,366 @@
+begin;
+-- Preserve media, payments, requests and price history. Revert feature enforcement and plan identifiers.
+drop trigger if exists studio_storage_quota on storage.objects;
+drop trigger if exists solo_owner on subscriptions;
+drop trigger if exists admin_capacity on tenant_memberships;
+drop trigger if exists admin_capacity on administrator_invitations;
+drop trigger if exists repeat_plan_guard on reminder_settings;
+drop trigger if exists repeat_plan_guard on services;
+drop trigger if exists subscription_plan_limit on subscriptions;
+do $$declare tbl text;begin for tbl in select unnest(array['inventory_items','inventory_movements','sales','tasks','staff_shifts','staff_earnings','staff_payouts','staff_service_compensation','invoices']) loop execute format('drop trigger if exists plan_module_guard on public.%I',tbl);end loop;end $$;
+alter table subscriptions drop constraint if exists subscriptions_plan_check;
+update subscriptions set plan=case when plan='solo' then 'start' when plan='studio' and (select count(*) from staff_profiles p where p.tenant_id=subscriptions.tenant_id and p.active)>10 then 'pro' else plan end;
+alter table subscriptions add constraint subscriptions_plan_check check(plan in ('start','studio','pro'));
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+begin
+  insert into public.profiles (id, full_name)
+  values (new.id, coalesce(new.raw_user_meta_data ->> 'full_name', ''));
+  if new.raw_user_meta_data ->> 'requested_role' = 'owner' then
+    insert into public.studio_access_requests (user_id, studio_name, phone, messenger, contact)
+    values (new.id, coalesce(new.raw_user_meta_data ->> 'studio_name', 'Нова студія'), new.raw_user_meta_data ->> 'phone', new.raw_user_meta_data ->> 'messenger', new.raw_user_meta_data ->> 'contact');
+  end if;
+  return new;
+end;
+$function$
+;
+CREATE OR REPLACE FUNCTION public.act_work_job(job_id_input uuid, action_input text, payload jsonb DEFAULT '{}'::jsonb, expected_version integer DEFAULT NULL::integer)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare j work_order_jobs; manager boolean; seconds integer; payout numeric; checks jsonb;
+begin
+ -- Serialize all jobs on one car first, then the job (consistent with editor locks).
+ perform 1 from work_orders where id=(select work_order_id from work_order_jobs where id=job_id_input) for update;
+ select * into j from work_order_jobs where id=job_id_input for update;
+ if j.id is null or not can_access_job(j.id) then raise exception 'Немає доступу'; end if;
+ manager:=is_tenant_manager(j.tenant_id);
+ -- Serialize start with attendance transitions and starting a second car.
+ perform 1 from staff_profiles where id=j.staff_id for update;
+ if action_input='approve' and j.status='approved' then return; end if;
+ if j.version is distinct from expected_version then raise exception 'Дані змінилися. Оновіть картку й повторіть дію'; end if;
+ if j.status='approved' then raise exception 'Роботу вже підтверджено'; end if;
+ if exists(select 1 from work_orders where id=j.work_order_id and status in ('issued','cancelled')) then raise exception 'Замовлення закрите'; end if;
+ seconds:=j.worked_seconds+case when j.running_since is null then 0 else greatest(0,floor(extract(epoch from now()-j.running_since))::integer) end;
+ if action_input in ('start','check','submit') then
+   if j.staff_id is null or not exists(select 1 from staff_shifts where staff_id=j.staff_id and ended_at is null and paused_at is null) then raise exception 'Майстер має почати зміну та завершити перерву'; end if;
+ end if;
+ if action_input='start' then
+   if j.status not in ('assigned','waiting') then raise exception 'Роботу неможливо розпочати'; end if;
+   if exists(select 1 from work_order_jobs where work_order_id=j.work_order_id and position<j.position and status<>'approved') then raise exception 'Попередній етап має пройти перевірку'; end if;
+   if exists(select 1 from work_order_jobs where staff_id=j.staff_id and running_since is not null) then raise exception 'Призупиніть іншу активну роботу'; end if;
+   update work_order_jobs set status='in_progress',running_since=now() where id=j.id;
+ elsif action_input='pause' then
+   if j.status<>'in_progress' then raise exception 'Робота не виконується'; end if;
+   update work_order_jobs set status='waiting',worked_seconds=seconds,running_since=null where id=j.id;
+ elsif action_input='check' then
+   if j.status<>'in_progress' then raise exception 'Спочатку почніть роботу'; end if;
+   if not exists(select 1 from jsonb_array_elements(j.checklist) v where v->>'id'=payload->>'item_id') or jsonb_typeof(payload->'done') is distinct from 'boolean' then raise exception 'Невірний пункт'; end if;
+   select jsonb_agg(case when v->>'id'=payload->>'item_id' then jsonb_set(v,'{done}',payload->'done') else v end order by n) into checks from jsonb_array_elements(j.checklist) with ordinality x(v,n);
+   update work_order_jobs set checklist=checks where id=j.id;
+ elsif action_input='submit' then
+   if j.status not in ('in_progress','waiting') or jsonb_array_length(j.checklist)=0 or exists(select 1 from jsonb_array_elements(j.checklist) v where v->'done' is distinct from 'true'::jsonb) then raise exception 'Виконайте весь чек-лист'; end if;
+   update work_order_jobs set status='review',worked_seconds=seconds,running_since=null,submitted_at=now() where id=j.id;
+ elsif action_input='return' then
+   if not manager or j.status<>'review' or length(trim(coalesce(payload->>'note','')))<3 then raise exception 'Вкажіть причину повернення'; end if;
+   update work_order_jobs set status='waiting',review_note=trim(payload->>'note'),checklist=(select jsonb_agg(jsonb_set(v,'{done}','false')) from jsonb_array_elements(j.checklist) v) where id=j.id;
+ elsif action_input='approve' then
+   if not manager or j.status<>'review' or payload->'quality' is distinct from 'true'::jsonb or payload->'defects' is distinct from 'true'::jsonb then raise exception 'Перевірте якість і відсутність дефектів'; end if;
+   payout:=round(case j.pay_mode when 'fixed' then j.rate when 'hourly' then j.rate*j.worked_seconds/3600 else j.price*j.rate/100 end,2);
+   insert into staff_earnings(tenant_id,staff_id,work_order_id,job_id,amount,calculation,approved_by,note)
+   values(j.tenant_id,j.staff_id,j.work_order_id,j.id,payout,jsonb_build_object('title',j.title,'price',j.price,'mode',j.pay_mode,'rate',j.rate,'seconds',j.worked_seconds),auth.uid(),payload->>'note');
+   update work_order_jobs set status='approved',approved_at=now(),approved_by=auth.uid(),review_note=coalesce(payload->>'note','') where id=j.id;
+ elsif action_input='note' then
+   if j.status='review' or length(coalesce(payload->>'note',''))>4000 then raise exception 'Примітка недоступна'; end if;
+   update work_order_jobs set note=coalesce(payload->>'note','') where id=j.id;
+ elsif action_input='photo' then
+   if j.status='review' or jsonb_array_length(j.attachments)>=12 or coalesce(payload->>'path','') not like j.tenant_id::text||'/'||j.id::text||'/%' then raise exception 'Фото недоступне'; end if;
+   if not exists(select 1 from storage.objects where bucket_id='job-photos' and name=payload->>'path') then raise exception 'Спочатку завантажте фото'; end if;
+   if exists(select 1 from jsonb_array_elements(j.attachments) a where a->>'path'=payload->>'path') then return; end if;
+   update work_order_jobs set attachments=attachments||jsonb_build_array(jsonb_build_object('path',payload->>'path','name',left(payload->>'name',120))) where id=j.id;
+ elsif action_input='delete' then
+   if not manager or j.status not in ('new','assigned') or j.worked_seconds>0 or (select count(*) from work_order_jobs where work_order_id=j.work_order_id)<2 then raise exception 'Не можна видалити цю роботу'; end if;
+   delete from work_order_jobs where id=j.id; return;
+ else raise exception 'Невідома дія'; end if;
+ update work_order_jobs set version=version+1,updated_at=now() where id=j.id;
+ insert into work_job_events(tenant_id,job_id,actor_id,event,detail) values(j.tenant_id,j.id,auth.uid(),action_input,payload);
+end $function$
+;
+CREATE OR REPLACE FUNCTION public.support_review_application(request_id uuid, approve boolean, note text DEFAULT ''::text)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare application public.studio_access_requests; studio_id uuid; owner_email text;
+begin
+ perform require_support_write();
+ select * into application from public.studio_access_requests where id=request_id for update;
+ if application.id is null then raise exception 'Заявку не знайдено'; end if;
+ if application.status='approved' and approve then return application.tenant_id; end if;
+ if application.status not in ('pending','contacted') then raise exception 'Заявку вже розглянуто'; end if;
+ if not approve then
+  if length(trim(note))=0 then raise exception 'Вкажіть причину відмови'; end if;
+  update public.studio_access_requests set status='rejected',review_note=left(trim(note),2000),reviewed_by=auth.uid(),reviewed_at=now() where id=request_id;
+  return null;
+ end if;
+ select email into owner_email from auth.users where id=application.user_id and email_confirmed_at is not null;
+ if owner_email is null then raise exception 'Власник ще не підтвердив email'; end if;
+ if exists(select 1 from public.tenant_memberships where user_id=application.user_id) then raise exception 'Акаунт уже має робочий профіль. Перевірте його перед активацією'; end if;
+ studio_id=gen_random_uuid();
+ insert into public.tenants(id,name,slug,phone,email) values(studio_id,application.studio_name,'studio-'||replace(studio_id::text,'-',''),application.phone,owner_email);
+ insert into public.tenant_memberships(tenant_id,user_id,role) values(studio_id,application.user_id,'owner');
+ insert into public.reminder_settings(tenant_id) values(studio_id);
+ insert into public.subscriptions(tenant_id,plan,status,trial_ends_at) values(studio_id,'start','trialing',now()+interval '14 days');
+ update public.studio_access_requests set status='approved',tenant_id=studio_id,reviewed_by=auth.uid(),review_note=left(trim(note),2000),reviewed_at=now() where id=request_id;
+ return studio_id;
+end;
+$function$
+;
+CREATE OR REPLACE FUNCTION public.guard_subscription_capacity()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare sub subscriptions;maximum integer;
+begin
+ if tg_table_name='staff_profiles' then
+  if not new.active then return new;end if;
+  if tg_op='UPDATE' then if old.active and new.tenant_id=old.tenant_id then return new;end if;end if;
+ end if;
+ perform 1 from tenants where id=new.tenant_id for update;
+ select * into sub from subscriptions where tenant_id=new.tenant_id;
+ if not subscription_allows_new_work(new.tenant_id) then raise exception 'Період доступу завершено. Власник або адміністратор має продовжити тариф';end if;
+ if tg_table_name='staff_profiles' then
+  maximum=plan_staff_limit(sub.plan);
+  if maximum is not null and (select count(*) from staff_profiles where tenant_id=new.tenant_id and active and id<>new.id)>=maximum then raise exception 'Досягнуто ліміт активних майстрів тарифу. Деактивуйте зайві профілі або оберіть більший тариф';end if;
+ end if;
+ return new;
+end $function$
+;
+CREATE OR REPLACE FUNCTION public.support_set_subscription(studio uuid, plan_input text, status_input text, end_input timestamp with time zone, note_input text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare prior jsonb;subscription_id uuid;begin
+ perform require_support_write();
+ if plan_input is null or status_input is null or note_input is null or plan_input not in ('start','studio','pro') or status_input not in ('trialing','active','past_due','cancelled') or length(trim(note_input))<5 or length(note_input)>2000 then raise exception 'Оберіть тариф, статус та вкажіть причину зміни';end if;
+ if status_input in ('active','trialing') and (end_input is null or end_input<=now() or end_input>now()+interval '2 years') then raise exception 'Вкажіть майбутню дату завершення, не більше двох років';end if;
+ perform 1 from tenants where id=studio and not is_internal for update;
+ if not found then raise exception 'Студію не знайдено';end if;
+ select to_jsonb(s) into prior from subscriptions s where tenant_id=studio for update;
+ insert into subscriptions(tenant_id,plan,status,trial_ends_at,current_period_end)
+ values(studio,plan_input,status_input,case when status_input='trialing' then end_input end,case when status_input='active' then end_input end)
+ on conflict(tenant_id) do update set plan=excluded.plan,status=excluded.status,
+ trial_ends_at=case when excluded.status='trialing' then excluded.trial_ends_at else subscriptions.trial_ends_at end,
+ current_period_end=case when excluded.status='active' then excluded.current_period_end else subscriptions.current_period_end end,updated_at=now()
+ returning id into subscription_id;
+ insert into audit_logs(tenant_id,actor_id,entity_type,entity_id,action,before_data,after_data) values(studio,auth.uid(),'subscriptions', subscription_id,'support_adjustment',prior,jsonb_build_object('plan',plan_input,'status',status_input,'end',end_input,'reason',trim(note_input)));
+end$function$
+;
+CREATE OR REPLACE FUNCTION public.guard_subscription_plan()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare maximum integer;used integer;begin
+ if tg_op='UPDATE' then
+  if new.tenant_id is distinct from old.tenant_id then raise exception 'Не можна перенести підписку до іншої студії';end if;
+  if new.plan=old.plan then return new;end if;
+ end if;
+ perform 1 from tenants where id=new.tenant_id for update;
+ maximum=plan_staff_limit(new.plan);
+ select count(*) into used from staff_profiles where tenant_id=new.tenant_id and active;
+ if maximum is not null and used>maximum then raise exception 'Тариф допускає % активних майстрів, зараз %. Спочатку деактивуйте зайві профілі або оберіть більший тариф',maximum,used;end if;
+ return new;
+end $function$
+;
+CREATE OR REPLACE FUNCTION public.plan_staff_limit(plan_input text)
+ RETURNS integer
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$begin
+ case plan_input when 'start' then return 3;when 'studio' then return 10;when 'pro' then return null;
+ else raise exception 'Невідомий тариф';end case;
+end $function$
+;
+CREATE OR REPLACE FUNCTION public.get_studio_billing(studio uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$begin
+ if not is_tenant_manager(studio) then raise exception 'Тариф доступний власнику та адміністратору студії';end if;
+ return jsonb_build_object('subscription',(select jsonb_build_object('plan',s.plan,'status',s.status,'trial_ends_at',s.trial_ends_at,'current_period_end',s.current_period_end,'staff_limit',plan_staff_limit(s.plan)) from subscriptions s where s.tenant_id=studio),
+ 'staff_count',(select count(*) from staff_profiles where tenant_id=studio and active),
+ 'orders',coalesce((select jsonb_agg(x) from(select id,plan,amount,status,created_at,paid_at from payment_orders where tenant_id=studio order by created_at desc limit 30)x),'[]'));
+end $function$
+;
+CREATE OR REPLACE FUNCTION public.business_analytics_v2(studio uuid, date_from date, date_to date)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare result jsonb;tz text;extra jsonb;
+begin
+ -- The original report validates both finance access and the date range.
+ result=business_analytics(studio,date_from,date_to);tz=result->>'timezone';
+ with approved as (
+  select j.staff_id,count(distinct j.work_order_id) orders,sum(j.price)/nullif(count(distinct j.work_order_id),0) average_order
+  from work_order_jobs j where j.tenant_id=studio and j.status='approved'
+   and j.approved_at>=date_from::timestamp at time zone tz and j.approved_at<(date_to+1)::timestamp at time zone tz
+  group by j.staff_id
+ ), cancelled as (
+  select j.staff_id,count(distinct o.id) cancelled_orders from work_orders o join work_order_jobs j on j.work_order_id=o.id and j.tenant_id=o.tenant_id
+  where o.tenant_id=studio and o.status='cancelled' and o.status_changed_at>=date_from::timestamp at time zone tz and o.status_changed_at<(date_to+1)::timestamp at time zone tz
+  group by j.staff_id
+ ), ids as (select staff_id from approved union select staff_id from cancelled union select (value->>'staff_id')::uuid from jsonb_array_elements(result->'masters'))
+ select coalesce(jsonb_agg(coalesce(m.value,jsonb_build_object('staff_id',ids.staff_id,'name',coalesce(s.full_name,'—'),'jobs',0,'revenue',0,'seconds',0,'timed_jobs',0,'timed_revenue',0))||jsonb_build_object('orders',coalesce(a.orders,0),'average_order',a.average_order,'cancelled_orders',coalesce(c.cancelled_orders,0)) order by coalesce((m.value->>'revenue')::numeric,0) desc,ids.staff_id),'[]') into extra
+ from ids left join staff_profiles s on s.id=ids.staff_id
+ left join approved a on a.staff_id is not distinct from ids.staff_id
+ left join cancelled c on c.staff_id is not distinct from ids.staff_id
+ left join lateral (select value from jsonb_array_elements(result->'masters') where (value->>'staff_id')::uuid is not distinct from ids.staff_id) m on true;
+ return result||jsonb_build_object('masters',extra);
+end $function$
+;
+CREATE OR REPLACE FUNCTION public.business_analytics(studio uuid, date_from date, date_to date)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare tz text; result jsonb;
+begin
+ if not can_view_finance(studio) then raise exception 'Access denied' using errcode='42501'; end if;
+ if date_from is null or date_to is null or date_to < date_from or date_to-date_from > 1095 then raise exception 'Invalid report period'; end if;
+ select coalesce(timezone,'Europe/Kyiv') into tz from tenants where id=studio;
+ with completed as (
+  select o.*,coalesce(o.approved_at,o.status_changed_at) finished
+  from work_orders o where o.tenant_id=studio and o.status in ('ready','issued')
+ ), period_orders as (
+  select * from completed where finished>=date_from::timestamp at time zone tz and finished<(date_to+1)::timestamp at time zone tz
+ ), client_history as (
+  select client_id,count(*) visits,sum(total) value,min(finished) first_visit
+  from completed where finished<(date_to+1)::timestamp at time zone tz group by client_id
+ ), clients_report as (
+  select c.id,c.full_name name,count(*) visits,sum(o.total) revenue,h.visits lifetime_visits,h.value lifetime_value,
+   (h.first_visit at time zone tz)::date < date_from as "returning"
+  from period_orders o join clients c on c.id=o.client_id join client_history h on h.client_id=c.id
+  group by c.id,c.full_name,h.visits,h.value,h.first_visit
+ ), jobs_report as (
+  select j.* from work_order_jobs j where j.tenant_id=studio and j.status='approved'
+   and j.approved_at>=date_from::timestamp at time zone tz and j.approved_at<(date_to+1)::timestamp at time zone tz
+ ), masters as (
+  select j.staff_id,coalesce(s.full_name,'—') name,count(*) jobs,sum(j.price) revenue,
+   sum(j.worked_seconds) seconds,count(*) filter(where j.worked_seconds>0) timed_jobs,
+   sum(j.price) filter(where j.worked_seconds>0) timed_revenue
+  from jobs_report j left join staff_profiles s on s.id=j.staff_id group by j.staff_id,s.full_name
+ ), services_report as (
+  select title,count(*) jobs,count(*) filter(where planned_minutes is not null and worked_seconds>0) measured,
+   avg(planned_minutes) filter(where planned_minutes is not null and worked_seconds>0) planned,
+   avg(worked_seconds/60.0) filter(where planned_minutes is not null and worked_seconds>0) actual,
+   count(*) filter(where planned_minutes is not null and worked_seconds>planned_minutes*60) exceeded
+  from jobs_report group by title
+ ), demand as (
+  select extract(isodow from starts_at at time zone tz)::int weekday,
+   extract(hour from starts_at at time zone tz)::int as booking_hour,count(*) bookings,
+   count(*) filter(where status::text='cancelled') cancelled
+  from appointments where tenant_id=studio and starts_at>=date_from::timestamp at time zone tz and starts_at<(date_to+1)::timestamp at time zone tz group by 1,2
+ ), months as (
+  select to_char(finished at time zone tz,'YYYY-MM') as month,count(*) orders,sum(total) revenue
+  from period_orders group by 1
+ )
+ select jsonb_build_object(
+  'timezone',tz,'orders',(select count(*) from period_orders),
+  'revenue',coalesce((select sum(total) from period_orders),0),
+  'late_orders',(select count(*) from period_orders where due_at is not null and finished>due_at),
+  'dated_orders',(select count(*) from period_orders where due_at is not null),
+  'clients',coalesce((select jsonb_agg(to_jsonb(c) order by revenue desc,id) from clients_report c),'[]'::jsonb),
+  'services',coalesce((select jsonb_agg(to_jsonb(s) order by title) from services_report s),'[]'::jsonb),
+  'masters',coalesce((select jsonb_agg(to_jsonb(m) order by revenue desc,staff_id) from masters m),'[]'::jsonb),
+  'demand',coalesce((select jsonb_agg(to_jsonb(d) order by weekday,booking_hour) from demand d),'[]'::jsonb),
+  'months',coalesce((select jsonb_agg(to_jsonb(m) order by month) from months m),'[]'::jsonb)
+ ) into result;
+ return result;
+end $function$
+;
+CREATE OR REPLACE FUNCTION public.support_studios_page(search_input text DEFAULT ''::text, offset_input integer DEFAULT 0, filter_input text DEFAULT ''::text, sort_input text DEFAULT 'access_end'::text, desc_input boolean DEFAULT false)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare rows jsonb;total bigint;begin
+ if not coalesce(is_support_user(),false) then raise exception 'Потрібні права підтримки' using errcode='42501';end if;
+ if offset_input<0 or sort_input not in ('name','plan','status','access_end','staff_count','client_count','last_activity') or filter_input not in ('','ending','trial','renew','active') then raise exception 'Невірний фільтр';end if;
+ with studios as (
+ select t.id,t.name,t.slug,t.timezone,t.phone,t.email,s.plan,s.status,s.trial_ends_at,s.current_period_end,
+ case when s.status='trialing' then s.trial_ends_at else s.current_period_end end access_end,
+ (select count(*) from staff_profiles p where p.tenant_id=t.id and p.active) staff_count,
+ (select count(*) from clients c where c.tenant_id=t.id) client_count,
+ greatest((select max(a.created_at) from audit_logs a where a.tenant_id=t.id),(select max(w.updated_at) from work_order_jobs w where w.tenant_id=t.id),(select max(u.last_sign_in_at) from tenant_memberships m join auth.users u on u.id=m.user_id where m.tenant_id=t.id and m.active)) last_activity
+ from tenants t left join subscriptions s on s.tenant_id=t.id where not t.is_internal and concat_ws(' ',t.id::text,t.name,t.slug,t.email,t.phone) ilike '%'||left(coalesce(search_input,''),200)||'%'
+ ),filtered as(select * from studios where filter_input='' or (filter_input='ending' and status in ('active','trialing') and access_end>now() and access_end<=now()+interval '7 days') or (filter_input='trial' and status='trialing') or (filter_input='renew' and (access_end is null or access_end<=now() or status in ('past_due','cancelled'))) or (filter_input='active' and status='active' and access_end>now())),paged as(
+ select * from filtered order by
+ case when not desc_input and sort_input in ('name','plan','status') then case sort_input when 'name' then name when 'plan' then plan else status end end asc nulls first,
+ case when desc_input and sort_input in ('name','plan','status') then case sort_input when 'name' then name when 'plan' then plan else status end end desc nulls last,
+ case when not desc_input and sort_input in ('staff_count','client_count') then case sort_input when 'staff_count' then staff_count else client_count end end asc,
+ case when desc_input and sort_input in ('staff_count','client_count') then case sort_input when 'staff_count' then staff_count else client_count end end desc,
+ case when not desc_input and sort_input in ('access_end','last_activity') then case sort_input when 'access_end' then access_end else last_activity end end asc nulls first,
+ case when desc_input and sort_input in ('access_end','last_activity') then case sort_input when 'access_end' then access_end else last_activity end end desc nulls last,id limit 25 offset offset_input)
+ select coalesce((select jsonb_agg(to_jsonb(p)) from paged p),'[]'),(select count(*) from filtered) into rows,total;
+ return jsonb_build_object('rows',rows,'total',total);
+end $function$
+;
+CREATE OR REPLACE FUNCTION public.support_platform_summary(from_input date, to_input date)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$begin
+ if not coalesce(is_support_user(),false) then raise exception 'Потрібні права підтримки' using errcode='42501';end if;
+ if from_input is null or to_input is null or to_input<from_input then raise exception 'Перевірте період';end if;
+ return (with eligible as(select s.* from subscriptions s join tenants t on t.id=s.tenant_id where not t.is_internal),cohort as(select s.tenant_id from eligible s left join studio_access_requests r on r.tenant_id=s.tenant_id and r.status='approved' where coalesce(r.reviewed_at,s.created_at)::date between from_input and to_input and (s.trial_ends_at is not null or r.id is not null))
+ select jsonb_build_object('paid_by_plan',coalesce((select jsonb_object_agg(plan,n) from(select plan,count(*) n from eligible where status='active' and current_period_end>now() group by plan) p),'{}'),
+ 'trial',(select count(*) from eligible where status='trialing' and trial_ends_at>now()),
+ 'ending',(select count(*) from eligible where status in ('active','trialing') and case when status='trialing' then trial_ends_at else current_period_end end between now() and now()+interval '7 days'),
+ 'cohort',(select count(*) from cohort),'converted',(select count(*) from cohort c where exists(select 1 from payments p where p.studio_id=c.tenant_id and p.paid_on<=to_input) or exists(select 1 from audit_logs a where a.tenant_id=c.tenant_id and a.entity_type='subscriptions' and a.after_data->>'status'='active' and a.created_at::date<=to_input))));
+end $function$
+;
+CREATE OR REPLACE FUNCTION public.support_add_payment(studio uuid, request_input uuid, amount_input numeric, method_input text, paid_on_input date, months_input integer, comment_input text DEFAULT ''::text)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare existing payments;sub subscriptions;start_value timestamptz;end_value timestamptz;begin
+ perform require_support_write();
+ if request_input is null or amount_input is null or amount_input<0 or amount_input>9999999999.99 or method_input is null or method_input not in ('transfer','card','cash') or months_input is null or months_input not in (1,3,12) or paid_on_input is null or paid_on_input>current_date or (amount_input=0 and length(trim(coalesce(comment_input,'')))<5) or length(coalesce(comment_input,''))>1900 then raise exception 'Вкажіть суму, спосіб, дату та період оплати';end if;
+ perform 1 from tenants where id=studio and not is_internal for update;if not found then raise exception 'Студію не знайдено';end if;
+ select * into existing from payments where id=request_input;
+ if found then
+  if existing.studio_id<>studio or existing.amount<>amount_input or existing.method<>method_input or existing.paid_on<>paid_on_input or existing.months_added<>months_input or existing.comment<>coalesce(comment_input,'') then raise exception 'Ідентифікатор платежу вже використано';end if;return existing.id;
+ end if;
+ select * into sub from subscriptions where tenant_id=studio for update;
+ start_value=greatest(now(),case when sub.status='trialing' then sub.trial_ends_at else sub.current_period_end end);end_value=start_value+make_interval(months=>months_input);
+ perform support_set_subscription(studio,coalesce(sub.plan,'start'),'active',end_value,'Ручна оплата: '||request_input::text||' '||coalesce(comment_input,''));
+ insert into payments(id,studio_id,amount,method,paid_on,comment,months_added,period_from,period_to,created_by) values(request_input,studio,amount_input,method_input,paid_on_input,coalesce(comment_input,''),months_input,start_value,end_value,auth.uid());
+ return request_input;
+end $function$
+;
+create trigger subscription_plan_limit before insert or update of plan,tenant_id on subscriptions for each row execute function guard_subscription_plan();
+revoke execute on function solo_work_action(uuid,text,integer),get_studio_entitlements(uuid),support_founder_price(uuid,numeric,boolean,text) from authenticated,service_role;
+notify pgrst,'reload schema';
+commit;

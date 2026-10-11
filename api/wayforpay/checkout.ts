@@ -7,6 +7,7 @@ const required = (name: string) => { const value = process.env[name]; if (!value
 
 export function createCheckoutHandler(makeClient:typeof createClient=createClient){return async function handler(request: Request, response: Response) {
   if (request.method !== 'POST') return response.status(405).json({ error: 'Method not allowed' })
+  if(process.env.BILLING_MODE!=='wayforpay')return response.status(403).json({code:'MANUAL_BILLING',error:'Підключення та продовження — через менеджера в Telegram'})
   try {
     const token = typeof request.headers.authorization === 'string' ? request.headers.authorization.replace(/^Bearer\s+/i, '') : ''
     if (!token) return response.status(401).json({ error: 'Sign in required' })

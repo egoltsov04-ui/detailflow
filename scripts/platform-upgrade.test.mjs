@@ -14,6 +14,9 @@ test('platform migrations, billing idempotence, administrator permissions and sp
  grant usage on schema public,auth,storage to authenticated,anon,service_role;`)
  await db.exec((await read('supabase/schema.sql')).replace('create extension if not exists pgcrypto;',''))
  for(const f of (await readdir(new URL('../supabase/migrations/',import.meta.url))).sort()){
+ // Historical migration contract; the full new plan chain is exercised by plan-entitlements.test.mjs.
+ if(parseInt(f)>55)continue;
+
   if(f.startsWith('013_')||f.startsWith('029_')||f.startsWith('030_'))continue
   if(f.startsWith('033_'))await db.exec('grant select,insert,update,delete on all tables in schema public to authenticated;')
   try{await db.exec(await read(f.startsWith('028_')?'supabase/deploy/workflow_028_030.sql':'supabase/migrations/'+f))}catch(e){throw new Error(f+': '+e.message)}

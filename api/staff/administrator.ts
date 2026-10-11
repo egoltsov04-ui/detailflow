@@ -29,7 +29,7 @@ export function createAdministratorHandler(makeClient:typeof createClient=create
   const email=typeof body.email==='string'?body.email.trim().toLowerCase():'',name=typeof body.name==='string'?body.name.trim():''
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||name.length<2||name.length>120)return res.status(400).json({error:'Вкажіть ім’я та email адміністратора'})
   const reserved=await db.rpc('reserve_administrator_invitation',{studio:body.tenantId,owner_input:session.data.user.id,email_input:email,name_input:name})
-  if(reserved.error||!reserved.data)return res.status(400).json({error:reserved.error?.message||'Не вдалося зберегти запрошення'})
+  if(reserved.error||!reserved.data)return res.status(reserved.error?.code==='42501'?403:400).json({code:reserved.error?.message,error:reserved.error?.message||'Не вдалося зберегти запрошення'})
   let invitedId=reserved.data.user_id
   if(invitedId){
    const existing=await db.from('tenant_memberships').select('active,role').eq('tenant_id',body.tenantId).eq('user_id',invitedId).maybeSingle()

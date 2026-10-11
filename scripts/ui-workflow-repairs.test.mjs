@@ -14,6 +14,7 @@ test('subscription upsert and shift limits: permissions, idempotence and bounded
  grant usage on schema public,auth,storage to authenticated,anon,service_role;`)
  await db.exec((await read('supabase/schema.sql')).replace('create extension if not exists pgcrypto;',''))
  for(const f of (await readdir(new URL('../supabase/migrations/',import.meta.url))).sort()){
+  if(parseInt(f)>58)continue
   if(f.startsWith('013_')||f.startsWith('029_')||f.startsWith('030_'))continue
   if(f.startsWith('033_'))await db.exec('grant select,insert,update,delete on all tables in schema public to authenticated;')
   try{await db.exec(await read(f.startsWith('028_')?'supabase/deploy/workflow_028_030.sql':'supabase/migrations/'+f))}catch(e){throw new Error(f+': '+e.message)}
@@ -25,7 +26,7 @@ test('subscription upsert and shift limits: permissions, idempotence and bounded
  await db.query("insert into auth.users(id,email,email_confirmed_at,raw_user_meta_data) values($1,'support@example.com',now(),'{}'),($2,'owner@example.com',now(),'{\"requested_role\":\"owner\",\"studio_name\":\"New Studio\",\"phone\":\"+380000000000\",\"messenger\":\"Telegram\",\"contact\":\"@test\"}'),($3,'master@example.com',now(),'{}')",[support,owner,master])
  await db.query("insert into tenants(id,name,slug) values($1,'Support','support-fixture')",[studio])
  await db.query("insert into tenant_memberships(tenant_id,user_id,role) values($1,$2,'super_admin')",[studio,support])
- const login=async id=>{await db.exec('reset role');await db.query("select set_config('request.jwt.claim.sub',$1,false)",[id]);await db.exec('set role authenticated')}
+ const login=async id=>{await db.exec('reset role');await db.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify({aal:'aal2',amr:[{method:'password',timestamp:Math.floor(Date.now()/1000)}]})]);await db.query("select set_config('request.jwt.claim.sub',$1,false)",[id]);await db.exec('set role authenticated')}
  await login(support)
  const request=(await db.query("select id from support_list_applications() where studio_name='New Studio'")).rows[0].id
  const target=(await db.query('select support_review_application($1,true) id',[request])).rows[0].id
