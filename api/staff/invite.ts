@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { staffMailDecision, type StaffMailAction } from '../../server/lib/staffMail.js'
+import { appUrl } from '../../server/lib/siteUrl.js'
 
 type Request = { method?: string; headers: Record<string, string | string[] | undefined>; body?: unknown }
 type Response = { status: (code: number) => Response; json: (body: unknown) => void }
@@ -31,9 +32,8 @@ export function createStaffMailHandler(makeClient:typeof createClient=createClie
     let decision:ReturnType<typeof staffMailDecision>
     try{decision=staffMailDecision(staff,action,email,accountEmail)}catch(e){return response.status(400).json({error:(e as Error).message})}
     if(staff.invite_sent_at&&Date.now()-new Date(staff.invite_sent_at).getTime()<60000)return response.status(429).json({error:'Зачекайте хвилину перед наступним листом.'})
-    const base=process.env.APP_URL||process.env.WAYFORPAY_APP_URL||(process.env.VERCEL_PROJECT_PRODUCTION_URL?'https://'+process.env.VERCEL_PROJECT_PRODUCTION_URL:'')
-    if(!base)return response.status(503).json({error:'Адміністратор має налаштувати адресу сайту для листів.'})
-    const redirectTo=new URL('/login?role=master&activate=master',base).toString()
+    let redirectTo:string
+    try{redirectTo=appUrl('/login?role=master&activate=master')}catch{return response.status(503).json({error:'Адміністратор має налаштувати APP_URL для цього середовища.'})}
     if(decision.kind==='recovery'){
       const {error}=await auth.auth.resetPasswordForEmail(decision.email,{redirectTo})
       if(error)return response.status(400).json({error:error.message})

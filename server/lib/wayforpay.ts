@@ -1,5 +1,6 @@
 import {subscriptionPlans} from '../../src/lib/plans.ts'
 import { createHmac, timingSafeEqual } from 'node:crypto'
+import { appUrl } from './siteUrl.ts'
 
 export const plans = Object.fromEntries(subscriptionPlans.map(p=>[p.id,{label:`Detailflow ${p.name} — 1 місяць`,amount:p.price,staffLimit:p.staffLimit}])) as Record<(typeof subscriptionPlans)[number]['id'],{label:string;amount:number;staffLimit:number|null}>
 
@@ -13,7 +14,6 @@ const required = (name: string) => {
 
 export const merchantAccount = () => required('WAYFORPAY_MERCHANT_ACCOUNT')
 export const merchantDomain = () => required('WAYFORPAY_MERCHANT_DOMAIN')
-export const appUrl = () => required('WAYFORPAY_APP_URL').replace(/\/$/, '')
 
 export const hmacMd5 = (values: Array<string | number | null | undefined>) =>
   createHmac('md5', required('WAYFORPAY_SECRET_KEY')).update(values.map(value => value ?? '').join(';'), 'utf8').digest('hex')

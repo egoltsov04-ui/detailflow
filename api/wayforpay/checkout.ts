@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
-import { appUrl, hmacMd5, merchantAccount, merchantDomain, plans, type PlanCode } from '../../server/lib/wayforpay.js'
+import { hmacMd5, merchantAccount, merchantDomain, plans, type PlanCode } from '../../server/lib/wayforpay.js'
+import { appUrl } from '../../server/lib/siteUrl.js'
 
 type Request = { method?: string; headers: Record<string, string | string[] | undefined>; body?: unknown }
 type Response = { status: (code: number) => Response; json: (body: unknown) => void }

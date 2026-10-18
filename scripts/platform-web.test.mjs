@@ -7,7 +7,7 @@ import {t,getLocale} from '../src/i18n/core.ts'
 import {messages} from '../src/i18n/messages.ts'
 import {hmacMd5} from '../server/lib/wayforpay.ts'
 const read=p=>readFile(new URL('../'+p,import.meta.url),'utf8')
-async function loadHandler(path){const source=(await read(path)).replace("'@supabase/supabase-js'",JSON.stringify(import.meta.resolve('@supabase/supabase-js'))).replace("'../../server/lib/wayforpay.js'",JSON.stringify(new URL('../server/lib/wayforpay.ts',import.meta.url).href));return import('data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(source)).toString('base64'))}
+async function loadHandler(path){const source=(await read(path)).replace("'@supabase/supabase-js'",JSON.stringify(import.meta.resolve('@supabase/supabase-js'))).replace("'../../server/lib/wayforpay.js'",JSON.stringify(new URL('../server/lib/wayforpay.ts',import.meta.url).href)).replace("'../../server/lib/siteUrl.js'",JSON.stringify(new URL('../server/lib/siteUrl.ts',import.meta.url).href));return import('data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(source)).toString('base64'))}
 test('translations preserve unknown user content, spacing and source status values',()=>{
  for(const [key,pair] of Object.entries(messages)){assert.ok(typeof pair==='string'&&pair.length>0,key)}
  assert.equal(t('Усі клієнти','en'),'All clients');assert.equal(t(' Клієнти ','en'),' Clients ')
@@ -39,7 +39,7 @@ test('service worker keeps API, external requests and authenticated responses ou
  assert.equal(cacheWrites.length,1)
 })
 test('payment endpoint verifies active studio manager, signature and atomic database result',async context=>{
- const env={BILLING_MODE:'wayforpay',VITE_SUPABASE_URL:'https://test.supabase.co',VITE_SUPABASE_ANON_KEY:'public-test',SUPABASE_SERVICE_ROLE_KEY:'secret-test',WAYFORPAY_SECRET_KEY:'test-signature',WAYFORPAY_MERCHANT_ACCOUNT:'merchant',WAYFORPAY_MERCHANT_DOMAIN:'example.com',WAYFORPAY_APP_URL:'https://example.com'}
+ const env={BILLING_MODE:'wayforpay',VITE_SUPABASE_URL:'https://test.supabase.co',VITE_SUPABASE_ANON_KEY:'public-test',SUPABASE_SERVICE_ROLE_KEY:'secret-test',WAYFORPAY_SECRET_KEY:'test-signature',WAYFORPAY_MERCHANT_ACCOUNT:'merchant',WAYFORPAY_MERCHANT_DOMAIN:'example.com',APP_URL:'https://example.com'}
  const prior=Object.fromEntries(Object.keys(env).map(k=>[k,process.env[k]]));Object.assign(process.env,env);context.after(()=>{for(const[k,v]of Object.entries(prior)){if(v===undefined)delete process.env[k];else process.env[k]=v}})
  const {createCheckoutHandler}=await loadHandler('api/wayforpay/checkout.ts'),{createCallbackHandler}=await loadHandler('api/wayforpay/callback.ts')
  let active=true,role='owner',staffCount=0,rpcError=null;const filters=[],writes=[],calls=[]
