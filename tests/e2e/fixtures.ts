@@ -6,7 +6,7 @@ const member={id:staff,tenant_id:studio,user_id:owner,full_name:'Тестови�
 const service={id:'service',name:'Комплексне полірування',price:1500,duration_minutes:120,active:true,category:'Полірування',description:'Відновлення блиску кузова',variants:[]}
 export const baseOrder={id:order,tenant_id:studio,client_id:client,clients:clients[0],staff_id:staff,staff_profiles:member,title:'Комплексне полірування',vehicle_label:'Mercedes-Benz GLE · TEST 001',service_summary:'Полірування кузова',status:'review',total:1500,deposit:500,created_at:now,status_changed_at:now,checklist:[],post_id:'post',started_at:now,planned_duration_minutes:120,appointment_id:'appointment'}
 const job={id:'job',tenant_id:studio,work_order_id:order,staff_id:staff,service_id:'service',title:service.name,stage:'Виконання',position:0,status:'review',price:1500,pay_mode:'percent',rate:30,checklist:[{id:'check',title:'Кузов підготовлено',done:true}],attachments:[],note:'',review_note:'',worked_seconds:7200,running_since:null,version:1,created_at:now,updated_at:now,submitted_at:now}
-export async function mockService(page:Page,role:'owner'|'master'|'super_admin'|'guest'='owner',scenario:{status?:string;reason?:string;attachments?:any[];aal?:string;plan?:string}={}){
+export async function mockService(page:Page,role:'owner'|'master'|'super_admin'|'guest'='owner',scenario:{status?:string;reason?:string;attachments?:any[];aal?:string;plan?:string;totpSetup?:boolean}={}){
  const calls:{name:string;body:any}[]=[]
  let orders=[baseOrder,{...baseOrder,id:'ready-order',appointment_id:null,status:'ready',vehicle_label:'BMW X5 · READY',post_id:null},{...baseOrder,id:'archived-order',appointment_id:null,status:'issued',vehicle_label:'Archived Volvo',status_changed_at:'2020-01-01',post_id:null}]
  let jobs:any[]=[{...job,status:scenario.status||job.status,review_note:scenario.reason||'',attachments:scenario.attachments||[]}],cards=structuredClone(clients)
@@ -26,9 +26,11 @@ export async function mockService(page:Page,role:'owner'|'master'|'super_admin'|
   return route.fulfill({status:200,contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jX9sAAAAASUVORK5CYII=','base64')})
  }
  if(url.pathname.startsWith('/auth/')){
- const user={id:owner,email:'test@example.com',factors:[{id:'totp',factor_type:'totp',status:'verified',friendly_name:'Support'}]}
+ const verifiedFactor={id:'totp',factor_type:'totp',status:'verified',friendly_name:'Support'},user={id:owner,email:'test@example.com',factors:scenario.totpSetup?[]:[verifiedFactor]}
+ if(url.pathname.endsWith('/factors')&&req.method()==='GET')return respond({all:scenario.totpSetup?[]:[verifiedFactor],totp:scenario.totpSetup?[]:[verifiedFactor],phone:[]})
+ if(url.pathname.endsWith('/factors')&&req.method()==='POST')return respond({id:'pending-factor',type:'totp',status:'unverified',factor_type:'totp',friendly_name:'Detailflow Support',totp:{qr_code:'data:image/png;base64,iVBORw0KGgo=',secret:'TESTSECRET',uri:'otpauth://totp/test'}})
  if(url.pathname.endsWith('/challenge'))return respond({id:'challenge',expires_at:Math.floor(Date.now()/1000)+300})
- if(url.pathname.includes('/token')||url.pathname.endsWith('/verify')){const exp=Math.floor(Date.now()/1000)+3600,token=btoa(JSON.stringify({alg:'HS256'}))+'.'+btoa(JSON.stringify({sub:owner,exp,aal:'aal2',amr:[{method:'password',timestamp:Math.floor(Date.now()/1000)}],role:'authenticated'}))+'.test';return respond({access_token:token,refresh_token:'test-refresh',expires_in:3600,expires_at:exp,token_type:'bearer',user})}
+ if(url.pathname.includes('/token')||url.pathname.endsWith('/verify')){const exp=Math.floor(Date.now()/1000)+3600,aal=scenario.totpSetup&&url.pathname.includes('/token')?'aal1':'aal2',token=btoa(JSON.stringify({alg:'HS256'}))+'.'+btoa(JSON.stringify({sub:owner,exp,aal,amr:[{method:'password',timestamp:Math.floor(Date.now()/1000)}],role:'authenticated'}))+'.test';return respond({access_token:token,refresh_token:'test-refresh',expires_in:3600,expires_at:exp,token_type:'bearer',user})}
  return respond(user)
  }
  const name=url.pathname.split('/').at(-1)!,body=req.postDataJSON();calls.push({name,body})

@@ -18,4 +18,10 @@ test('support summary, table, payment and password confirmation',async({page},in
  await page.getByLabel('Пароль',{exact:true}).fill('Test-password');await page.getByRole('button',{name:'Підтвердити',exact:true}).click();await page.getByLabel('Код автентифікації').fill('123456');await page.getByRole('button',{name:'Підтвердити',exact:true}).click();await expect(page.getByText('Оплату збережено, доступ продовжено',{exact:true})).toBeVisible();expect(calls.filter(c=>c.name==='support_add_payment')).toHaveLength(1);await noOverflow(page);await page.screenshot({path:info.outputPath('support.png'),fullPage:true})
 })
 test('support requires TOTP before loading studios',async({page})=>{const calls=await mockService(page,'super_admin',{aal:'aal1'});await page.goto('/admin');await expect(page.getByRole('heading',{name:'Захищений вхід підтримки'})).toBeVisible();expect(calls.some(c=>c.name==='support_studios_page'||c.name==='support_platform_summary')).toBe(false);await noOverflow(page)})
+test('support TOTP setup keeps the QR visible until the first code is verified',async({page})=>{
+ await mockService(page,'super_admin',{aal:'aal1',totpSetup:true})
+ await page.goto('/admin');await page.getByRole('textbox',{name:'Пароль',exact:true}).fill('Test-password');await page.getByRole('button',{name:'Підтвердити',exact:true}).click()
+ const qr=page.getByRole('img',{name:'QR-код двофакторного входу'});await expect(qr).toBeVisible();await expect(page.getByLabel('Код автентифікації')).toBeVisible()
+ await page.waitForTimeout(11000);await expect(qr).toBeVisible();await expect(page.getByLabel('Код автентифікації')).toBeVisible()
+})
 test('master cannot access admin',async({page})=>{await mockService(page,'master');await page.goto('/admin');await expect(page.getByText(/403/)).toBeVisible();await expect(page.locator('.support-studios')).toHaveCount(0)})
