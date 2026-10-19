@@ -18,6 +18,19 @@ test('support summary, table, payment and password confirmation',async({page},in
  await page.getByLabel('Пароль',{exact:true}).fill('Test-password');await page.getByRole('button',{name:'Підтвердити',exact:true}).click();await page.getByLabel('Код автентифікації').fill('123456');await page.getByRole('button',{name:'Підтвердити',exact:true}).click();await expect(page.getByText('Оплату збережено, доступ продовжено',{exact:true})).toBeVisible();expect(calls.filter(c=>c.name==='support_add_payment')).toHaveLength(1);await noOverflow(page);await page.screenshot({path:info.outputPath('support.png'),fullPage:true})
 })
 test('support requires TOTP before loading studios',async({page})=>{const calls=await mockService(page,'super_admin',{aal:'aal1'});await page.goto('/admin');await expect(page.getByRole('heading',{name:'Захищений вхід підтримки'})).toBeVisible();expect(calls.some(c=>c.name==='support_studios_page'||c.name==='support_platform_summary')).toBe(false);await noOverflow(page)})
+test('support workspace tabs, status badges and studio table stay styled and readable',async({page},info)=>{
+ await mockService(page,'super_admin');await page.goto('/admin');await page.getByRole('button',{name:'Студії та підписки',exact:true}).click()
+ const table=page.locator('.support-workspace .ui-table');await expect(table).toBeVisible()
+ const surface=await page.evaluate(()=>innerWidth<=767)?table.locator('tbody tr'):table
+ expect(await surface.evaluate(el=>getComputedStyle(el).backgroundColor)).toBe('rgb(34, 38, 47)')
+ const searchField=page.locator('.support-search .ui-field'),searchFieldBox=await searchField.boundingBox(),searchInputBox=await searchField.locator('input').boundingBox();expect(searchInputBox&&searchFieldBox&&searchInputBox.y).toBeGreaterThan(searchFieldBox?.y||0)
+ const badge=page.locator('.support-badge').first(),badgeBox=await badge.boundingBox(),cellBox=await badge.locator('xpath=ancestor::td').boundingBox();expect(badgeBox&&cellBox&&badgeBox.x+badgeBox.width).toBeLessThanOrEqual((cellBox?.x||0)+(cellBox?.width||0)+1)
+ await page.screenshot({path:info.outputPath('support-studios.png'),fullPage:true})
+ await page.getByRole('button',{name:'Нова студія без підписки',exact:true}).click()
+ const founder=page.getByRole('button',{name:'Ціна засновника',exact:true});await founder.click();await expect(page.getByText(/спеціальна ціна підписки/)).toBeVisible()
+ expect(await founder.evaluate(el=>getComputedStyle(el).borderColor)).not.toBe('rgb(118, 118, 118)');await noOverflow(page)
+ await page.screenshot({path:info.outputPath('support-founder-price.png'),fullPage:true})
+})
 test('support TOTP setup keeps the QR visible until the first code is verified',async({page})=>{
  await mockService(page,'super_admin',{aal:'aal1',totpSetup:true})
  await page.goto('/admin');await page.getByRole('textbox',{name:'Пароль',exact:true}).fill('Test-password');await page.getByRole('button',{name:'Підтвердити',exact:true}).click()

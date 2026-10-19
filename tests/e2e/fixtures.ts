@@ -45,7 +45,7 @@ export async function mockService(page:Page,role:'owner'|'master'|'super_admin'|
  case 'get_studio_entitlements':data={id:scenario.plan||'studio'};break
  case 'get_studio_billing':data={subscription:{plan:'studio',status:'active',current_period_end:'2027-01-01',trial_ends_at:null,staff_limit:10},staff_count:1,orders:[]};break
  case 'studio_setup':data={completed:true};break
- case 'support_studios_page':data={rows:[{id:studio,name:'Нова студія без підписки',slug:'test',timezone:'Europe/Kyiv',phone:'+380000000000',email:'qa@example.com',plan:null,status:null,staff_count:1,client_count:1}],total:1};break
+ case 'support_studios_page':data={rows:[{id:studio,name:'Нова студія без підписки',slug:'test',timezone:'Europe/Kyiv',phone:'+380000000000',email:'qa@example.com',plan:null,status:null,staff_count:1,client_count:1,priority_support:true}],total:1};break
  case 'support_platform_summary':data={paid_by_plan:{solo:2,studio:1},mrr:1970,trial:1,ending:1,cohort:4,converted:2};break
  case 'support_applications_queue':data=[{id:'request',full_name:'Новий власник',studio_name:'Нова студія',email:'new@example.com',email_confirmed:true,phone:'+380000000000',messenger:'Telegram',contact:'@new',status:'pending',created_at:now}];break
  case 'support_list_studios':data=[{id:studio,name:'Нова студія без підписки',slug:'test',timezone:'Europe/Kyiv',phone:'+380000000000',email:'qa@example.com',plan:null,status:null,staff_count:1,client_count:1}];break

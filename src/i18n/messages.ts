@@ -117,6 +117,11 @@ Excel або CSV з прикладами та поясненнями колон�
 Ціну збережено|Price saved
 Ціна засновника, ₴|Founder price, ₴
 Порожнє поле повертає стандартну ціну тарифу.|Leave blank to restore the standard plan price.
+Ціна засновника — спеціальна ціна підписки для конкретної студії. Вона відображається власнику та адміністратору в розділі тарифу.|A founder price is a custom subscription price for a specific studio. It is shown to the owner and administrators in the plan section.
+Стандартна ціна тарифу|Standard plan price
+Ціна для цієї студії|Price for this studio
+Зафіксована ціна діятиме під час наступних продовжень тарифу.|The locked price will remain in effect for future plan renewals.
+Без фіксації ціна діє до завершення поточного періоду, потім повернеться стандартна ціна тарифу.|Without a lock, the custom price lasts until the current period ends, then the standard plan price applies.
 Зафіксувати на весь час|Lock this price indefinitely
 міс.|mo.
 Навігація по сторінці|Page navigation

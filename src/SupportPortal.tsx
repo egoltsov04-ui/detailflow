@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react'
 import { Headphones, RefreshCw } from 'lucide-react'
 import { supabase } from './lib/supabase'
 import './support.css'
+import './support-polish.css'
 
 type Application={selected_plan?:string;id:string;full_name:string;email:string;email_confirmed:boolean;studio_name:string;phone:string;messenger:string;contact:string;status:'pending'|'contacted'|'approved'|'rejected';tenant_id:string|null;reviewed_at:string|null;reviewed_name:string|null;created_at:string;review_note:string|null}
 export default function SupportPortal(){return <SupportSecurity><SupportContent/></SupportSecurity>}
