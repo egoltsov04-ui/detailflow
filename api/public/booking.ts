@@ -1,8 +1,9 @@
 import { readAllPages } from '../../src/lib/pagination.js'
 import { createClient } from '@supabase/supabase-js'
 import { availableStaff, bookingTotals, resolveBookingServices, type BookingData, type BookingService } from '../../src/lib/bookingAvailability.js'
+import { publicBookingRateLimitKeys } from '../../server/lib/publicBookingRateLimit.js'
 
-type Request = { method?:string; query?:Record<string,string|string[]|undefined>; body?:unknown }
+type Request = { method?:string; headers?:Record<string,string|string[]|undefined>; query?:Record<string,string|string[]|undefined>; body?:unknown }
 type Response = { status:(code:number)=>Response; json:(body:unknown)=>void }
 const required=(name:string)=>{const value=process.env[name];if(!value)throw new Error(`Missing ${name}`);return value}
 const clean=(value:unknown,max:number)=>typeof value==='string'?value.trim().slice(0,max):''
@@ -18,6 +19,19 @@ export function createPublicBookingHandler(makeClient:typeof createClient=create
     const {data:tenant,error:tenantError}=await supabase.from('tenants').select('id,name,address,timezone').eq('slug',slug).maybeSingle()
     if(tenantError)throw tenantError
     if(!tenant)return response.status(404).json({error:'Студію не знайдено.'})
+    let buckets
+    try {
+      buckets=publicBookingRateLimitKeys(request.headers||{},tenant.id,required('SUPABASE_SERVICE_ROLE_KEY'))
+    } catch {
+      return response.status(503).json({error:'Онлайн-запис тимчасово недоступний. Спробуйте пізніше.'})
+    }
+    const rateLimit=await supabase.rpc('consume_public_booking_rate_limit',{
+      ip_bucket_hash:buckets.ipBucketHash,
+      studio_bucket_hash:buckets.studioBucketHash,
+      is_submission:request.method==='POST',
+    })
+    if(rateLimit.error)return response.status(503).json({error:'Онлайн-запис тимчасово недоступний. Спробуйте пізніше.'})
+    if(rateLimit.data!==true)return response.status(429).json({error:'Забагато запитів. Спробуйте ще раз пізніше.'})
     const access=await supabase.rpc('subscription_allows_new_work',{studio:tenant.id})
     if(access.error)throw access.error
     if(!access.data)return response.status(409).json({error:'Онлайн-запис тимчасово недоступний. Зв’яжіться зі студією, щоб домовитися про візит.'})

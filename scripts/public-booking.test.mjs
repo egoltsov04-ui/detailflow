@@ -4,6 +4,7 @@ import {readFile} from 'node:fs/promises'
 import {stripTypeScriptTypes} from 'node:module'
 import {availableStaff,bookingTotals,studioDay,addBookingDays} from '../src/lib/bookingAvailability.ts'
 import {bookingEmail} from '../server/lib/bookingContact.ts'
+import {publicBookingRateLimitKeys} from '../server/lib/publicBookingRateLimit.ts'
 const data={studio:{name:'Test',address:null,timezone:'Europe/Kyiv'},services:[{id:'wash',name:'Wash',price:850,duration_minutes:60},{id:'inside',name:'Interior',price:1200,duration_minutes:90}],staff:[{id:'a',full_name:'A'},{id:'b',full_name:'B'}],schedules:['a','b'].map(staff_id=>({staff_id,weekday:1,starts_at:'09:00',ends_at:'19:00'})),appointments:[]}
 const now=Date.parse('2026-09-28T04:00:00Z'),start=new Date('2026-09-28T06:00:00Z')
 test('booking totals, timezone dates and date arithmetic',()=>{
@@ -36,17 +37,30 @@ test('booking-specific email cannot replace CRM email for unrelated appointments
  assert.equal(bookingEmail('Email онлайн-запису: request@example.com','manual','crm@example.com'),'crm@example.com')
  assert.equal(bookingEmail('Email онлайн-запису: invalid','public','crm@example.com'),'crm@example.com')
 })
+test('public booking rate-limit keys are stable, scoped, and do not expose IP addresses',()=>{
+ const headers={'x-vercel-forwarded-for':'203.0.113.9'}
+ const first=publicBookingRateLimitKeys(headers,'studio-one','test-secret')
+ assert.deepEqual(first,publicBookingRateLimitKeys(headers,'studio-one','test-secret'))
+ assert.equal(first.ipBucketHash,publicBookingRateLimitKeys(headers,'studio-two','test-secret').ipBucketHash)
+ assert.notEqual(first.studioBucketHash,publicBookingRateLimitKeys(headers,'studio-two','test-secret').studioBucketHash)
+ assert.notEqual(first.ipBucketHash,publicBookingRateLimitKeys({'x-vercel-forwarded-for':'203.0.113.10'},'studio-one','test-secret').ipBucketHash)
+ assert.equal(JSON.stringify(first).includes('203.0.113.9'),false)
+ assert.throws(()=>publicBookingRateLimitKeys({},'studio-one','test-secret'),/Trusted client IP unavailable/)
+})
 const source=(await readFile(new URL('../api/public/booking.ts',import.meta.url),'utf8')).replace("'@supabase/supabase-js'",JSON.stringify(import.meta.resolve('@supabase/supabase-js'))).replace("'../../src/lib/bookingAvailability.js'",JSON.stringify(new URL('../src/lib/bookingAvailability.ts',import.meta.url).href))
-const {createPublicBookingHandler}=await import('data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(source.replace("'../../src/lib/pagination.js'",JSON.stringify(new URL('../src/lib/pagination.ts',import.meta.url).href)))).toString('base64'))
+const {createPublicBookingHandler}=await import('data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(source.replace("'../../src/lib/pagination.js'",JSON.stringify(new URL('../src/lib/pagination.ts',import.meta.url).href)).replace("'../../server/lib/publicBookingRateLimit.js'",JSON.stringify(new URL('../server/lib/publicBookingRateLimit.ts',import.meta.url).href)))).toString('base64'))
 test('public API validates tenant catalog and server time, saves multiple services, and cleans failed requests',async t=>{
  const originalNow=Date.now;Date.now=()=>now;t.after(()=>Date.now=originalNow)
  const prev={VITE_SUPABASE_URL:process.env.VITE_SUPABASE_URL,SUPABASE_SERVICE_ROLE_KEY:process.env.SUPABASE_SERVICE_ROLE_KEY};Object.assign(process.env,{VITE_SUPABASE_URL:'https://test.supabase.co',SUPABASE_SERVICE_ROLE_KEY:'fake'})
  t.after(()=>{for(const [k,v]of Object.entries(prev)){if(v===undefined)delete process.env[k];else process.env[k]=v}})
- const writes=[];let failServices=false;let busy=[];let access=true
- const db={rpc:async()=>({data:access,error:null}),from(table){let operation='select';const chain={select(){return chain},eq(){return chain},in(){return chain},gte(){return chain},lte(){return chain},order(){return chain},range(){return chain},insert(values){operation='insert';writes.push({table,operation,values});return chain},upsert(values,options){operation='upsert';writes.push({table,operation,values,options});return chain},delete(){operation='delete';writes.push({table,operation});return chain},maybeSingle(){return chain},single(){return chain},then(resolve){const rows=table==='tenants'?{id:'tenant',...data.studio}:table==='services'?data.services:table==='staff_profiles'?data.staff:table==='work_schedules'?data.schedules:table==='appointments'&&operation==='select'?busy:{id:table+'-id'};return Promise.resolve({data:rows,error:table==='appointment_services'&&failServices?{code:'failed'}:null}).then(resolve)}};return chain}}
+ const writes=[],rateCalls=[];let failServices=false;let busy=[];let access=true;let bookingAllowed=true;let rateLimitAvailable=true
+ const db={rpc:async(name,args)=>{if(name==='consume_public_booking_rate_limit'){rateCalls.push(args);return {data:bookingAllowed,error:rateLimitAvailable?null:{code:'unavailable'}}}return {data:access,error:null}},from(table){let operation='select';const chain={select(){return chain},eq(){return chain},in(){return chain},gte(){return chain},lte(){return chain},order(){return chain},range(){return chain},insert(values){operation='insert';writes.push({table,operation,values});return chain},upsert(values,options){operation='upsert';writes.push({table,operation,values,options});return chain},delete(){operation='delete';writes.push({table,operation});return chain},maybeSingle(){return chain},single(){return chain},then(resolve){const rows=table==='tenants'?{id:'tenant',...data.studio}:table==='services'?data.services:table==='staff_profiles'?data.staff:table==='work_schedules'?data.schedules:table==='appointments'&&operation==='select'?busy:{id:table+'-id'};return Promise.resolve({data:rows,error:table==='appointment_services'&&failServices?{code:'failed'}:null}).then(resolve)}};return chain}}
  const handler=createPublicBookingHandler(()=>db)
- async function request(body,method='POST'){let status,result;await handler({method,body,query:{slug:'test'}},{status(code){status=code;return this},json(value){result=value}});return {status,result}}
+ async function request(body,method='POST',headers={'x-vercel-forwarded-for':'203.0.113.8'}){let status,result;await handler({method,body,query:{slug:'test'},headers},{status(code){status=code;return this},json(value){result=value}});return {status,result}}
  const payload={slug:'test',clientName:'Test',phone:'+380 00 000 00 01',email:'test@example.com',car:'BMW X5',serviceIds:['wash','inside'],staffId:'',startsAt:start.toISOString()}
+ bookingAllowed=false;assert.equal((await request(payload)).status,429);assert.equal(writes.length,0);assert.equal(rateCalls.at(-1).is_submission,true);bookingAllowed=true
+ assert.equal((await request(payload,'POST',{})).status,503);assert.equal(writes.length,0)
+ rateLimitAvailable=false;assert.equal((await request(payload)).status,503);assert.equal(writes.length,0);rateLimitAvailable=true
  assert.equal((await request({...payload,serviceIds:['unknown']})).status,400);assert.equal(writes.length,0)
  assert.equal((await request({...payload,staffId:'other-tenant'})).status,409);assert.equal(writes.length,0)
  assert.equal((await request({...payload,phone:'123'})).status,400)
