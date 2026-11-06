@@ -8,6 +8,8 @@ import { DateKind, dateError, displayDate, localDate, normalizeNumber, numberErr
 import './form-inputs.css'
 
 type Props=InputHTMLAttributes<HTMLInputElement>
+// buttonStep: how much plus/minus change the value; step still defines the allowed precision.
+type NumberProps=Props&{buttonStep?:number}
 function labelInput(input:HTMLInputElement|null){
   if(!input||input.hasAttribute('aria-label')||input.hasAttribute('aria-labelledby'))return
   const label=input.closest('label'),text=label&&Array.from(label.childNodes).filter(node=>node.nodeType===Node.TEXT_NODE).map(node=>node.textContent).join(' ').trim()
@@ -19,13 +21,13 @@ function emit(input: HTMLInputElement, value: string, onChange: Props['onChange'
   onChange?.({target,currentTarget:target} as ChangeEvent<HTMLInputElement>)
 }
 
-export function NumberInput({value='',onChange,min,max,step,disabled,readOnly,className='',onBlur,onKeyDown,...props}: Props) {
+export function NumberInput({value='',onChange,min,max,step,buttonStep,disabled,readOnly,className='',onBlur,onKeyDown,...props}: NumberProps) {
   const input=useRef<HTMLInputElement>(null), [error,setError]=useState(''), id=useId()
   useLayoutEffect(()=>labelInput(input.current),[])
   const raw=String(value), invalid=numberError(raw,min,max,step)
   useEffect(()=>{input.current?.setCustomValidity(t(invalid));if(!invalid)setError('')},[invalid])
   function change(next:string){if(!input.current)return;input.current.setCustomValidity(t(numberError(next,min,max,step)));emit(input.current,next,onChange)}
-  function increment(direction:number){change(stepNumber(raw,direction,min,max,step));input.current?.focus()}
+  function increment(direction:number){change(buttonStep?stepNumber(raw,direction,min,max,buttonStep,0):stepNumber(raw,direction,min,max,step));input.current?.focus()}
   return <span className={`number-control ${className}`}>
     <span className="number-field"><input {...props} ref={input} type="text" inputMode="decimal" value={raw} disabled={disabled} readOnly={readOnly} aria-invalid={!!error} aria-describedby={[props['aria-describedby'],error?id:undefined].filter(Boolean).join(' ')||undefined}
       onChange={e=>change(normalizeNumber(e.target.value))} onBlur={e=>{setError(invalid);onBlur?.(e)}} onInvalid={()=>setError(invalid)}
