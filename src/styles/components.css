@@ -33,7 +33,7 @@
   font-family:var(--font-body);font-weight:var(--weight-bold);text-decoration:none;cursor:pointer;
   transition:color var(--duration-fast);
 }
-:is(button,a).text-btn::after{content:'';position:absolute;inset:min(-10px,calc((100% - var(--touch-target)) / 2)) -6px}
+:is(button,a).text-btn::after{content:'';position:absolute;inset:min(-10px,calc((100% - var(--touch-target)) / 2)) min(-6px,calc((100% - var(--touch-target)) / 2))}
 :is(button,a).text-btn:hover:not(:disabled){color:var(--color-accent)}
 :is(button,a).text-btn.danger{color:var(--color-danger)}
 :is(button,a).text-btn.danger:hover:not(:disabled){color:var(--color-danger);text-decoration:underline}
@@ -144,7 +144,7 @@ body :is(.ui-badge.is-warning,.post-status.is-late,.support-badge.is-expired){ba
 body .ui-badge.is-danger{background:var(--color-danger-soft);border-color:rgba(255,138,138,.35);color:var(--color-danger)}
 
 /* Tables: one header style (readable muted text, no shouting caps), quiet row dividers. ------------- */
-.ui-table th,.table-row.table-head>*,.table-head>span{
+.ui-table th,.table-row.table-head>*,.table-head>span,.compensation-row.compensation-head>*{
   color:var(--color-text-muted);font-size:var(--text-xs);font-weight:var(--weight-bold);
   text-transform:none;letter-spacing:.01em;
 }
@@ -187,3 +187,26 @@ div[role=alert]:not(.ui-notice){
 .ui-notice.is-warning{border-left-color:var(--color-warning)}
 .ui-notice.is-success{border-left-color:var(--color-accent)}
 .ui-notice.is-danger{border-left-color:var(--color-danger);background:var(--color-danger-soft)}
+
+/* Touch targets: at least 44px where the visible control is smaller. Invisible ::after areas keep
+   compact controls (dots, steppers, calendar buttons) visually unchanged. ---------------------------- */
+.sidebar nav button,.lp-nav a,.ob-steps button,.wf-actions>button,button.locale{min-height:var(--touch-target)}
+.lp-nav a{display:inline-flex;align-items:center}
+:is(button,a):is(.mobile-close,.hamburger,.avatar){min-width:var(--touch-target);min-height:var(--touch-target)}
+summary{min-height:var(--touch-target);box-sizing:border-box;padding-block:11px;cursor:pointer}
+body .number-steps>button{position:relative}
+.date-field>button::after,body .number-steps>button::after{content:'';position:absolute;inset:-6px}
+.lp-section-nav button::after{content:'';position:absolute;inset:-2px -6px}
+a.lp-brand,a.access-home,.ob-header a{display:inline-flex;align-items:center;min-height:var(--touch-target)}
+.lp-nav a,.access-back{min-height:var(--touch-target)}
+/* Never smaller than the 12px floor: the browser default for <small> is 'smaller' (~10.8px in 13px text) */
+:where(small){font-size:max(var(--text-xs),.85em)}
+/* Disabled main action keeps its colour and fades, instead of a grey block with low-contrast text */
+:is(button,a,label).primary:disabled{background:var(--color-accent);color:var(--color-on-accent);opacity:.5}
+.compensation-row.compensation-head{color:var(--color-text-muted);text-transform:none}
+.lp-nav a{min-width:var(--touch-target);justify-content:center}
+.wf-actions button{min-height:var(--touch-target);height:auto}
+:is(.ui-table td,.ui-table-value,.table-row>span)>a:not([class]){display:inline-flex;align-items:center;min-height:var(--touch-target)}
+/* Search boxes with an icon wrapper: the wrapper shows the field border and the focus ring */
+.ob-search{border-color:var(--color-border-input)}
+.ob-search:focus-within{border-color:var(--color-accent);box-shadow:0 0 0 3px var(--color-accent-soft)}
