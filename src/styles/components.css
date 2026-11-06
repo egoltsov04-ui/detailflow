@@ -328,3 +328,15 @@ a.lp-brand,a.access-home,.ob-header a{display:inline-flex;align-items:center;min
 
 /* An empty tab bar (screens without section tabs) is not drawn */
 :is(.ui-tabs,.section-tabs):empty{display:none!important}
+
+/* Clients: search on its own row, segment chips under it; phone rows read as tidy cards ------------ */
+.crm-toolbar{display:flex;flex-wrap:wrap;align-items:flex-end;gap:var(--space-3)}
+.crm-toolbar>.crm-search{flex:1 1 100%;width:100%}
+.crm-toolbar>.crm-lost-days{flex:0 0 200px}
+@media(max-width:767px){
+  .client-workspace .ui-table td:first-child{grid-template-columns:1fr}
+  .client-workspace .ui-table td:first-child::before{display:none}
+  .client-workspace .ui-table td:first-child .text-btn{font-size:var(--text-lg)}
+  .client-workspace .ui-table tr{border-color:var(--color-border);background:var(--color-surface)}
+}
+.ui-chip:has(>.vehicle-tag){background:none;border:0;padding:0}

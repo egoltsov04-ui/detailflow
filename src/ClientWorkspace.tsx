@@ -10,6 +10,8 @@ import {localeTag} from './i18n/core'
 import './service-variants.css'
 import type {Booking} from './data'
 import {VehicleTag} from './components/VehicleTag'
+import {pluralUk} from './lib/plural'
+import {displayDate} from './lib/formValues'
 type Vehicle={id?:string;make:string;model:string;plate:string;year:string;notes:string}
 export type ClientCard={id?:string;name:string;phone:string;email:string;notes:string;tags:string[];followupEnabled?:boolean;vehicles:Vehicle[]}
 const blank:ClientCard={name:'',phone:'',email:'',notes:'',tags:[],vehicles:[]}
@@ -26,19 +28,19 @@ export default function ClientWorkspace({tenantId,bookings,onSaved,previewStore,
  const open=(c:ClientCard)=>{setCard(structuredClone(c));setError('');setTab('profile');setTag('')}
  const addTag=()=>{const value=tag.trim();if(card&&value&&!card.tags.includes(value))setCard({...card,tags:[...card.tags,value]});setTag('')}
  const summary=card?stats(card):null
- return <section className="content client-workspace"><PageHeader className="page-title"><div><p>CRM · {items.length} {t('клієнтів')}</p><h1>{t('Клієнти та автомобілі')}</h1></div><button className="primary" onClick={()=>open({...blank,vehicles:[]})}>{t('Додати клієнта')}</button></PageHeader>
- <Card className="panel crm-toolbar"><FormField>{t('Пошук')}<input placeholder={t('Ім’я, телефон, авто або номер')} value={query} onChange={e=>setQuery(e.target.value)}/></FormField><div className="ui-chips">{[['all','Усі клієнти'],['lost','Давно не були'],['new','Нові'],['repeat','Постійні']].map(([id,label])=><button className="ui-chip" key={id} aria-pressed={segment===id} onClick={()=>setSegment(id)}>{t(label)}</button>)}</div><FormField>{t('Не були понад, днів')}<input type="number" min={1} max={3650} value={lostDays} onChange={e=>{setLostDays(e.target.value);localStorage.setItem('crm-lost-days:'+tenantId,e.target.value)}}/></FormField></Card>
+ return <section className="content client-workspace"><PageHeader className="page-title"><div><p>{items.length} {t(pluralUk(items.length,'клієнт','клієнти','клієнтів'))}</p><h1>{t('Клієнти та автомобілі')}</h1></div><button className="primary" onClick={()=>open({...blank,vehicles:[]})}>{t('Додати клієнта')}</button></PageHeader>
+ <Card className="panel crm-toolbar"><input className="crm-search" type="search" placeholder={t('Ім’я, телефон, авто або номер')} aria-label={t('Пошук')} value={query} onChange={e=>setQuery(e.target.value)}/><div className="ui-chips">{[['all','Усі клієнти'],['lost','Давно не були'],['new','Нові'],['repeat','Постійні']].map(([id,label])=><button className="ui-chip" key={id} aria-pressed={segment===id} onClick={()=>setSegment(id)}>{t(label)}</button>)}</div>{segment==='lost'&&<FormField className="crm-lost-days">{t('Не були понад, днів')}<input type="number" min={1} max={3650} value={lostDays} onChange={e=>{setLostDays(e.target.value);localStorage.setItem('crm-lost-days:'+tenantId,e.target.value)}}/></FormField>}</Card>
  {error&&!card&&<p role="alert">{t(error)}</p>}{loading&&<p>{t('Завантаження…')}</p>}
  <Table rows={shown} rowKey={c=>c.id||c.phone} columns={[
  {key:'name',label:t('Клієнт'),render:c=><button className="text-btn" onClick={()=>open(c)}>{c.name}</button>},
  {key:'phone',label:t('Телефон'),render:c=><a href={'tel:'+c.phone}>{c.phone||'—'}</a>},
  {key:'cars',label:t('Автомобілі'),render:c=><div className="ui-chips">{c.vehicles.map((v,i)=><span className="ui-chip" key={v.id||i}>{(v.make||v.model||v.plate)?<VehicleTag make={v.make} model={v.model} plate={v.plate}/>:v.notes}</span>)}</div>},
- {key:'last',label:t('Останній візит'),render:c=>stats(c).last||'—'},
+ {key:'last',label:t('Останній візит'),render:c=>stats(c).last?displayDate(stats(c).last,'date'):'—'},
  {key:'total',label:t('Сума'),render:c=>currency(stats(c).total)},
  {key:'count',label:t('Візити'),render:c=>stats(c).count}
  ]}/>
  {card&&<Drawer title={card.id?t('Картка клієнта'):t('Новий клієнт')} close={()=>{if(!busy)setCard(null)}}><h2>{card.name||t('Новий клієнт')}</h2>
- {summary&&card.id&&<><div className="crm-summary">{[[t('Візити'),summary.count],[t('Витрачено'),currency(summary.total)],[t('Середній чек'),currency(summary.average)],[t('Останній візит'),summary.last||'—']].map(([label,value])=><Card key={label}><small>{label}</small><strong>{value}</strong></Card>)}</div>{onNewBooking&&<button className="primary" onClick={()=>{setCard(null);onNewBooking(card)}}>{t('Новий запис')}</button>}</>}
+ {summary&&card.id&&<><div className="crm-summary">{[[t('Візити'),summary.count],[t('Витрачено'),currency(summary.total)],[t('Середній чек'),currency(summary.average)],[t('Останній візит'),summary.last?displayDate(summary.last,'date'):'—']].map(([label,value])=><Card key={label}><small>{label}</small><strong>{value}</strong></Card>)}</div>{onNewBooking&&<button className="primary" onClick={()=>{setCard(null);onNewBooking(card)}}>{t('Новий запис')}</button>}</>}
  <Tabs>{[['profile','Контакти й авто'],['history','Історія'],['leads','Звернення']].map(([id,label])=><button key={id} aria-pressed={tab===id} onClick={()=>setTab(id)}>{t(label)}</button>)}</Tabs>
  {tab==='profile'&&<form onSubmit={e=>{e.preventDefault();void save()}}><fieldset disabled={busy}><div className="service-editor-grid"><FormField>{t('Ім’я')}<input required minLength={2} maxLength={120} value={card.name} onChange={e=>setCard({...card,name:e.target.value})}/></FormField><FormField>{t('Телефон')}<input type="tel" value={card.phone} onChange={e=>setCard({...card,phone:e.target.value})}/></FormField><FormField>Email<input type="email" value={card.email} onChange={e=>setCard({...card,email:e.target.value})}/></FormField></div>
  <FormField><input type="checkbox" checked={card.followupEnabled===true} onChange={e=>setCard({...card,followupEnabled:e.target.checked})}/>{t('Клієнт погодився на нагадування про повторні візити')}</FormField>
