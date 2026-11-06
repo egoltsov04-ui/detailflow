@@ -9,6 +9,7 @@ import OrderActions from './OrderActions'
 import {Card,PageHeader,Badge} from './components/UI'
 import {VehicleTag} from './components/VehicleTag'
 import {usePlan} from './lib/PlanContext'
+import {orderStatusLabels,orderStatusTone} from './lib/orderStatus'
 import { OrderWorkDialog, WorkflowNotice } from './workflow/WorkflowUI'
 import type { WorkflowController } from './workflow/useWorkflow'
 import { Select } from './components/Select'
@@ -34,7 +35,7 @@ const columns:{status:WorkOrderStatus;title:string;color:string}[]=[
   {status:'ready',title:'Підтверджені',color:'violet'},
   {status:'issued',title:'Видано',color:'gray'}
 ]
-const labels:Record<WorkOrderStatus,string>={new:'Потрібно призначити',assigned:'Призначено',in_progress:'У роботі',waiting:'Очікування',review:'На перевірці',ready:'Підтверджено',issued:'Видано',cancelled:'Скасовано'}
+const labels=orderStatusLabels
 const money=(value:number)=>new Intl.NumberFormat(localeTag(),{maximumFractionDigits:2}).format(value)+' ₴'
 
 export default function WorkOrders({posts=[],onOpenKanban,onOpenOrder,bookings=[],onBookingStatus,services=[],items,clients,staff,add,update,remove,recordPayment,approve,workflow,postControl,postFilter='',overdueOnly=false,view='kanban',statusFilter='',dateFilter='',scheduled={},onFilter,onBooking}:{posts?:{id:string;name:string}[];onOpenKanban?:()=>void;onOpenOrder?:(id:string)=>void;bookings?:Booking[];onBookingStatus?:(id:string|number,status:Status)=>Promise<string>;postControl?:(order:WorkOrder)=>React.ReactNode;postFilter?:string;overdueOnly?:boolean;view?:'calendar'|'kanban';statusFilter?:string;dateFilter?:string;scheduled?:Record<string,{date:string;time:string}>;onFilter?:(filters:Record<string,string>)=>void;onBooking?:()=>void;services?:BookingService[];workflow?:WorkflowController;items:WorkOrder[];clients:Person[];staff:Person[];add:(item:WorkOrder)=>Promise<string>;update:(id:WorkOrder['id'],patch:Partial<Pick<WorkOrder,'status'|'total'|'deposit'|'dueAt'|'staffId'|'title'|'serviceSummary'|'notes'>>)=>Promise<string>;remove:(id:WorkOrder['id'])=>Promise<string>;recordPayment:(item:WorkOrder,payment:WorkOrderPayment)=>Promise<string>;approve?:(item:WorkOrder)=>Promise<string>}) {
@@ -101,6 +102,6 @@ export default function WorkOrders({posts=[],onOpenKanban,onOpenOrder,bookings=[
 }
 
 function Metric({title,value,note}:{title:string;value:string;note:string}){return <div className="metric"><span>{title}</span><b>{value}</b><small>{note}</small></div>}
-const statusTone:Record<WorkOrderStatus,'neutral'|'success'|'warning'|'danger'>={new:'neutral',assigned:'neutral',in_progress:'success',waiting:'warning',review:'warning',ready:'success',issued:'neutral',cancelled:'danger'}
+const statusTone=orderStatusTone
 /** Order card: the whole card opens the shared order panel via one stretched button (keyboard friendly). */
 function OrderCard({item,openDetail,progress,assignees,showStatus=false,postName}:{item:WorkOrder;openDetail:()=>void;progress?:string;assignees?:string;showStatus?:boolean;postName?:string}){const remaining=Math.max(item.total-item.deposit,0);return <Card as="article" className="order-card" draggable={!['issued','cancelled'].includes(item.status)} onDragStart={event=>{event.dataTransfer.effectAllowed='move';event.dataTransfer.setData('text/plain',String(item.id))}}>{(showStatus||postName)&&<div className="order-card-badges">{showStatus&&<Badge tone={statusTone[item.status]}>{t(labels[item.status])}</Badge>}{postName&&<Badge>{postName}</Badge>}</div>}<button type="button" className="order-card-open" onClick={openDetail} aria-label={`${t('Відкрити замовлення')} ${item.vehicle||item.title}`}><VehicleTag label={item.vehicle||item.title}/></button><p>{item.clientName}</p><p>{item.serviceSummary||item.title}</p><div className="order-card-details"><span>{assignees||item.staffName||t('Майстра не призначено')}</span><strong>{money(item.total)}{remaining>0&&<>{' · '}{t('Залишок')} {money(remaining)}</>}</strong>{progress&&<small>{progress}</small>}</div></Card>}
