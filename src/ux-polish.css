@@ -1,10 +1,10 @@
 /* Stable geometry and a single visual treatment for shared controls. */
-:root{color-scheme:dark;--surface:#22262f;--border:#2c303c;--accent:#a7d65c}
+:root{color-scheme:dark;--surface:var(--color-surface);--border:var(--color-border);--accent:var(--color-accent)}
 body button,body a{border-radius:8px;transition:background-color .15s,color .15s,border-color .15s,box-shadow .15s}
 body button:focus-visible,body a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 body button:disabled{cursor:not-allowed;opacity:.55;box-shadow:none}
 body input,body select,body textarea{font-weight:400;min-width:0;max-width:100%}
-body input:not([type=checkbox]):not([type=color]),body select,body textarea{color:#fff;background:#171a22;border:1px solid var(--border);border-radius:10px;min-height:44px;padding:10px 12px}
+body input:not([type=checkbox]):not([type=color]),body select,body textarea{color:var(--color-text);background:var(--color-bg);border:1px solid var(--border);border-radius:10px;min-height:44px;padding:10px 12px}
 body input::placeholder,body textarea::placeholder{color:#9399a5}
 body input[type=checkbox]{accent-color:var(--accent);width:18px!important;height:18px;min-width:18px;flex:none}
 body svg{flex-shrink:0}
@@ -15,14 +15,14 @@ body .schedule-member header{justify-content:flex-start}
 body article header>div{min-width:0}body article header strong{flex-shrink:0;color:var(--accent)}
 body .master-earned{background:var(--surface);border-color:var(--border)}
 body .master-shift{min-height:44px;border:1px solid var(--border);border-radius:10px}
-body .master-shift.active{background:#2c303c;color:#fff}
+body .master-shift.active{background:var(--color-border);color:var(--color-text)}
 .dialog-actions{display:flex;justify-content:flex-end;gap:12px;flex-wrap:wrap}.app-confirm{z-index:40}
 .modal{overscroll-behavior:contain;scrollbar-width:thin;max-height:calc(100dvh - 32px)}
 .modal h2{padding-right:28px;line-height:1.25}
 .modal-close{display:grid;place-items:center;width:32px;height:32px;padding:4px;right:12px;top:12px}
 .order-board{scroll-snap-type:x proximity;scroll-padding-inline:8px;overscroll-behavior-x:contain}.order-column{scroll-snap-align:start}
 .order-card{touch-action:pan-x pan-y}.order-card .order-card-details strong{line-height:1.6}
-.order-actions{display:flex;gap:6px;flex-wrap:wrap}.order-actions button{padding:8px 10px;background:#2c303c;border:1px solid var(--border);color:var(--accent);font-size:12px}
+.order-actions{display:flex;gap:6px;flex-wrap:wrap}.order-actions button{padding:8px 10px;background:var(--color-border);border:1px solid var(--border);color:var(--accent);font-size:12px}
 .sync-warning{margin:12px 20px;padding:12px 16px;border:1px solid #b99756;border-radius:10px;background:#332f25;color:#f4d496}
 .calendar-filters>label,.report-filters>label,.cashflow-filters>label{flex:1 1 170px;min-width:0}
 .schedule-form>label,.compensation-base>label{min-width:0;display:grid;gap:6px}
@@ -51,7 +51,7 @@ body .master-shift.active{background:#2c303c;color:#fff}
  .page-title{flex-wrap:wrap}.page-title>div:first-child{flex:1 1 100%;display:block}.page-title>.primary{width:100%;justify-content:center}
  .crm-filters{flex-wrap:wrap}.crm-filters label{flex:1 1 140px;min-width:0}
  .access-row{grid-template-columns:minmax(0,1fr)}.staff-mail-actions>div{display:grid}.staff-mail-actions button{justify-content:center;width:100%}
- .client-import .import-table-scroll{display:none}.import-mobile-cards{display:grid;gap:10px}.import-mobile-cards article{padding:14px;background:#171a22;border:1px solid var(--border);border-radius:10px;display:grid;gap:6px;overflow-wrap:anywhere}.import-mobile-cards dl{display:grid;gap:8px;margin:8px 0 0}.import-mobile-cards dt{font-size:11px;color:#abb5c5}.import-mobile-cards dd{margin:3px 0 0}.import-mobile-cards span{font-size:13px}
+ .client-import .import-table-scroll{display:none}.import-mobile-cards{display:grid;gap:10px}.import-mobile-cards article{padding:14px;background:var(--color-bg);border:1px solid var(--border);border-radius:10px;display:grid;gap:6px;overflow-wrap:anywhere}.import-mobile-cards dl{display:grid;gap:8px;margin:8px 0 0}.import-mobile-cards dt{font-size:11px;color:#abb5c5}.import-mobile-cards dd{margin:3px 0 0}.import-mobile-cards span{font-size:13px}
  .content input,.content textarea,.content select,.access-portal input{font-size:16px}.select-trigger{min-height:44px}
  .panel-head{flex-wrap:wrap}.panel-head>div{flex:1 1 180px}.panel-head .text-btn{white-space:normal}
  .app-shell>main>header{height:auto;min-height:64px;gap:10px;flex-wrap:wrap;padding:12px 16px}.app-shell>main>header .search{flex:1 1 180px}.header-actions{gap:10px;flex-wrap:wrap}
@@ -66,16 +66,16 @@ body .master-shift.active{background:#2c303c;color:#fff}
 
 .settings-left>.settings{max-width:none;width:100%}
 
-.order-job-assignments{display:grid;gap:12px;margin:14px 0}.order-job-assignment{border-top:1px solid #39414c;padding-top:12px;min-width:0}.order-job-assignment label{display:grid;gap:8px;font-size:12px}.order-job-assignment label>span{overflow-wrap:anywhere;color:#c7cad1}.order-job-assignment small{display:block;margin-top:6px}.order-job-assignment [role=alert]{color:#ffadb9}
+.order-job-assignments{display:grid;gap:12px;margin:14px 0}.order-job-assignment{border-top:1px solid #39414c;padding-top:12px;min-width:0}.order-job-assignment label{display:grid;gap:8px;font-size:12px}.order-job-assignment label>span{overflow-wrap:anywhere;color:var(--color-text-secondary)}.order-job-assignment small{display:block;margin-top:6px}.order-job-assignment [role=alert]{color:#ffadb9}
 /* Keep warehouse entries readable without sideways navigation on phones. */
-@media(max-width:700px){.inventory-table{overflow:visible;background:transparent;border:0}.inventory-table .table-head{display:none}.inventory-table .table-row{min-width:0;grid-template-columns:minmax(0,1fr);gap:12px;margin-bottom:12px;padding:16px;border:1px solid #343a43;border-radius:12px;background:#22262f}.inventory-table .table-row>span{overflow-wrap:anywhere;white-space:normal}.inventory-table .table-row>span[data-label]::before{content:attr(data-label);display:block;color:#a7b0bf;font-size:12px;margin-bottom:5px}}
+@media(max-width:700px){.inventory-table{overflow:visible;background:transparent;border:0}.inventory-table .table-head{display:none}.inventory-table .table-row{min-width:0;grid-template-columns:minmax(0,1fr);gap:12px;margin-bottom:12px;padding:16px;border:1px solid #343a43;border-radius:12px;background:var(--color-surface)}.inventory-table .table-row>span{overflow-wrap:anywhere;white-space:normal}.inventory-table .table-row>span[data-label]::before{content:attr(data-label);display:block;color:#a7b0bf;font-size:12px;margin-bottom:5px}}
 .inventory-page .search{display:flex;width:100%;min-width:0}.inventory-page .search svg{flex-shrink:0}
 
 /* Dark theme: status columns on task, lead and order boards keep the dark surface.
    Status is shown by a coloured top edge plus the column title, never by a light fill. */
-.task-board .task-column,.lead-board .lead-column,.order-board .order-column{background:#1d2028;border-top:3px solid #2C303C}
-.task-board .task-column.in_progress,.lead-board .lead-column.in_progress,.order-board .order-column.in_progress,.order-board .order-column.ready{background:#1d2028;border-top-color:#A7D65C}
-.task-board .task-column.blocked,.lead-board .lead-column.deferred,.order-board .order-column.waiting{background:#1d2028;border-top-color:#f6bf5a}
-.task-board .task-column.done,.lead-board .lead-column.won,.order-board .order-column.issued{background:#1d2028;border-top-color:#6D7280}
+.task-board .task-column,.lead-board .lead-column,.order-board .order-column{background:var(--color-surface-raised);border-top:3px solid var(--color-border)}
+.task-board .task-column.in_progress,.lead-board .lead-column.in_progress,.order-board .order-column.in_progress,.order-board .order-column.ready{background:var(--color-surface-raised);border-top-color:var(--color-accent)}
+.task-board .task-column.blocked,.lead-board .lead-column.deferred,.order-board .order-column.waiting{background:var(--color-surface-raised);border-top-color:#f6bf5a}
+.task-board .task-column.done,.lead-board .lead-column.won,.order-board .order-column.issued{background:var(--color-surface-raised);border-top-color:#6D7280}
 .task-board .task-column-head small,.lead-board .task-column-head small,.order-board .task-column-head small{color:#9aa0ab}
 .task-board .task-empty,.lead-board .task-empty,.order-board .task-empty{color:#9aa0ab}
