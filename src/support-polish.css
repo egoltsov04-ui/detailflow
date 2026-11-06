@@ -4,24 +4,24 @@
   --support-surface-raised:#292e38;
   --support-input:var(--color-bg);
   --support-border:#343b47;
-  --support-muted:#aeb8c6;
+  --support-muted:var(--color-text-secondary);
   --support-accent:var(--color-accent);
-  color:#f4f6f8;
+  color:var(--color-text);
   overflow-x:hidden;
   line-height:1.5;
 }
 .support-workspace .panel,.support-workspace .ui-card{
   background:var(--support-surface);
-  color:#f4f6f8;
+  color:var(--color-text);
   border-color:#303743;
 }
-.support-workspace h1,.support-workspace h2,.support-workspace h3{color:#f4f6f8;line-height:1.25}
+.support-workspace h1,.support-workspace h2,.support-workspace h3{color:var(--color-text);line-height:1.25}
 .support-workspace p{overflow-wrap:anywhere}
 .support-workspace>header{
   min-height:72px;
   height:auto;
   background:var(--color-surface-raised);
-  color:#f4f6f8;
+  color:var(--color-text);
   gap:16px;
 }
 .support-workspace>header>div{min-width:0;overflow-wrap:anywhere}
@@ -122,7 +122,7 @@
 .support-workspace .support-search .ui-field{min-width:0}
 .support-workspace .support-search input,.support-workspace input:not([type=checkbox]),.support-workspace textarea,.support-workspace select{
   background:var(--support-input);
-  color:#f4f6f8;
+  color:var(--color-text);
   border:1px solid #363d49;
   border-radius:10px;
 }
@@ -159,7 +159,7 @@
   padding:14px 0 0;
   background:linear-gradient(#22262fdd,var(--color-surface) 35%);
 }
-.support-workspace .support-subscription-modal form>p{color:#aeb8c6;font-size:13px;line-height:1.6}
+.support-workspace .support-subscription-modal form>p{color:var(--color-text-secondary);font-size:13px;line-height:1.6}
 .support-workspace .founder-price-help{
   display:grid;
   gap:10px;
@@ -170,7 +170,7 @@
 }
 .support-workspace .founder-price-help p{margin:0;color:#c2cbd6;font-size:13px;line-height:1.6}
 .support-workspace .founder-price-help>div{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
-.support-workspace .founder-price-help span{color:#aeb8c6;font-size:12px}
+.support-workspace .founder-price-help span{color:var(--color-text-secondary);font-size:12px}
 .support-workspace .founder-price-help b{color:#c5e98f;overflow-wrap:anywhere}
 .support-workspace .studio-card-title{gap:8px;align-items:flex-start}
 .support-workspace .studio-card-title .support-badge{flex:0 1 auto}
