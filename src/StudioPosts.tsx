@@ -46,5 +46,9 @@ export function PostsMap({posts,orders,open,settings,error=''}:{posts:StudioPost
  </Card>
 }
 function ParkingBay({occupied=false}:{occupied?:boolean}){
- return <svg className="parking-bay" viewBox="0 0 260 132" fill="none" aria-hidden="true"><path d="M32 14V112H228V14" stroke="currentColor" strokeOpacity=".3" strokeWidth="2"/><path d="M44 103H216M44 94H216" stroke="currentColor" strokeOpacity=".08"/><path d="M32 22h14m168 0h14M32 48h8m180 0h8M32 74h8m180 0h8" stroke="currentColor" strokeOpacity=".3" strokeWidth="2"/>{occupied?<g transform="translate(77 21)"><rect x="3" y="14" width="20" height="12" rx="4" fill="#11151c"/><rect x="85" y="14" width="20" height="12" rx="4" fill="#11151c"/><rect x="3" y="66" width="20" height="12" rx="4" fill="#11151c"/><rect x="85" y="66" width="20" height="12" rx="4" fill="#11151c"/><rect x="12" y="0" width="84" height="91" rx="24" fill="#aebac9" stroke="#dee5ed"/><path d="M26 26Q54 15 82 26L76 40H32Z" fill="#222c39"/><path d="M32 58H76L82 71Q54 82 26 71Z" fill="#222c39"/><path d="M22 12l12-4m40 0 12 4" stroke="#d5f8a4" strokeWidth="4" strokeLinecap="round"/></g>:<><rect x="108" y="36" width="44" height="44" rx="12" stroke="currentColor" strokeOpacity=".35"/><path d="M125 68V48h8a6 6 0 0 1 0 12h-8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></>}</svg>
+ return <svg className="parking-bay" viewBox="0 0 260 132" fill="none" aria-hidden="true">
+  <path d="M88 9V123H172V9" stroke="currentColor" strokeOpacity=".32" strokeWidth="2"/>
+  <path d="M94 115H166M94 109H166M88 18h8m-8 26h6m-6 26h6m-6 26h6m66-78h8m-8 26h6m-6 26h6m-6 26h6" stroke="currentColor" strokeOpacity=".16" strokeWidth="1.5"/>
+  {occupied?<image href="/assets/studio-post-sedan-gray.svg" x="90" y="6" width="80" height="120" preserveAspectRatio="xMidYMid meet"/>:<><rect x="111" y="49" width="38" height="38" rx="11" stroke="currentColor" strokeOpacity=".35"/><path d="M125 77V59h7a5.5 5.5 0 0 1 0 11h-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></>}
+ </svg>
 }

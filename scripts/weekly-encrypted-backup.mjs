@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process'
-import { mkdtemp, rm } from 'node:fs/promises'
+import { readFile, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -13,6 +13,44 @@ if (!env.PGSERVICE || !env.PGSERVICEFILE) throw new Error('Set PGSERVICE and PGS
 if (!env.RCLONE_SUPABASE_REMOTE || !env.RCLONE_R2_CRYPT_REMOTE) throw new Error('Configure rclone source and encrypted R2 remotes.')
 if (!env.BACKUP_BUCKETS) throw new Error('Set BACKUP_BUCKETS to a comma-separated allow-list of storage buckets.')
 if (!env.AGE_RECIPIENT) throw new Error('Set AGE_RECIPIENT to the public age encryption recipient.')
+
+const expectedStagingRef = 'tycasaahjifcjhxjafue'
+const readServiceHost = async () => {
+  const content = await readFile(env.PGSERVICEFILE, 'utf8')
+  const escapedName = env.PGSERVICE.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const section = content.match(new RegExp(`(?:^|\\r?\\n)\\[${escapedName}\\]\\s*\\r?\\n([\\s\\S]*?)(?=\\r?\\n\\s*\\[|$)`, 'i'))?.[1]
+  if (!section) throw new Error(`PGSERVICE profile "${env.PGSERVICE}" was not found in PGSERVICEFILE.`)
+  return section.match(/^\s*host\s*=\s*(.*?)\s*$/im)?.[1]?.replace(/^['"]|['"]$/g, '') || ''
+}
+
+const readRcloneConfig = (remote) => {
+  const result = spawnSync('rclone', ['config', 'show', remote], { encoding: 'utf8', windowsHide: true })
+  if (result.error) throw result.error
+  if (result.status !== 0) throw new Error(`Could not inspect rclone remote "${remote}"; verify its local configuration.`)
+  return result.stdout
+}
+
+if (backupEnv === 'staging') {
+  const databaseHost = await readServiceHost()
+  if (databaseHost !== `db.${expectedStagingRef}.supabase.co`) {
+    throw new Error('Staging backup blocked: the selected PostgreSQL profile does not point to the configured staging project.')
+  }
+
+  const sourceConfig = readRcloneConfig(env.RCLONE_SUPABASE_REMOTE)
+  const sourceType = sourceConfig.match(/^\s*type\s*=\s*(.*?)\s*$/im)?.[1]?.toLowerCase()
+  const sourceEndpoint = sourceConfig.match(/^\s*endpoint\s*=\s*(.*?)\s*$/im)?.[1] || ''
+  if (sourceType !== 's3' || !sourceEndpoint.includes(expectedStagingRef)) {
+    throw new Error('Staging backup blocked: the rclone Storage source endpoint does not identify the configured staging project.')
+  }
+
+  const encryptedRemoteConfig = readRcloneConfig(env.RCLONE_R2_CRYPT_REMOTE)
+  const remoteType = encryptedRemoteConfig.match(/^\s*type\s*=\s*(.*?)\s*$/im)?.[1]?.toLowerCase()
+  const filenameEncryption = encryptedRemoteConfig.match(/^\s*filename_encryption\s*=\s*(.*?)\s*$/im)?.[1]?.toLowerCase()
+  const directoryEncryption = encryptedRemoteConfig.match(/^\s*directory_name_encryption\s*=\s*(.*?)\s*$/im)?.[1]?.toLowerCase()
+  if (remoteType !== 'crypt' || filenameEncryption !== 'standard' || directoryEncryption !== 'true') {
+    throw new Error('Staging backup blocked: the R2 destination must be an rclone crypt remote with filename and directory encryption enabled.')
+  }
+}
 
 const run = (command, args, extraEnv = {}) => {
   const result = spawnSync(command, args, { stdio: 'inherit', env: { ...env, ...extraEnv }, windowsHide: true })

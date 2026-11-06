@@ -65,9 +65,10 @@ Other external origins are provider endpoints, not our site address: SendPulse A
 ### Preconditions
 
 - Do not run against Production until the owner explicitly approves a Production backup.
+- The current staging project is `tycasaahjifcjhxjafue`. For a staging run, the backup script now checks that the selected PostgreSQL profile points to `db.tycasaahjifcjhxjafue.supabase.co`, that the rclone Storage endpoint contains this project reference, and that the R2 destination is an encrypted `crypt` remote. A Production connection cannot pass these staging checks.
 - Install compatible `pg_dump`, `age`, and `rclone` binaries on a protected backup host.
 - Create a dedicated R2 backup bucket and an R2 API token limited to that bucket. Configure an rclone remote `r2crypt` of type `crypt` whose backend points to the R2 bucket; enable filename and content encryption. Keep crypt password/salt and R2 secret in a secret manager, outside Git.
-- Configure an rclone S3 remote `supabase-src` for the **intended** Supabase project's Storage S3 endpoint with read-only object permissions. Use only the required bucket names in the allow-list.
+- Configure an rclone S3 remote `supabase-src` for the **intended** Supabase project's Storage S3 endpoint. Treat its access key as sensitive and use only the required bucket names in the allow-list.
 - Generate an `age` keypair. Put only the public `AGE_RECIPIENT` on the backup host. Keep the age identity/private key offline in at least two protected locations; without it database dumps cannot be decrypted.
 - Configure a protected `pg_service.conf` service called `detailflow_staging` or `detailflow_prod`; store database password in a permission-restricted `pgpass`, not command arguments.
 
@@ -75,16 +76,25 @@ The script `scripts/weekly-encrypted-backup.mjs` writes a custom-format PostgreS
 
 ### First run: staging only
 
-PowerShell example; configure credentials through protected service files/secret store, never by pasting secrets into shell history:
+On the Windows workstation, install the PostgreSQL command-line tools matching the staging database major version, `age`, and `rclone`. Official installation references: [PostgreSQL Windows downloads](https://www.postgresql.org/download/windows/), [age](https://github.com/FiloSottile/age#installation), and [rclone for Windows](https://rclone.org/install/). Cloudflare requires R2 to be enabled before an R2 API token can be created; this may incur storage and operation charges. Create a private bucket and scope the token to that bucket with Object Read & Write. Keep the Access Key ID and Secret Access Key in the local rclone config, never in Git or chat. [Cloudflare R2 token setup](https://developers.cloudflare.com/r2/api/tokens/)
+
+In the staging Supabase dashboard, open **Storage → Configuration → S3** (or **Storage → S3 Configuration → Access keys**) and create an access key pair. Supabase shows the secret only once. Configure an rclone S3 remote with endpoint `https://tycasaahjifcjhxjafue.storage.supabase.co/storage/v1/s3`, the project's region, and those credentials. Configure a separate R2 S3 remote, then an rclone `crypt` remote over the R2 bucket with filename encryption `standard` and directory-name encryption enabled. [Supabase S3 access](https://supabase.com/docs/guides/storage/management/download-objects)
+
+Create a protected `C:\detailflow-backup-secrets\pg_service.conf` profile using the direct database connection details from **Supabase → Connect → Direct connection**. Store the database password in the corresponding `pgpass` file with Windows ACLs restricted to your user. The profile section must be named `detailflow_staging` and its host must match the staging reference above. The script never needs a service-role key.
+
+After installing age, generate its encryption identity locally with `age-keygen -o C:\detailflow-backup-secrets\age-identity.txt`. Keep that file offline in two protected places. Copy only its printed public `age1...` recipient into `AGE_RECIPIENT`; never upload or paste the identity file.
+
+PowerShell example; run from the project root. The environment values below are non-secret names/paths except `AGE_RECIPIENT`, which is a public encryption key. Never paste R2 credentials, the database password, or the age private identity into chat or shell history:
 
 ```powershell
 $env:BACKUP_ENV='staging'
 $env:PGSERVICE='detailflow_staging'
-$env:PGSERVICEFILE='C:\secure\pg_service.conf'
+$env:PGSERVICEFILE='C:\detailflow-backup-secrets\pg_service.conf'
 $env:RCLONE_SUPABASE_REMOTE='supabase-src'
 $env:RCLONE_R2_CRYPT_REMOTE='r2crypt'
 $env:BACKUP_BUCKETS='job-photos'
 $env:AGE_RECIPIENT='age1...public-recipient...'
+node scripts/backup-preflight.mjs
 node scripts/weekly-encrypted-backup.mjs
 ```
 

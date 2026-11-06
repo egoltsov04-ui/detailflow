@@ -21,7 +21,7 @@ The counter table has RLS enabled and no read or write grants for `anon` or `aut
 - The public booking route uses the server service key only in the API layer. The browser bundle does not reference `SUPABASE_SERVICE_ROLE_KEY`.
 - Public booking persists a client, optional vehicle, appointment, and service rows in separate database calls. A failure while adding service rows removes the pending appointment, but a newly created client or vehicle can remain. This is a cleanup/data-consistency risk to address with a transactional RPC if it appears in real traffic; it does not grant cross-studio access.
 - Static checks and fixtures cannot establish the live Supabase RLS state. Run the read-only RLS inventory on staging and test access with separate owner, admin, master, and anonymous accounts before importing real customer records.
-- The function inventory showed five callable helpers with effective `anon` execute permission: `is_own_staff_profile`, `is_tenant_member`, `is_tenant_manager`, `claim_staff_invite`, and `approve_work_order`. Their current bodies either require `auth.uid()` or reject the deprecated approval call, so the output did not establish an unauthenticated data/write exploit. The permission is broader than needed, however. Migration `061_restrict_public_function_execute.sql` revokes anonymous/public execution while preserving authenticated and service-role access; its focused repeatability/grants test passes. This migration still needs staging application.
+- The original function inventory showed five callable helpers with effective `anon` execute permission: `is_own_staff_profile`, `is_tenant_member`, `is_tenant_manager`, `claim_staff_invite`, and `approve_work_order`. Their current bodies either require `auth.uid()` or reject the deprecated approval call, so the output did not establish an unauthenticated data/write exploit. The permission was broader than needed. Migration `061_restrict_public_function_execute.sql` revokes anonymous/public execution while preserving authenticated and service-role access. The follow-up staging function inventory confirms `anon_can_execute=false` for all five; the remaining `anon_can_execute=true` rows are zero-argument trigger/event-trigger functions, which cannot be called directly as ordinary RPCs.
 
 ## Verification
 
@@ -37,12 +37,13 @@ On 2026-10-20, the user confirmed that the Preview deployment was Ready, a test 
 
 The staging RLS inventory output provided by the user showed `relrowsecurity=true` for every listed table in `public` and `storage`, including `storage.objects`. Some service-managed tables have no direct policies in this inventory; that can be correct when direct client grants are revoked. The inventory does not show policy expressions or grants, so these still require the detailed read-only follow-up in `supabase/audits/rls_policy_details.sql`.
 
+The first compact policy/grant result showed tenant checks on the main business tables, but its grant source was `information_schema.role_table_grants`, which omits permissions made available through `PUBLIC`. Do not use that result to conclude effective table privileges. The corrected `supabase/audits/rls_compact_inventory.sql` uses `table_privileges` for direct grants and `has_table_privilege` for effective `anon`/`authenticated` DML access. The existing output also shows explicit `anon` DML grants on `storage.objects`; its RLS policies target `authenticated` only, so confirm the effective result with the corrected query before finalizing the review.
+
 ## Remaining staging checks
 
 1. Verify migration 060's table has RLS enabled and its grants match the checks above; the successful push confirms execution but not the resulting live ACL inventory.
-2. Apply migration 061 and confirm anonymous execute access is false for the five listed helpers.
-3. Run the detailed read-only policy and grants query and retain its output with the staging release notes.
-4. Confirm preview environment variables point only to staging and contain the staging service key; verify the built browser assets contain no service-role key.
-5. Test a second staging studio to confirm cross-tenant isolation. Role checks and a successful booking have been reported as passing, but the two-studio check was not reported.
-6. Optionally validate rate-limit thresholds in staging with a controlled test client; automated tests cover the quotas without generating live booking spam.
+2. Run the detailed read-only policy and grants query and retain its output with the staging release notes; the latest pasted output included only the functions result.
+3. Confirm preview environment variables point only to staging and contain the staging service key; verify the built browser assets contain no service-role key.
+4. Test a second staging studio to confirm cross-tenant isolation. Role checks and a successful booking have been reported as passing, but the two-studio check was not reported.
+5. Optionally validate rate-limit thresholds in staging with a controlled test client; automated tests cover the quotas without generating live booking spam.
 
