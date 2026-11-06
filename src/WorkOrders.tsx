@@ -8,6 +8,7 @@ import {t,localeTag} from './i18n/core'
 import OrderActions from './OrderActions'
 import {Card,PageHeader,Badge} from './components/UI'
 import {VehicleTag} from './components/VehicleTag'
+import {usePlan} from './lib/PlanContext'
 import { OrderWorkDialog, WorkflowNotice } from './workflow/WorkflowUI'
 import type { WorkflowController } from './workflow/useWorkflow'
 import { Select } from './components/Select'
@@ -38,6 +39,8 @@ const money=(value:number)=>new Intl.NumberFormat(localeTag(),{maximumFractionDi
 
 export default function WorkOrders({posts=[],onOpenKanban,onOpenOrder,bookings=[],onBookingStatus,services=[],items,clients,staff,add,update,remove,recordPayment,approve,workflow,postControl,postFilter='',overdueOnly=false,view='kanban',statusFilter='',dateFilter='',scheduled={},onFilter,onBooking}:{posts?:{id:string;name:string}[];onOpenKanban?:()=>void;onOpenOrder?:(id:string)=>void;bookings?:Booking[];onBookingStatus?:(id:string|number,status:Status)=>Promise<string>;postControl?:(order:WorkOrder)=>React.ReactNode;postFilter?:string;overdueOnly?:boolean;view?:'calendar'|'kanban';statusFilter?:string;dateFilter?:string;scheduled?:Record<string,{date:string;time:string}>;onFilter?:(filters:Record<string,string>)=>void;onBooking?:()=>void;services?:BookingService[];workflow?:WorkflowController;items:WorkOrder[];clients:Person[];staff:Person[];add:(item:WorkOrder)=>Promise<string>;update:(id:WorkOrder['id'],patch:Partial<Pick<WorkOrder,'status'|'total'|'deposit'|'dueAt'|'staffId'|'title'|'serviceSummary'|'notes'>>)=>Promise<string>;remove:(id:WorkOrder['id'])=>Promise<string>;recordPayment:(item:WorkOrder,payment:WorkOrderPayment)=>Promise<string>;approve?:(item:WorkOrder)=>Promise<string>}) {
   const timezone=useStudioTimezone(),[calendarDate,setCalendarDate]=useState(dateFilter||studioDay(new Date(),timezone))
+  // Solo plans have no kanban, so undated orders stay listed in the calendar there.
+  const kanbanAvailable=usePlan()!=='solo'
   const day=dateFilter||calendarDate
   const weekRef=useRef<HTMLDivElement>(null)
   useEffect(()=>{const container=weekRef.current,selected=container?.querySelector<HTMLElement>('[aria-pressed=true]');if(container&&selected)container.scrollLeft=selected.offsetLeft-container.offsetLeft-(container.clientWidth-selected.offsetWidth)/2},[day,view])
@@ -86,7 +89,7 @@ export default function WorkOrders({posts=[],onOpenKanban,onOpenOrder,bookings=[
       <div className="work-agenda">{dated.map(o=><section className="work-agenda-entry" key={o.id}><time>{scheduled[String(o.id)]?.time||(o.dueAt?new Date(o.dueAt).toLocaleTimeString(localeTag(),{timeZone:timezone,hour:'2-digit',minute:'2-digit'}):'')}</time>{renderSummary(o)}</section>)}
       {unlinked.map(b=><Card as="article" className="panel" key={b.id}><strong>{b.time} · {b.car||b.client}</strong><p>{b.client} · {b.service}</p><p>{t(b.status)}</p>{onBookingStatus&&b.status==='Очікує підтвердження'&&<button className="primary" onClick={()=>void onBookingStatus(b.id,'Підтверджено').then(error=>setMessage(error||t('Запис підтверджено')))}>{t('Підтвердити запис')}</button>}</Card>)}
       {!dated.length&&!unlinked.length&&<p className="panel">{t('На цей день записів немає')}</p>}</div>
-      {!!undated.length&&(onOpenKanban?<p className="work-undated">{t('Без дати')}: {undated.length}<button className="text-btn" onClick={onOpenKanban}>{t('Відкрити канбан')} →</button></p>:<><h2>{t('Без дати')}</h2><div className="work-agenda">{undated.map(renderSummary)}</div></>)}
+      {!!undated.length&&(onOpenKanban&&kanbanAvailable?<p className="work-undated">{t('Без дати')}: {undated.length}<button className="text-btn" onClick={onOpenKanban}>{t('Відкрити канбан')} →</button></p>:<><h2>{t('Без дати')}</h2><div className="work-agenda">{undated.map(renderSummary)}</div></>)}
     </>}
 
     {view==='kanban'&&<div className="order-board">{columns.map(column=>{const rows=visible.filter(item=>item.status===column.status);return <section className={'order-column '+column.color+(rows.length?'':' is-empty')} key={column.status} onDragOver={event=>event.preventDefault()} onDrop={event=>{const item=items.find(order=>String(order.id)===event.dataTransfer.getData('text/plain'));if(item&&item.status!==column.status)void change(item,column.status)}}><div className="task-column-head"><h2>{t(column.title)}</h2><b>{rows.length}</b></div>{rows.map(renderCard)}{!rows.length&&<p className="task-empty">{t("Перетягніть сюди замовлення")}</p>}</section>})}</div>}
