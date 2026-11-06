@@ -46,6 +46,10 @@ test('public booking rate-limit keys are stable, scoped, and do not expose IP ad
  assert.notEqual(first.ipBucketHash,publicBookingRateLimitKeys({'x-vercel-forwarded-for':'203.0.113.10'},'studio-one','test-secret').ipBucketHash)
  assert.equal(JSON.stringify(first).includes('203.0.113.9'),false)
  assert.throws(()=>publicBookingRateLimitKeys({},'studio-one','test-secret'),/Trusted client IP unavailable/)
+ // Views and submissions never share a counter: 15 page loads must not block the booking itself.
+ const submit=publicBookingRateLimitKeys(headers,'studio-one','test-secret',true)
+ assert.notEqual(submit.ipBucketHash,first.ipBucketHash);assert.notEqual(submit.studioBucketHash,first.studioBucketHash)
+ assert.deepEqual(submit,publicBookingRateLimitKeys(headers,'studio-one','test-secret',true))
 })
 const source=(await readFile(new URL('../api/public/booking.ts',import.meta.url),'utf8')).replace("'@supabase/supabase-js'",JSON.stringify(import.meta.resolve('@supabase/supabase-js'))).replace("'../../src/lib/bookingAvailability.js'",JSON.stringify(new URL('../src/lib/bookingAvailability.ts',import.meta.url).href))
 const {createPublicBookingHandler}=await import('data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(source.replace("'../../src/lib/pagination.js'",JSON.stringify(new URL('../src/lib/pagination.ts',import.meta.url).href)).replace("'../../server/lib/publicBookingRateLimit.js'",JSON.stringify(new URL('../server/lib/publicBookingRateLimit.ts',import.meta.url).href)))).toString('base64'))

@@ -21,7 +21,7 @@ export function createPublicBookingHandler(makeClient:typeof createClient=create
     if(!tenant)return response.status(404).json({error:'Студію не знайдено.'})
     let buckets
     try {
-      buckets=publicBookingRateLimitKeys(request.headers||{},tenant.id,required('SUPABASE_SERVICE_ROLE_KEY'))
+      buckets=publicBookingRateLimitKeys(request.headers||{},tenant.id,required('SUPABASE_SERVICE_ROLE_KEY'),request.method==='POST')
     } catch {
       return response.status(503).json({error:'Онлайн-запис тимчасово недоступний. Спробуйте пізніше.'})
     }
