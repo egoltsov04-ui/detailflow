@@ -269,3 +269,20 @@ a.lp-brand,a.access-home,.ob-header a{display:inline-flex;align-items:center;min
   .work-calendar-nav>.work-week{order:5;flex-basis:100%}
   .work-calendar-date{flex:1 1 110px;min-width:0}
 }
+
+/* Online requests: requests first; the booking link is a compact setup block at the bottom ---------- */
+.request-card{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:var(--space-4)}
+.request-card>div:first-child{display:grid;gap:var(--space-2);justify-items:start;min-width:0}
+.request-card h2{margin:0;font-size:var(--text-lg)}
+.request-card p{margin:0;color:var(--color-text-secondary)}
+.request-card p b{color:var(--color-text)}
+.booking-link{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:var(--space-3);margin-top:var(--space-6)}
+.booking-link>:is(h2,p,small){grid-column:1/-1;margin:0}
+.booking-link>h2{font-size:var(--text-md)}
+.booking-link>p{color:var(--color-text-muted);font-size:var(--text-sm)}
+@media(max-width:768px){.booking-link{grid-template-columns:1fr}.booking-link>*{grid-column:1/-1}}
+/* Filter bars that legacy rules paint with the surface colour get a proper panel shape */
+.calendar-filters{padding:var(--space-4);border:1px solid var(--color-border);border-radius:var(--radius-md)}
+@media(min-width:769px){.calendar-filters>.ui-field{flex:1 1 220px}}
+/* Legacy filter labels use flex-basis:170px; in the phone column layout that became a 170px height */
+@media(max-width:768px){:is(.calendar-filters,.report-filters,.cashflow-filters)>label{flex:none;align-content:start}}
