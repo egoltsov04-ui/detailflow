@@ -119,3 +119,14 @@ body .select-control>button.select-trigger:focus-visible,body .select-control>bu
 .file-picker>input[type=file]:focus-visible+.file-picker-button{outline:2px solid var(--color-focus);outline-offset:2px}
 .file-picker>input[type=file]:disabled{cursor:not-allowed}
 .file-picker>input[type=file]:disabled+.file-picker-button{opacity:.5}
+
+/* Stat cards: label, one number, quiet hint. Shared by StatCard (.ui-stat), legacy .metric and the
+   analytics .finance-kpi. The hint is secondary text, not accent; negative values keep their colour. */
+:is(.ui-stat,.metric,.finance-kpi,.overview-kpis>button)>span,.finance-kpi>div,.wf-summary>div{color:var(--color-text-secondary);font-size:var(--text-sm);font-weight:var(--weight-medium)}
+:is(.ui-stat,.metric)>b,.finance-kpi>strong,.overview-kpis>button>strong,.wf-summary>div>b{
+  font-family:var(--font-number);font-weight:var(--weight-heavy);font-variant-numeric:tabular-nums;
+  font-size:28px;line-height:var(--leading-tight);letter-spacing:-.5px;
+}
+:is(.ui-stat,.metric)>b,.finance-kpi>strong:not(.finance-negative),.overview-kpis>button>strong,.wf-summary>div>b{color:var(--color-text)}
+:is(.ui-stat,.metric,.finance-kpi)>small{color:var(--color-text-muted);font-size:var(--text-xs);font-weight:var(--weight-medium);line-height:var(--leading-normal)}
+@media(max-width:768px){:is(.ui-stat,.metric)>b,.finance-kpi>strong,.overview-kpis>button>strong,.wf-summary>div>b{font-size:var(--text-xl)}}
