@@ -70,3 +70,12 @@ body .master-shift.active{background:#2c303c;color:#fff}
 /* Keep warehouse entries readable without sideways navigation on phones. */
 @media(max-width:700px){.inventory-table{overflow:visible;background:transparent;border:0}.inventory-table .table-head{display:none}.inventory-table .table-row{min-width:0;grid-template-columns:minmax(0,1fr);gap:12px;margin-bottom:12px;padding:16px;border:1px solid #343a43;border-radius:12px;background:#22262f}.inventory-table .table-row>span{overflow-wrap:anywhere;white-space:normal}.inventory-table .table-row>span[data-label]::before{content:attr(data-label);display:block;color:#a7b0bf;font-size:12px;margin-bottom:5px}}
 .inventory-page .search{display:flex;width:100%;min-width:0}.inventory-page .search svg{flex-shrink:0}
+
+/* Dark theme: status columns on task, lead and order boards keep the dark surface.
+   Status is shown by a coloured top edge plus the column title, never by a light fill. */
+.task-board .task-column,.lead-board .lead-column,.order-board .order-column{background:#1d2028;border-top:3px solid #2C303C}
+.task-board .task-column.in_progress,.lead-board .lead-column.in_progress,.order-board .order-column.in_progress,.order-board .order-column.ready{background:#1d2028;border-top-color:#A7D65C}
+.task-board .task-column.blocked,.lead-board .lead-column.deferred,.order-board .order-column.waiting{background:#1d2028;border-top-color:#f6bf5a}
+.task-board .task-column.done,.lead-board .lead-column.won,.order-board .order-column.issued{background:#1d2028;border-top-color:#6D7280}
+.task-board .task-column-head small,.lead-board .task-column-head small,.order-board .task-column-head small{color:#9aa0ab}
+.task-board .task-empty,.lead-board .task-empty,.order-board .task-empty{color:#9aa0ab}
