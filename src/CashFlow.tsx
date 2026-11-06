@@ -7,6 +7,7 @@ import { localDate } from './lib/formValues'
 import { DateInput, NumberInput } from './components/FormInputs'
 import { FormEvent, useMemo, useState } from 'react'
 import { ArrowDownLeft, ArrowUpRight, Plus, Trash2, X } from 'lucide-react'
+import {VehicleTag} from './components/VehicleTag'
 
 export type CashTransaction={payoutId?:string|null;id:string|number;date:string;direction:'income'|'expense';amount:number;method:'Картка'|'Готівка'|'Переказ';category:string;title:string;note:string;clientId:string|number|null;clientName:string}
 type Client={id:string|number;name:string}
@@ -18,7 +19,7 @@ export default function CashFlow({items,clients,add,remove,legacyAccruals=[],ord
  {key:'method',label:t('Метод / клієнт'),render:item=><><b>{t(item.method)}</b><small>{item.clientName||t('Без клієнта')}</small></>},
  {key:'amount',label:t('Сума'),render:item=><span className={item.direction==='income'?'cash-in':'cash-out'}><b>{item.direction==='income'?'+':'−'}{money(item.amount)}</b><button className="text-btn danger" disabled={!!item.payoutId} title={item.payoutId?t('Виплату збережено в історії зарплати'):undefined} aria-label={t('Видалити операцію')} onClick={()=>void deleteItem(item.id)}><Trash2 size={15}/></button></span>}
  ]}/>{onOpenOrder&&<Card className="panel" style={{marginTop:20}}><h2>{t('Оплати замовлень')}</h2><p>{t('Відкрийте замовлення, щоб переглянути деталі або внести оплату.')}</p><Table rows={orders.filter(o=>o.status!=='cancelled'&&(!from||o.createdAt.slice(0,10)>=from)&&(!to||o.createdAt.slice(0,10)<=to))} rowKey={o=>String(o.id)} empty={t('Замовлень за цим фільтром немає.')} columns={[
- {key:'order',label:t('Замовлення'),render:o=><button className="text-btn" onClick={()=>onOpenOrder(String(o.id))}>{o.vehicle||o.title}<small>{o.clientName} · #{String(o.id).slice(0,8)}</small></button>},
+ {key:'order',label:t('Замовлення'),render:o=><button className="text-btn" onClick={()=>onOpenOrder(String(o.id))}><VehicleTag label={o.vehicle||o.title}/><small>{o.clientName} · #{String(o.id).slice(0,8)}</small></button>},
  {key:'total',label:t('Сума'),render:o=>money(o.total)},
  {key:'paid',label:t('Оплачено'),render:o=>money(o.deposit)},
  {key:'balance',label:t('Залишок'),render:o=>money(Math.max(0,o.total-o.deposit))}

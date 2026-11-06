@@ -9,6 +9,7 @@ import type {Lead} from './Leads'
 import {localeTag} from './i18n/core'
 import './service-variants.css'
 import type {Booking} from './data'
+import {VehicleTag} from './components/VehicleTag'
 type Vehicle={id?:string;make:string;model:string;plate:string;year:string;notes:string}
 export type ClientCard={id?:string;name:string;phone:string;email:string;notes:string;tags:string[];followupEnabled?:boolean;vehicles:Vehicle[]}
 const blank:ClientCard={name:'',phone:'',email:'',notes:'',tags:[],vehicles:[]}
@@ -31,7 +32,7 @@ export default function ClientWorkspace({tenantId,bookings,onSaved,previewStore,
  <Table rows={shown} rowKey={c=>c.id||c.phone} columns={[
  {key:'name',label:t('Клієнт'),render:c=><button className="text-btn" onClick={()=>open(c)}>{c.name}</button>},
  {key:'phone',label:t('Телефон'),render:c=><a href={'tel:'+c.phone}>{c.phone||'—'}</a>},
- {key:'cars',label:t('Автомобілі'),render:c=><div className="ui-chips">{c.vehicles.map((v,i)=><span className="ui-chip" key={v.id||i}>{[v.make,v.model,v.plate].filter(Boolean).join(' · ')||v.notes}</span>)}</div>},
+ {key:'cars',label:t('Автомобілі'),render:c=><div className="ui-chips">{c.vehicles.map((v,i)=><span className="ui-chip" key={v.id||i}>{(v.make||v.model||v.plate)?<VehicleTag make={v.make} model={v.model} plate={v.plate}/>:v.notes}</span>)}</div>},
  {key:'last',label:t('Останній візит'),render:c=>stats(c).last||'—'},
  {key:'total',label:t('Сума'),render:c=>currency(stats(c).total)},
  {key:'count',label:t('Візити'),render:c=>stats(c).count}
@@ -45,7 +46,7 @@ export default function ClientWorkspace({tenantId,bookings,onSaved,previewStore,
  <FormField>{t('Примітка клієнта')}<textarea maxLength={4000} value={card.notes} onChange={e=>setCard({...card,notes:e.target.value})}/></FormField><h3>{t('Автомобілі')}</h3>
  {card.vehicles.map((v,i)=>{const change=(patch:Partial<Vehicle>)=>setCard({...card,vehicles:card.vehicles.map((x,n)=>n===i?{...x,...patch}:x)});return <Card className="service-variant-editor" key={v.id||i}><div className="service-editor-grid">{(['make','model','plate','year'] as const).map((key,n)=><FormField key={key}>{t(['Марка','Модель','Держномер','Рік'][n])}<input maxLength={key==='year'?4:80} inputMode={key==='year'?'numeric':undefined} pattern={key==='year'?'(19|20|21)[0-9]{2}':undefined} value={v[key]} onChange={e=>change({[key]:e.target.value})}/></FormField>)}</div><FormField>{t('Примітка авто')}<input maxLength={2000} value={v.notes} onChange={e=>change({notes:e.target.value})}/></FormField>{!v.id&&<button type="button" className="text-btn" onClick={()=>setCard({...card,vehicles:card.vehicles.filter((_,n)=>n!==i)})}>{t('Прибрати нове авто')}</button>}</Card>})}
  <button type="button" className="secondary" disabled={card.vehicles.length>=50} onClick={()=>setCard({...card,vehicles:[...card.vehicles,{make:'',model:'',plate:'',year:'',notes:''}]})}>{t('Додати автомобіль')}</button></fieldset>{error&&<p role="alert">{t(error)}</p>}<button className="primary" disabled={busy}>{busy?t('Зберігаємо…'):t('Зберегти картку')}</button></form>}
- {tab==='history'&&<><h3>{t('Історія візитів')}</h3>{orders.filter(o=>String(o.clientId)===card.id).map(o=><Card className="panel" key={o.id}><p>{o.vehicle} · {o.serviceSummary||o.title}</p><p>{o.createdAt.slice(0,10)} · {currency(o.total)}</p>{onOpenOrder&&<button className="text-btn" onClick={()=>{setCard(null);onOpenOrder(String(o.id))}}>{t('Відкрити замовлення')}</button>}</Card>)}{history(card.id).filter(b=>!orders.some(o=>o.appointmentId===String(b.id))).map(b=><p key={b.id}>{b.date} · {b.service} · {b.car}<br/>{b.tech} · {t(b.status)} · {currency(b.price-b.discount)}</p>)}{!history(card.id).length&&!orders.some(o=>String(o.clientId)===card.id)&&<p>{t('Візитів ще немає.')}</p>}</>}
+ {tab==='history'&&<><h3>{t('Історія візитів')}</h3>{orders.filter(o=>String(o.clientId)===card.id).map(o=><Card className="panel" key={o.id}><p><VehicleTag label={o.vehicle}/> · {o.serviceSummary||o.title}</p><p>{o.createdAt.slice(0,10)} · {currency(o.total)}</p>{onOpenOrder&&<button className="text-btn" onClick={()=>{setCard(null);onOpenOrder(String(o.id))}}>{t('Відкрити замовлення')}</button>}</Card>)}{history(card.id).filter(b=>!orders.some(o=>o.appointmentId===String(b.id))).map(b=><p key={b.id}>{b.date} · {b.service} · {b.car}<br/>{b.tech} · {t(b.status)} · {currency(b.price-b.discount)}</p>)}{!history(card.id).length&&!orders.some(o=>String(o.clientId)===card.id)&&<p>{t('Візитів ще немає.')}</p>}</>}
  {tab==='leads'&&<>{leads.filter(l=>String(l.clientId)===card.id||!!card.phone&&l.phone.replace(/\D/g,'')===card.phone.replace(/\D/g,'')).map(l=><Card className="panel" key={l.id}><b>{l.title}</b><p>{l.source} · {l.createdAt.slice(0,10)}</p><p>{l.notes}</p></Card>)}{!leads.some(l=>String(l.clientId)===card.id||!!card.phone&&l.phone.replace(/\D/g,'')===card.phone.replace(/\D/g,''))&&<p>{t('Немає звернень')}</p>}</>}
  </Drawer>}
  </section>
