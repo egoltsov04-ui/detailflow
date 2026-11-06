@@ -1,5 +1,6 @@
 // Display strings only. Database status codes, option values and customer data stay unchanged.
 const rows=`
+Обрати CSV-файл|Choose a CSV file
 Ваш робочий простір|Your workspace
 Оберіть формат роботи|Choose how you work
 Від самостійної роботи до великої команди.|From working solo to running a larger team.

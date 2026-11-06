@@ -7,7 +7,7 @@
 
 /* Buttons ------------------------------------------------------------------------------------ */
 :is(button,a,label).primary,
-:is(button,a,label).secondary,
+:is(button,a,label,span.file-picker-button).secondary,
 :is(button,a).danger-btn{
   display:inline-flex;align-items:center;justify-content:center;gap:var(--space-2);
   min-height:var(--touch-target);padding:0 var(--space-4);
@@ -20,7 +20,7 @@
 :is(button,a,label).primary{background:var(--color-accent);color:var(--color-on-accent)}
 :is(button,a,label).primary:hover:not(:disabled){background:var(--color-accent-hover)}
 /* Secondary action */
-:is(button,a,label).secondary{background:transparent;border-color:var(--color-border-strong);color:var(--color-text);font-weight:var(--weight-bold)}
+:is(button,a,label,span.file-picker-button).secondary{background:transparent;border-color:var(--color-border-strong);color:var(--color-text);font-weight:var(--weight-bold)}
 :is(button,a,label).secondary:hover:not(:disabled){background:var(--color-surface-raised)}
 /* Destructive action with its own weight */
 :is(button,a).danger-btn{background:transparent;border-color:var(--color-danger);color:var(--color-danger);font-weight:var(--weight-bold)}
@@ -78,3 +78,44 @@
 }
 :is(.ui-chips,.support-filters,.master-work-filters,.ob-categories)>button:not([hidden]):focus-visible{outline:2px solid var(--color-focus);outline-offset:2px}
 :is(.support-filters,.master-work-filters){display:flex;flex-wrap:wrap;gap:var(--space-2);border:0;overflow:visible;-webkit-mask-image:none;mask-image:none}
+
+/* Fields ---------------------------------------------------------------------------------------------
+   Text inputs, native and custom selects, number and date fields, textareas share one look.
+   16px text on phones prevents the iOS zoom on focus. */
+:is(input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]):not([type=hidden]):not([type=color]),select:not(.select-native),textarea),
+body .select-control>button.select-trigger{
+  box-sizing:border-box;min-height:var(--touch-target);
+  background-color:var(--color-bg);border:1px solid var(--color-border-input);border-radius:var(--radius-md);
+  color:var(--color-text);font-family:var(--font-body);font-size:var(--text-sm);
+  transition:border-color var(--duration-fast),box-shadow var(--duration-fast);
+}
+textarea{min-height:88px;line-height:var(--leading-normal);padding:var(--space-3)}
+select:not(.select-native):not([multiple]){
+  -webkit-appearance:none;appearance:none;padding-right:40px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%239AA0AB' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 14px center;background-size:16px;
+}
+:is(input,textarea)::placeholder{color:var(--color-text-muted);opacity:1}
+:is(input:not([type=checkbox]):not([type=radio]):not([type=file]),select:not(.select-native),textarea):hover:not(:disabled),
+body .select-control>button.select-trigger:hover:not(:disabled){border-color:var(--color-text-muted)}
+:is(input:not([type=checkbox]):not([type=radio]):not([type=file]),select:not(.select-native),textarea):focus-visible,
+body .select-control>button.select-trigger:focus-visible,body .select-control>button.select-trigger[aria-expanded=true]{
+  outline:none;border-color:var(--color-accent);box-shadow:0 0 0 3px var(--color-accent-soft);
+}
+:is(input,select,textarea)[aria-invalid=true]{border-color:var(--color-danger)}
+:is(input,select,textarea):disabled,body .select-control>button.select-trigger:disabled{opacity:.6;cursor:not-allowed}
+@media(max-width:768px){
+  :is(input:not([type=checkbox]):not([type=radio]):not([type=file]),select:not(.select-native),textarea),body .select-control>button.select-trigger{font-size:var(--text-md)}
+}
+
+/* Labels above fields and inline errors */
+.ui-field{gap:6px;color:var(--color-text-secondary);font-size:var(--text-sm);font-weight:var(--weight-bold)}
+.field-error,.ui-field .field-error{color:var(--color-danger);font-size:var(--text-xs);font-weight:var(--weight-medium)}
+
+/* File picker: the native input stays focusable but hidden; the label shows a localized button */
+.file-picker{position:relative;display:inline-flex;align-items:center;gap:var(--space-3);cursor:pointer}
+.file-picker>input[type=file]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+.file-picker>.file-picker-button{pointer-events:none}
+.file-picker>input[type=file]:focus-visible+.file-picker-button{outline:2px solid var(--color-focus);outline-offset:2px}
+.file-picker>input[type=file]:disabled{cursor:not-allowed}
+.file-picker>input[type=file]:disabled+.file-picker-button{opacity:.5}

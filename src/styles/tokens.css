@@ -8,6 +8,8 @@
   --color-surface-sunken:#13161C;
   --color-border:#2C303C;
   --color-border-strong:#3A3F4C;
+  /* input boundaries need 3:1 against the surface (WCAG 1.4.11): 3.2:1 on cards, 3.6:1 on the page */
+  --color-border-input:#6D7280;
 
   /* Text. --color-text-muted is for small secondary text (5.8:1 on surface);
      --color-text-disabled (brand #6D7280, 3.2:1) only for disabled states and decoration. */
