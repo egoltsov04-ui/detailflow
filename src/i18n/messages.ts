@@ -1,5 +1,6 @@
 // Display strings only. Database status codes, option values and customer data stay unchanged.
 const rows=`
+Номерний знак|License plate
 Обрати CSV-файл|Choose a CSV file
 Ваш робочий простір|Your workspace
 Оберіть формат роботи|Choose how you work

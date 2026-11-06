@@ -33,6 +33,13 @@
   --color-danger-soft:rgba(255,138,138,.12);
   --color-focus:#A7D65C;
 
+  /* Licence plate (DSTU 4278:2019 colours) — a deliberate light element, kept small */
+  --plate-bg:#FFFFFF;
+  --plate-ink:#111318;
+  --plate-band:#0057B8;
+  --plate-flag-blue:#0057B8;
+  --plate-flag-yellow:#FFD500;
+
   /* Type */
   --font-heading:'Montserrat','Manrope',ui-sans-serif,system-ui,sans-serif;
   --font-body:'Manrope',ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;
