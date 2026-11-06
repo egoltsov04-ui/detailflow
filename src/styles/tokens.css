@@ -1,0 +1,87 @@
+/* Detailflow design tokens: the single source for colours, type, spacing, radii, shadows and layers.
+   Components and screens use these variables instead of raw values. Brand: dark theme, accent #A7D65C. */
+:root{
+  /* Surfaces */
+  --color-bg:#171A22;
+  --color-surface:#22262F;
+  --color-surface-raised:#1D2028;
+  --color-surface-sunken:#13161C;
+  --color-border:#2C303C;
+  --color-border-strong:#3A3F4C;
+
+  /* Text. --color-text-muted is for small secondary text (5.8:1 on surface);
+     --color-text-disabled (brand #6D7280, 3.2:1) only for disabled states and decoration. */
+  --color-text:#FFFFFF;
+  --color-text-secondary:#C7CAD1;
+  --color-text-muted:#9AA0AB;
+  --color-text-disabled:#6D7280;
+
+  /* Accent: only the main action on a screen and the active item */
+  --color-accent:#A7D65C;
+  --color-accent-hover:#B6E06F;
+  --color-accent-soft:rgba(167,214,92,.12);
+  --color-on-accent:#171A22;
+
+  /* Status: always paired with text or an icon, never colour alone */
+  --color-success:#A7D65C;
+  --color-warning:#F6BF5A;
+  --color-warning-soft:rgba(246,191,90,.14);
+  --color-danger:#FF8A8A;
+  --color-danger-fill:#C14B62;
+  --color-danger-soft:rgba(255,138,138,.12);
+  --color-focus:#A7D65C;
+
+  /* Type */
+  --font-heading:'Montserrat','Manrope',ui-sans-serif,system-ui,sans-serif;
+  --font-body:'Manrope',ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;
+  --font-number:'Manrope',ui-sans-serif,system-ui,sans-serif;
+  --text-xs:12px;
+  --text-sm:14px;
+  --text-md:16px;
+  --text-lg:20px;
+  --text-xl:24px;
+  --text-2xl:32px;
+  --weight-regular:400;
+  --weight-medium:500;
+  --weight-bold:700;
+  --weight-heavy:800;
+  --leading-tight:1.2;
+  --leading-normal:1.5;
+
+  /* Spacing, 4px grid */
+  --space-1:4px;
+  --space-2:8px;
+  --space-3:12px;
+  --space-4:16px;
+  --space-5:20px;
+  --space-6:24px;
+  --space-8:32px;
+  --space-10:40px;
+  --space-12:48px;
+
+  /* Radii */
+  --radius-sm:8px;
+  --radius-md:12px;
+  --radius-lg:16px;
+  --radius-full:999px;
+
+  /* Shadows */
+  --shadow-raised:0 1px 2px rgba(0,0,0,.24);
+  --shadow-overlay:0 16px 48px rgba(0,0,0,.45);
+
+  /* Layers */
+  --z-nav:30;
+  --z-sticky:40;
+  --z-overlay:60;
+  --z-modal:70;
+  --z-toast:80;
+
+  /* Interaction */
+  --touch-target:44px;
+  --duration-fast:120ms;
+  --duration-base:200ms;
+}
+
+/* Headings: Montserrat ExtraBold for page, section and dialog titles and the landing.
+   Small headings inside cards and board columns stay in Manrope. */
+h1,.ui-page-header h2,.modal h2,.landing h2{font-family:var(--font-heading);font-weight:var(--weight-heavy)}
