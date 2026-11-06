@@ -39,37 +39,12 @@
 .support-workspace .primary:hover:not(:disabled){background:#b9e579;border-color:#b9e579}
 .support-workspace .secondary{background:#2b303a;color:#e7ebf0;border-color:#414956}
 .support-workspace .secondary:hover:not(:disabled){background:#343b46;border-color:#73805f}
-.support-workspace .support-navigation>button[aria-pressed=true]{background:var(--support-accent);color:var(--color-on-accent);border-color:var(--support-accent);font-weight:750}
-.support-workspace .support-filters:not(.ui-tabs)>button[aria-pressed=true]{background:#a7d65c18;color:#c7ea91;border-color:#8fb750}
-.support-workspace .ui-tabs{
-  max-width:100%;
-  flex-wrap:nowrap;
-  gap:8px;
-  overflow-x:auto;
-  overscroll-behavior-inline:contain;
-  scrollbar-width:thin;
-  scrollbar-color:#505b49 transparent;
-  padding:3px 3px 11px;
-}
-.support-workspace .ui-tabs>button{
-  appearance:none;
-  flex:0 0 auto;
-  min-height:42px;
-  padding:9px 13px;
-  border:1px solid #3b424e;
-  border-radius:10px;
-  background:#1b1f27;
-  color:#cbd2dc;
-  font-family:inherit;
-  font-size:13px;
-  font-weight:600;
-  line-height:1.35;
-  white-space:nowrap;
-  cursor:pointer;
-  transition:background .16s ease,border-color .16s ease,color .16s ease;
-}
-.support-workspace .ui-tabs>button:hover:not(:disabled){border-color:#748858;background:#272d35;color:var(--color-text)}
-.support-workspace .ui-tabs>button[aria-pressed=true]{background:#a7d65c1c;color:#c8ec91;border-color:#8fb750}
+
+
+
+
+
+
 .support-workspace .ui-table-wrap{
   border:1px solid var(--support-border);
   border-radius:14px;
@@ -195,7 +170,7 @@
   .support-workspace .ui-table tbody tr:hover td{background:transparent}
   .support-workspace .support-badge{font-size:10px;padding:4px 8px}
   .support-workspace .support-navigation{padding:14px 14px 0}
-  .support-workspace .support-navigation>button{flex:1 1 auto;justify-content:center}
+
   .support-workspace .support-subscription-modal{width:100%;max-height:100dvh;padding:46px 16px 18px;border-radius:0}
   .support-workspace .support-subscription-modal .ui-tabs{margin:14px -2px 18px}
   .support-workspace .support-subscription-modal .support-actions{flex-direction:column}
@@ -206,5 +181,5 @@
 @media(max-width:390px){
   .support-workspace .support-summary-grid{grid-template-columns:minmax(0,1fr)}
   .support-workspace .ui-table td{grid-template-columns:minmax(78px,32%) minmax(0,1fr);gap:8px}
-  .support-workspace .support-navigation>button{flex-basis:100%}
+
 }
