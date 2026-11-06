@@ -309,3 +309,22 @@ a.lp-brand,a.access-home,.ob-header a{display:inline-flex;align-items:center;min
 :is(td,.ui-table-value) .text-btn:has(.vehicle-tag){display:grid;justify-items:start;gap:var(--space-1);text-align:left}
 :is(td,.ui-table-value) .text-btn:has(.vehicle-tag)>small{color:var(--color-text-muted);font-weight:var(--weight-medium)}
 .ui-chip .vehicle-tag{gap:6px;row-gap:4px}
+
+/* App header: the sidebar is fixed from 1201px, so the menu toggles are only for the drawer */
+@media(min-width:1201px){.app-shell>main>header>.hamburger,.sidebar>.mobile-close{display:none!important}}
+.connection-status{color:var(--color-warning);font-size:var(--text-xs)}
+
+/* Overview: two stat cards and two attention tiles per row on phones; zero tiles stay quiet */
+@media(max-width:768px){
+  .studio-overview .overview-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .studio-overview .overview-kpis>button:last-child:nth-child(odd){grid-column:1/-1}
+  .studio-overview .overview-attention{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+.overview-attention button{background:var(--color-surface-raised);border-color:var(--color-border-strong);color:var(--color-text)}
+.overview-attention button>b{font-family:var(--font-number);font-variant-numeric:tabular-nums}
+.overview-attention button[data-zero]{border-color:var(--color-border)}
+.overview-attention button[data-zero]>b{color:var(--color-text-muted)}
+.overview-attention button:not([data-zero])>b{color:var(--color-warning)}
+
+/* An empty tab bar (screens without section tabs) is not drawn */
+:is(.ui-tabs,.section-tabs):empty{display:none!important}
