@@ -256,3 +256,16 @@ a.lp-brand,a.access-home,.ob-header a{display:inline-flex;align-items:center;min
 .order-card p{margin:0;color:var(--color-text-secondary);font-size:var(--text-sm)}
 .order-card-details{display:grid;gap:var(--space-1);color:var(--color-text-muted);font-size:var(--text-xs)}
 .order-card-details strong{color:var(--color-text);font-size:var(--text-sm);font-weight:var(--weight-bold)}
+
+/* Calendar: one navigation row (previous, week days, next, today, date picker) ---------------------- */
+.work-calendar-nav{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-2);margin-bottom:var(--space-4)}
+.work-calendar-nav>.work-week{display:flex;flex-wrap:nowrap;gap:var(--space-2);flex:1 1 0;min-width:0;overflow-x:auto;scrollbar-width:none;padding:4px 0;-webkit-mask-image:linear-gradient(to right,transparent,#000 16px,#000 calc(100% - 16px),transparent);mask-image:linear-gradient(to right,transparent,#000 16px,#000 calc(100% - 16px),transparent)}
+.work-calendar-nav>.work-week>button{flex:0 0 auto}
+:is(button).icon-btn{min-width:var(--touch-target);padding:0;font-size:var(--text-md)}
+.work-calendar-date{flex:0 0 160px}
+.work-calendar-hint{color:var(--color-text-muted);font-size:var(--text-sm);margin:0 0 var(--space-4)}
+.work-undated{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-3);margin-top:var(--space-6);color:var(--color-text-secondary);font-size:var(--text-sm)}
+@media(max-width:768px){
+  .work-calendar-nav>.work-week{order:5;flex-basis:100%}
+  .work-calendar-date{flex:1 1 110px;min-width:0}
+}

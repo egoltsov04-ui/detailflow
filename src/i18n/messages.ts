@@ -1,5 +1,6 @@
 // Display strings only. Database status codes, option values and customer data stay unchanged.
 const rows=`
+Відкрити канбан|Open the kanban
 Номерний знак|License plate
 Обрати CSV-файл|Choose a CSV file
 Ваш робочий простір|Your workspace
