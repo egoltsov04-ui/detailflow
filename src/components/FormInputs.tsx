@@ -25,6 +25,8 @@ export function NumberInput({value='',onChange,min,max,step,buttonStep,disabled,
   const input=useRef<HTMLInputElement>(null), [error,setError]=useState(''), id=useId()
   useLayoutEffect(()=>labelInput(input.current),[])
   const raw=String(value), invalid=numberError(raw,min,max,step)
+  // With a coarse buttonStep, minus is off when the next step would fall below min (e.g. 1 -> 0 where min is 0.001).
+  const belowMin=min!==undefined&&raw!==''&&(Number(raw)<=Number(min)||(!!buttonStep&&Number(stepNumber(raw,-1,undefined,undefined,buttonStep,0))<Number(min)))
   useEffect(()=>{input.current?.setCustomValidity(t(invalid));if(!invalid)setError('')},[invalid])
   function change(next:string){if(!input.current)return;input.current.setCustomValidity(t(numberError(next,min,max,step)));emit(input.current,next,onChange)}
   function increment(direction:number){change(buttonStep?stepNumber(raw,direction,min,max,buttonStep,0):stepNumber(raw,direction,min,max,step));input.current?.focus()}
@@ -32,7 +34,7 @@ export function NumberInput({value='',onChange,min,max,step,buttonStep,disabled,
     <span className="number-field"><input {...props} ref={input} type="text" inputMode="decimal" value={raw} disabled={disabled} readOnly={readOnly} aria-invalid={!!error} aria-describedby={[props['aria-describedby'],error?id:undefined].filter(Boolean).join(' ')||undefined}
       onChange={e=>change(normalizeNumber(e.target.value))} onBlur={e=>{setError(invalid);onBlur?.(e)}} onInvalid={()=>setError(invalid)}
       onKeyDown={e=>{onKeyDown?.(e);if(!e.defaultPrevented&&!disabled&&!readOnly&&['ArrowUp','ArrowDown'].includes(e.key)){e.preventDefault();increment(e.key==='ArrowUp'?1:-1)}}}/>
-      {!readOnly&&<span className="number-steps"><button type="button" aria-label={t("Зменшити значення")} disabled={disabled||(min!==undefined&&raw!==''&&Number(raw)<=Number(min))} onClick={()=>increment(-1)}><Minus size={14}/></button><button type="button" aria-label={t("Збільшити значення")} disabled={disabled||(max!==undefined&&raw!==''&&Number(raw)>=Number(max))} onClick={()=>increment(1)}><Plus size={14}/></button></span>}
+      {!readOnly&&<span className="number-steps"><button type="button" aria-label={t("Зменшити значення")} disabled={disabled||belowMin} onClick={()=>increment(-1)}><Minus size={14}/></button><button type="button" aria-label={t("Збільшити значення")} disabled={disabled||(max!==undefined&&raw!==''&&Number(raw)>=Number(max))} onClick={()=>increment(1)}><Plus size={14}/></button></span>}
     </span>{error&&<small className="field-error" id={id}>{t(error)}</small>}
   </span>
 }
