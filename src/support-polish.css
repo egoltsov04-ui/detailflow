@@ -67,26 +67,10 @@
 .support-workspace .ui-table tbody tr:hover td{background:#272c35}
 .support-workspace .ui-table-value{min-width:0;overflow-wrap:anywhere}
 .support-workspace .ui-empty{color:var(--support-muted)}
-.support-workspace .support-badge{
-  display:inline-flex;
-  align-items:center;
-  width:max-content;
-  max-width:100%;
-  min-height:26px;
-  margin-top:6px;
-  padding:4px 9px;
-  border:1px solid transparent;
-  border-radius:999px;
-  font-size:11px;
-  font-weight:700;
-  line-height:1.35;
-  white-space:normal;
-  overflow-wrap:anywhere;
-  vertical-align:middle;
-}
-.support-workspace .support-badge.is-active{background:#a7d65c18;color:#c1e889;border-color:#a7d65c45}
-.support-workspace .support-badge.is-expired{background:#e9b96718;color:#f0ca83;border-color:#e9b96745}
-.support-workspace .support-badge.is-priority{background:#8b9ac71b;color:#c3cff4;border-color:#8b9ac755}
+.support-workspace .support-badge{width:max-content;max-width:100%;margin-top:6px;vertical-align:middle}
+
+
+
 .support-workspace .support-search{
   grid-template-columns:minmax(0,1fr) auto auto;
   align-items:end;
@@ -168,7 +152,7 @@
   .support-workspace .ui-table td{grid-template-columns:minmax(92px,34%) minmax(0,1fr);gap:10px;align-items:start}
   .support-workspace .ui-table td:before{color:#9faaba;font-size:11px;font-weight:700;line-height:1.45}
   .support-workspace .ui-table tbody tr:hover td{background:transparent}
-  .support-workspace .support-badge{font-size:10px;padding:4px 8px}
+
   .support-workspace .support-navigation{padding:14px 14px 0}
 
   .support-workspace .support-subscription-modal{width:100%;max-height:100dvh;padding:46px 16px 18px;border-radius:0}
