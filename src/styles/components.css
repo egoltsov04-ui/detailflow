@@ -153,3 +153,37 @@ body .ui-badge.is-danger{background:var(--color-danger-soft);border-color:rgba(2
 /* Plain links (no component class): readable, underlined, accent on hover. Zero specificity. */
 :where(a:not([class])){color:inherit;text-decoration:underline;text-decoration-color:var(--color-text-muted);text-underline-offset:3px}
 :where(a:not([class])):hover{color:var(--color-accent);text-decoration-color:currentColor}
+
+/* Dialogs and drawers ---------------------------------------------------------------------------- */
+.overlay{background:rgba(9,11,15,.72)}
+.modal.ui-modal,.ui-modal.modal{
+  background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-overlay);color:var(--color-text);
+}
+:is(button,a).modal-close{
+  display:grid;place-items:center;width:var(--touch-target);height:var(--touch-target);min-width:var(--touch-target);
+  border:0;border-radius:var(--radius-sm);background:transparent;color:var(--color-text-secondary);cursor:pointer;
+}
+:is(button,a).modal-close:hover{background:var(--color-surface-raised);color:var(--color-text)}
+:is(button,a).modal-close:focus-visible{outline:2px solid var(--color-focus);outline-offset:2px}
+
+/* Empty states: say what is missing and what to do next; quiet, readable */
+:is(.ui-empty,.task-empty,.attention-empty,.empty-state){color:var(--color-text-muted);font-size:var(--text-sm);line-height:var(--leading-normal)}
+
+/* Loading text with a small spinner (static when reduced motion is requested) */
+.loading{color:var(--color-text-muted)}
+.loading::before{content:'';display:inline-block;width:14px;height:14px;margin-right:var(--space-2);vertical-align:-2px;
+  border:2px solid var(--color-border-strong);border-top-color:var(--color-accent);border-radius:50%;animation:ui-spin .8s linear infinite}
+@keyframes ui-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.loading::before{animation:none}}
+
+/* Errors: inline messages in danger text; block alerts as a soft panel with a danger edge */
+:is(p,span,small)[role=alert]{color:var(--color-danger);font-size:var(--text-sm);font-weight:var(--weight-medium)}
+div[role=alert]:not(.ui-notice){
+  padding:var(--space-3) var(--space-4);border:1px solid rgba(255,138,138,.3);border-left:3px solid var(--color-danger);
+  border-radius:var(--radius-sm);background:var(--color-danger-soft);color:var(--color-text);
+}
+.ui-notice{padding:var(--space-3) var(--space-4);border:1px solid var(--color-border);border-left:3px solid var(--color-text-muted);border-radius:var(--radius-sm);background:var(--color-surface-raised);color:var(--color-text)}
+.ui-notice.is-warning{border-left-color:var(--color-warning)}
+.ui-notice.is-success{border-left-color:var(--color-accent)}
+.ui-notice.is-danger{border-left-color:var(--color-danger);background:var(--color-danger-soft)}
