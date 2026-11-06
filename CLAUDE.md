@@ -43,13 +43,13 @@ tests/e2e/           сквозные тесты
 
 ## Команды
 
-Из `package.json`. Если scripts поменялись, сначала сверь с ним.
+Из `package.json`. Если scripts поменялись, сначала сверь с ним. Нужен Node 24 (как в CI `.github/workflows/verify.yml`): на Node 22 `npm test` падает сразу на флаге `--test-isolation=none`, временная замена `--experimental-test-isolation=none`.
 
 - `npm ci`: установка зависимостей.
 - `npm run dev`: локальный запуск фронтенда (Vite).
 - `npm run lint`: проверка типов TypeScript для `src/` и `api/` (`tsc --noEmit`). Это не ESLint.
 - `npm test`: unit и проверки базы на PGlite (`scripts/*.test.mjs`). Перед ними автоматически собираются сводные миграции и конфиг тарифов.
-- `npm run build`: сборка в `dist/`. Перед ней `scripts/check-env-isolation.mjs` проверяет, что staging не смотрит в боевые ключи, и собирается конфиг тарифов.
+- `npm run build`: сборка в `dist/`. Перед ней собирается конфиг тарифов и запускается `scripts/check-env-isolation.mjs`: он проверяет, что staging не смотрит в боевую базу, но только при `VERCEL_ENV=preview` или `DEPLOYMENT_ENV=staging`, иначе пропускается.
 - `npm run test:e2e`: E2E на Playwright (`tests/e2e/`).
 
 ## Роли
