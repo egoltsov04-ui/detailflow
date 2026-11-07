@@ -122,3 +122,34 @@ test('studios are isolated and in-studio roles only change what they own',async 
  assert.deepEqual(audit.map(r=>r.entity_type),['inventory_items','services','tenants'])
  assert.ok(audit.every(r=>r.actor_id===OWNER))
 })
+
+test('a master shift starts only after an owner or admin confirms it',async t=>{
+ const db=await schema();t.after(()=>db.close());await seed(db)
+ const q=async(s,p)=>(await db.query(s,p)).rows
+ async function as(user,fn){
+  await db.exec(`reset role;select set_config('request.jwt.claim.sub','${user}',false);select set_config('request.jwt.claims','{"sub":"${user}","role":"authenticated","aal":"aal1"}',false);set role authenticated;`)
+  try{return await fn()}finally{await db.exec('reset role')}
+ }
+ const fails=async(user,sql)=>{try{await as(user,()=>db.query(sql));return false}catch{return true}}
+ const M=id(31),open=async()=>(await q(`select count(*)::int n from staff_shifts where staff_id=$1 and ended_at is null`,[M]))[0].n
+ await as(MASTER,()=>db.query(`select manage_master_shift('${M}','start')`))
+ assert.equal(await open(),0,'start must wait for confirmation')
+ const [req]=await q(`select id,status from shift_requests where staff_id=$1`,[M]);assert.equal(req.status,'pending')
+ assert.ok(await fails(MASTER,`select decide_shift_request('${req.id}',true)`),'master confirms own shift')
+ assert.ok(await fails(OWNER_B,`select decide_shift_request('${req.id}',true)`),'another studio confirms')
+ await as(ADMIN,()=>db.query(`select decide_shift_request('${req.id}',false,'Ще не на місці')`))
+ assert.equal((await as(MASTER,()=>q(`select reason from shift_requests where staff_id=$1`,[M])))[0].reason,'Ще не на місці')
+ assert.equal(await open(),0)
+ await db.exec(`update shift_requests set requested_at=now()-interval '2 hours' where staff_id='${M}'`)
+ await as(MASTER,()=>db.query(`select manage_master_shift('${M}','start')`))
+ const [again]=await q(`select id,status from shift_requests where staff_id=$1`,[M]);assert.equal(again.status,'pending')
+ await db.exec(`update shift_requests set requested_at=now()-interval '2 hours' where staff_id='${M}'`)
+ await as(OWNER,()=>db.query(`select decide_shift_request('${again.id}',true)`))
+ const [shift]=await q(`select started_at>now()-interval '1 minute' fresh from staff_shifts where staff_id=$1 and ended_at is null`,[M])
+ assert.ok(shift?.fresh,'shift counts from the confirmation, not the request')
+ assert.equal((await q(`select count(*)::int n from shift_requests where staff_id=$1`,[M]))[0].n,0)
+ // with the setting off the master starts immediately
+ await db.exec(`update staff_shifts set ended_at=now()+interval '1 second' where staff_id='${M}';update tenants set shift_approval=false where id='${A}'`)
+ await as(MASTER,()=>db.query(`select manage_master_shift('${M}','start')`))
+ assert.equal(await open(),1)
+})

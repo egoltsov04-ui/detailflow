@@ -2,7 +2,7 @@ import webpush from 'web-push'
 import type {SupabaseClient} from '@supabase/supabase-js'
 import {validPushEndpoint} from '../../api/push.js'
 import {appUrl} from './siteUrl.js'
-const titles:Record<string,string[]>={work_assigned:['Призначено нову роботу','New work assigned'],work_review:['Робота очікує перевірки','Work awaits review'],work_approved:['Роботу підтверджено','Work approved'],work_returned:['Роботу повернуто на доопрацювання','Work returned for changes']}
+const titles:Record<string,string[]>={work_assigned:['Призначено нову роботу','New work assigned'],work_review:['Робота очікує перевірки','Work awaits review'],work_approved:['Роботу підтверджено','Work approved'],work_returned:['Роботу повернуто на доопрацювання','Work returned for changes'],shift_requested:['Майстер просить підтвердити початок зміни','A master asks to confirm a shift start'],shift_rejected:['Запит на початок зміни відхилено','Shift start request rejected']}
 export async function deliverPushQueue(db:SupabaseClient,send=webpush.sendNotification){
  if(!process.env.VAPID_PUBLIC_KEY||!process.env.VAPID_PRIVATE_KEY)return {configured:false,sent:0}
  const claimed=await db.rpc('claim_notifications',{channel_input:'push',limit_input:2});if(claimed.error)throw claimed.error

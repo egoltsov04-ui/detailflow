@@ -370,3 +370,16 @@ a.lp-brand,a.access-home,.ob-header a{display:inline-flex;align-items:center;min
 
 /* Master shift: pause and end are real buttons side by side */
 .wf-shift .wf-actions{display:flex;flex-wrap:wrap;gap:var(--space-2)}
+
+/* Shift start requests and the approval setting */
+.shift-requests{display:grid;gap:var(--space-3)}
+.shift-requests h2,.shift-requests>p{margin:0}
+.shift-request{display:grid;grid-template-columns:minmax(140px,1fr) minmax(200px,2fr) auto;gap:var(--space-3);align-items:end;padding-top:var(--space-3);border-top:1px solid var(--color-border)}
+.shift-request>div:first-child{display:grid;gap:2px;align-self:center}
+.shift-request>div:first-child span{color:var(--color-text-muted);font-size:var(--text-sm)}
+.shift-request label{display:grid;gap:var(--space-1);font-size:var(--text-sm);font-weight:var(--weight-bold)}
+@media(max-width:768px){.shift-request{grid-template-columns:1fr}}
+.shift-approval-toggle{display:flex!important;align-items:center;justify-content:space-between;gap:var(--space-4);min-height:var(--touch-target);cursor:pointer}
+.shift-approval-toggle>span{display:grid;gap:2px}
+.shift-approval-toggle small{color:var(--color-text-muted);font-weight:var(--weight-regular)}
+.shift-approval-toggle input{width:20px;height:20px;flex:none;accent-color:var(--color-accent)}
