@@ -1,6 +1,6 @@
 import {type Page} from '@playwright/test'
 export const studio='10000000-0000-4000-8000-000000000001',owner='10000000-0000-4000-8000-000000000002',client='10000000-0000-4000-8000-000000000003',staff='10000000-0000-4000-8000-000000000004',order='10000000-0000-4000-8000-000000000005'
-const now=new Date().toISOString(),today=now.slice(0,10)
+const now=new Date().toISOString(),today=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Kyiv'}).format(new Date()) // studio day, not UTC: after 22:00 UTC Kyiv is already on the next date
 export const clients=[{id:client,tenant_id:studio,full_name:'Тестовий клієнт',phone:'+380000000000',email:'test@example.com',notes:'Перед видачею зателефонувати',tags:['Постійний'],followup_enabled:true,vehicles:[{id:'vehicle',make:'Mercedes-Benz',model:'GLE',plate_number:'TEST 001',year:2023,notes:''}]}]
 const member={id:staff,tenant_id:studio,user_id:owner,full_name:'Тестовий майстер',specialty:'Мийка та полірування',color:'#a7d65c',compensation_percent:30,hourly_rate:0,profile_completed_at:now,all_services:true,staff_services:[]}
 const service={id:'service',name:'Комплексне полірування',price:1500,duration_minutes:120,active:true,category:'Полірування',description:'Відновлення блиску кузова',variants:[]}

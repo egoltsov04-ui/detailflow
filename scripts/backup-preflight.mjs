@@ -2,11 +2,8 @@ import { spawnSync } from 'node:child_process'
 
 const required = [
   'BACKUP_ENV',
-  'PGSERVICE',
-  'PGSERVICEFILE',
-  'RCLONE_SUPABASE_REMOTE',
-  'RCLONE_R2_CRYPT_REMOTE',
-  'BACKUP_BUCKETS',
+  'BACKUP_DB_CONTAINER',
+  'RCLONE_BACKUP_REMOTE',
   'AGE_RECIPIENT',
 ]
 const missing = required.filter((name) => !process.env[name])
@@ -23,7 +20,7 @@ if (process.env.BACKUP_ENV !== 'staging') {
 
 const failed = []
 for (const [command, args] of [
-  ['pg_dump', ['--version']],
+  ['docker', ['--version']],
   ['age', ['--version']],
   ['rclone', ['version']],
 ]) {
@@ -41,4 +38,4 @@ if (failed.length) {
   process.exit(1)
 }
 
-console.log('Backup preflight passed. The backup script will separately verify the staging database, Storage endpoint, and encrypted R2 target before reading data.')
+console.log('Backup preflight passed. The backup script separately verifies the encrypted rclone destination and runs as a dry run unless --apply is passed.')
