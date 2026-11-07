@@ -1,0 +1,31 @@
+# Detailflow app next to a self-hosted Supabase stack (official supabase/docker compose).
+# Only Caddy publishes ports; the API is reachable inside the Docker network only.
+name: detailflow
+services:
+  api:
+    build: {context: ../.., dockerfile: deploy/selfhost/Dockerfile.api}
+    env_file: .env
+    restart: unless-stopped
+    networks: [default, supabase]
+  caddy:
+    image: caddy:2.10.2
+    restart: unless-stopped
+    depends_on: [api]
+    ports: ["${HTTP_PORT:-80}:80", "${HTTPS_PORT:-443}:443"]
+    environment:
+      APP_SITE: ${APP_SITE:-:80}
+      SUPABASE_SITE: ${SUPABASE_SITE:-:8001}
+      SUPABASE_GATEWAY: ${SUPABASE_GATEWAY:-supabase-envoy:8000}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ../../dist:/srv:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [default, supabase]
+networks:
+  supabase:
+    external: true
+    name: ${SUPABASE_NETWORK:-supabase_default}
+volumes:
+  caddy_data:
+  caddy_config:

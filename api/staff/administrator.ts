@@ -1,4 +1,5 @@
 import {createClient} from '@supabase/supabase-js'
+import {appUrl} from '../../server/lib/siteUrl.js'
 type Request={method?:string;headers:Record<string,string|string[]|undefined>;body?:unknown}
 type Response={status:(code:number)=>Response;json:(body:unknown)=>void}
 export function createAdministratorHandler(makeClient:typeof createClient=createClient){return async(req:Request,res:Response)=>{
@@ -13,9 +14,8 @@ export function createAdministratorHandler(makeClient:typeof createClient=create
   if(session.error||!session.data.user)return res.status(401).json({error:'Увійдіть повторно'})
   const owner=await db.from('tenant_memberships').select('role').eq('tenant_id',body.tenantId).eq('user_id',session.data.user.id).eq('active',true).eq('role','owner').maybeSingle()
   if(!owner.data)return res.status(403).json({error:'Адміністраторів запрошує лише власник'})
-  const base=process.env.APP_URL||process.env.WAYFORPAY_APP_URL||(process.env.VERCEL_PROJECT_PRODUCTION_URL?'https://'+process.env.VERCEL_PROJECT_PRODUCTION_URL:'')
-  if(!base)return res.status(503).json({error:'Налаштуйте адресу сайту для листів'})
-  const redirectTo=new URL('/login?role=admin&activate=admin',base).toString()
+  let redirectTo:string
+  try{redirectTo=appUrl('/login?role=admin&activate=admin')}catch{return res.status(503).json({error:'Налаштуйте APP_URL для цього середовища'})}
   if(body.action==='recovery'){
    if(typeof body.userId!=='string')return res.status(400).json({error:'Оберіть адміністратора'})
    const member=await db.from('tenant_memberships').select('user_id').eq('tenant_id',body.tenantId).eq('user_id',body.userId).eq('active',true).eq('role','admin').maybeSingle()

@@ -1,0 +1,9 @@
+node_modules
+dist
+build
+.git
+playwright-report
+test-results
+.env
+.env.*
+deploy/selfhost/.env

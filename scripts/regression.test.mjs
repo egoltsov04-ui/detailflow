@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
-import { localDate, validDate, parseDate, dateError, normalizeNumber, numberError, stepNumber, studioDateTime } from '../src/lib/formValues.ts'
+import { localDate, validDate, parseDate, dateError, normalizeNumber, numberError, stepNumber, unitStep, studioDateTime } from '../src/lib/formValues.ts'
 import { transitionError } from '../src/lib/workOrderFlow.ts'
 import { readAllPages } from '../src/lib/pagination.ts'
 import { entryRoute } from '../src/lib/entryRoute.ts'
@@ -86,6 +86,13 @@ test('numbers accept comma, pasted spaces and zero but reject garbage and out of
 test('steppers respect precision and boundaries',()=>{
  assert.equal(stepNumber('0.2',1,0,100,.1),'0.3');assert.equal(stepNumber('100',1,0,100,1),'100')
  assert.equal(stepNumber('0',-1,0,100,1),'0');assert.equal(stepNumber('1.5',1,0,100,1),'2')
+})
+test('stock quantity buttons move by unit, typed input keeps 0.001 precision',()=>{
+ assert.equal(unitStep('шт'),1);assert.equal(unitStep('уп.'),1);assert.equal(unitStep('мл'),1);assert.equal(unitStep('кг'),.5);assert.equal(unitStep('л'),.5)
+ assert.equal(stepNumber('',1,0.001,undefined,1,0),'1');assert.equal(stepNumber('2',1,0.001,undefined,1,0),'3')
+ assert.equal(stepNumber('2.5',-1,0.001,undefined,1,0),'2');assert.equal(stepNumber('0.25',1,0,undefined,.5,0),'0.5')
+ assert.equal(stepNumber('1',-1,0.001,undefined,1,0),'0.001')
+ assert.equal(numberError('0.125',0.001,undefined,.001),'')
 })
 test('approval flow cannot skip review or change already accrued work',()=>{
  const base={status:'new',staffId:null,checklist:[]} 

@@ -16,7 +16,8 @@ export type Report={timezone:string;orders:number;revenue:number;late_orders:num
 const n=(value:number|null)=>value===null?'—':new Intl.NumberFormat(localeTag(),{maximumFractionDigits:1}).format(value)
 export default function BusinessAnalytics({tenantId,preview}:{tenantId?:string|null;preview?:Report}){
  const timezone=useStudioTimezone(),today=financeDay(new Date().toISOString(),timezone)
- const [from,setFrom]=useState(today.slice(0,7)+'-01'),[to,setTo]=useState(today),[period,setPeriod]=useState({from:today.slice(0,7)+'-01',to:today})
+ const initialFrom=preview?.months[0]?.month?`${preview.months[0].month}-01`:today.slice(0,7)+'-01'
+ const [from,setFrom]=useState(initialFrom),[to,setTo]=useState(today),[period,setPeriod]=useState({from:initialFrom,to:today})
  const [previous,setPrevious]=useState<Report|null>(null),[exporting,setExporting]=useState(false),[clientLimit,setClientLimit]=useState(50)
  const [data,setData]=useState<Report|null>(null),[error,setError]=useState(''),[loading,setLoading]=useState(false),[version,setVersion]=useState(0)
  useEffect(()=>{let live=true;setData(null);setPrevious(null);setClientLimit(50);setError('');setLoading(false);if(import.meta.env.DEV&&preview){setData(preview);setPrevious({...preview,orders:20,revenue:35000});return}if(!supabase||!tenantId){setError('Для звіту підключіть студію.');return}setLoading(true)

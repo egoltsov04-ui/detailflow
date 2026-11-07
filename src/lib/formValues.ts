@@ -55,8 +55,11 @@ export function numberError(value: string, min?: number|string, max?: number|str
   }
   return ''
 }
-export function stepNumber(value: string, direction: number, min?: number|string, max?: number|string, step?: number|string): string {
-  const increment=step==='any'?1:Number(step??1), base=Number(min??0)
+// Plus/minus step for stock quantities: half a unit for litres and kilograms (as the minimum-stock field does for litres),
+// whole units otherwise. Typed input keeps the 0.001 precision of the database column.
+export function unitStep(unit?: string): number { return ['л','l','літр','кг'].includes((unit||'').toLowerCase())?0.5:1 }
+export function stepNumber(value: string, direction: number, min?: number|string, max?: number|string, step?: number|string, origin?: number): string {
+  const increment=step==='any'?1:Number(step??1), base=origin??Number(min??0)
   const current=value!==''&&Number.isFinite(Number(value))?Number(value):base
   const units=(current-base)/increment
   const next=base+(direction>0?Math.floor(units+1e-8)+1:Math.ceil(units-1e-8)-1)*increment

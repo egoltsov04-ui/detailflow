@@ -1,5 +1,32 @@
 // Display strings only. Database status codes, option values and customer data stay unchanged.
 const rows=`
+клієнт|client
+клієнти|clients
+Відкрити канбан|Open the kanban
+Номерний знак|License plate
+Обрати CSV-файл|Choose a CSV file
+Ваш робочий простір|Your workspace
+Оберіть формат роботи|Choose how you work
+Від самостійної роботи до великої команди.|From working solo to running a larger team.
+Ваш тариф|Your plan
+Самостійна робота|Working solo
+Для команди|For your team
+Для масштабування|Room to grow
+на місяць|per month
+Що входить|What's included
+Для власника, який працює сам. Команда та склад — у тарифах Студія і Pro.|For an owner working solo. Team and inventory features are included in Studio and Pro.
+Продовжити тариф|Renew plan
+Робочий простір|Workspace
+Завантаження та перебіг робіт зараз|Live occupancy and work progress
+Налаштувати пости|Set up bays
+Вільні пости|Available bays
+Завантаження|Occupancy
+Клієнт не вказаний|Client not specified
+Час у роботі|Time in progress
+Готовий до роботи|Ready for work
+На цьому посту немає активного замовлення.|No active order is assigned to this bay.
+Оберіть цей пост у картці замовлення, щоб розпочати роботу.|Select this bay in an order to start work.
+Налаштувати пост|Configure bay
 Мій робочий графік|My working hours
 Вкажіть години, у які клієнти можуть записатися онлайн.|Set the hours when clients can book online.
 Стандартна ціна|Standard price
@@ -95,6 +122,11 @@ Excel або CSV з прикладами та поясненнями колон�
 Ціну збережено|Price saved
 Ціна засновника, ₴|Founder price, ₴
 Порожнє поле повертає стандартну ціну тарифу.|Leave blank to restore the standard plan price.
+Ціна засновника — спеціальна ціна підписки для конкретної студії. Вона відображається власнику та адміністратору в розділі тарифу.|A founder price is a custom subscription price for a specific studio. It is shown to the owner and administrators in the plan section.
+Стандартна ціна тарифу|Standard plan price
+Ціна для цієї студії|Price for this studio
+Зафіксована ціна діятиме під час наступних продовжень тарифу.|The locked price will remain in effect for future plan renewals.
+Без фіксації ціна діє до завершення поточного періоду, потім повернеться стандартна ціна тарифу.|Without a lock, the custom price lasts until the current period ends, then the standard plan price applies.
 Зафіксувати на весь час|Lock this price indefinitely
 міс.|mo.
 Навігація по сторінці|Page navigation
@@ -972,6 +1004,19 @@ VIP, корпоративний, повторний|VIP, corporate, returning
 · Клієнтів:|· Clients:
 Назва, адреса та часовий пояс|Name, address and time zone
 Послуг у каталозі:|Catalog services:
+Запити на початок зміни|Shift start requests
+Підтвердіть, коли майстер на місці. Зміна рахується з моменту підтвердження.|Confirm when the master is on site. The shift counts from the confirmation.
+Запит о|Requested at
+Причина відмови, необов’язково|Reason for rejection, optional
+Підтвердження початку зміни|Shift start confirmation
+Майстер починає зміну лише після підтвердження власника або адміністратора.|A master's shift starts only after an owner or admin confirms it.
+Адміністратор або власник має підтвердити початок зміни.|An admin or the owner must confirm the shift start.
+Запит відхилено|Request rejected
+Скасувати запит|Cancel request
+Не вдалося зберегти|Could not save
+Свою зміну підтверджує інший адміністратор або власник|Your own shift is confirmed by another admin or the owner
+Запит уже розглянуто|This request has already been handled
+Клієнтів у базі:|Clients in the database:
 Майстрів у команді:|Team members:
 Необов’язково — можна зробити пізніше|Optional; you can do this later
 Почніть вводити ім’я або телефон|Start typing a name or phone number

@@ -64,10 +64,10 @@ test('push API rejects untrusted endpoints, blocked accounts and changing anothe
 })
 
 test('push delivery skips blocked recipients, removes expired devices and distinguishes retryable failures',async t=>{
- env(t,{VAPID_PUBLIC_KEY:'public-test',VAPID_PRIVATE_KEY:'private-test'})
+ env(t,{VAPID_PUBLIC_KEY:'public-test',VAPID_PRIVATE_KEY:'private-test',APP_URL:'https://example.com'})
  const endpointSource=(await read('api/push.ts')).replace("'@supabase/supabase-js'",JSON.stringify(import.meta.resolve('@supabase/supabase-js')))
  const endpointModule='data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(endpointSource)).toString('base64')
- const source=(await read('server/lib/push.ts')).replace("'web-push'",JSON.stringify(import.meta.resolve('web-push'))).replace("'../../api/push.js'",JSON.stringify(endpointModule))
+ const source=(await read('server/lib/push.ts')).replace("'web-push'",JSON.stringify(import.meta.resolve('web-push'))).replace("'../../api/push.js'",JSON.stringify(endpointModule)).replace("'./siteUrl.js'",JSON.stringify(new URL('../server/lib/siteUrl.ts',import.meta.url).href))
  const {deliverPushQueue}=await import('data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(source)).toString('base64'))
  let active=false,code=0,sends=0,deleted=0,finish
  const db={rpc:async(name,args)=>name==='claim_notifications'?{data:[{id:'job',tenant_id:'studio',recipient_user_id:'master',claim_token:'claim',kind:'work_assigned',payload:{subscription_id:'subscription'}}]}:(finish=args,{data:true}),from(table){const chain={select(){return chain},eq(){return chain},delete(){deleted++;return chain},maybeSingle:async()=>({data:table==='push_subscriptions'?{endpoint:'https://fcm.googleapis.com/test',keys:{},locale:'en'}:active?{role:'master',id:'master'}:null}),then(resolve){return Promise.resolve({error:null}).then(resolve)}};return chain}}
