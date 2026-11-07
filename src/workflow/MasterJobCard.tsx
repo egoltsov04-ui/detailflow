@@ -5,6 +5,7 @@ import type {WorkOrder} from '../WorkOrders'
 import type {WorkflowController} from './useWorkflow'
 import type {Job} from './model'
 import JobEvidence from './JobEvidence'
+import {VehicleTag} from '../components/VehicleTag'
 
 export const isReturned=(job:Job)=>!!job.review_note&&['waiting','in_progress'].includes(job.status)
 export default function MasterJobCard({job,order,workflow,readOnly=false}:{job:Job;order:WorkOrder;workflow:WorkflowController;readOnly?:boolean}){
@@ -20,7 +21,7 @@ export default function MasterJobCard({job,order,workflow,readOnly=false}:{job:J
  const primary=<button className="primary" disabled={frozen||!working||(running&&(!job.checklist.length||job.checklist.some(c=>!c.done)))} onClick={()=>void act(start?'start':'submit')}>{t(start?(job.status==='waiting'?'Продовжити роботу':'Почати роботи'):'Здати на перевірку')}</button>
  return <Card as="article" className="wf-job master-stage-card">
   {returned&&<div className="master-return" role="status"><b>{t('Повернено')}</b><p>{job.review_note}</p></div>}
-  <h3>{job.title}</h3><p>{order.vehicle||order.title} · {order.clientName}</p>
+  <h3>{job.title}</h3><p><VehicleTag label={order.vehicle||order.title}/> · {order.clientName}</p>
   {planned!=null&&<p>{t('Планова тривалість')}: {planned} {t('хв')}</p>}
   {start&&<div className="master-stage-top">{primary}</div>}
   {running&&<div className={'master-work-timer '+(remaining!==null&&remaining<0?'post-overdue':'')}><strong>{!order.startedAt?t('Оновлюємо час початку…'):remaining===null?t('Планову тривалість не задано'):t(remaining<0?'Прострочено':'Залишилось')+' '+clock}</strong>{!!planned&&<progress aria-label={t('Прогрес роботи')} max={100} value={Math.min(100,elapsed/planned*100)}/>}<button className="text-btn" disabled={frozen} onClick={()=>void act('pause')}>{t('Призупинити')}</button></div>}

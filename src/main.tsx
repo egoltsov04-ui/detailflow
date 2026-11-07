@@ -3,10 +3,14 @@ import { StrictMode, lazy, Suspense, useEffect, useState } from 'react'
 import {supabase} from './lib/supabase'
 import {observeSession} from './lib/session'
 import { createRoot } from 'react-dom/client'
+import './styles/fonts.css'
+import './styles/tokens.css'
 import './styles.css'
 import PwaControls from './components/PwaControls'
 import { Dialogs, ErrorBoundary, ModalAccessibility } from './components/Dialogs'
 import './ux-polish.css'
+// Base components last among global styles, so they win ties with legacy rules
+import './styles/components.css'
 import { entryRoute } from './lib/entryRoute'
 
 document.documentElement.lang=getLocale()

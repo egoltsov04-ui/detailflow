@@ -1,5 +1,10 @@
 // Display strings only. Database status codes, option values and customer data stay unchanged.
 const rows=`
+клієнт|client
+клієнти|clients
+Відкрити канбан|Open the kanban
+Номерний знак|License plate
+Обрати CSV-файл|Choose a CSV file
 Ваш робочий простір|Your workspace
 Оберіть формат роботи|Choose how you work
 Від самостійної роботи до великої команди.|From working solo to running a larger team.
@@ -999,6 +1004,19 @@ VIP, корпоративний, повторний|VIP, corporate, returning
 · Клієнтів:|· Clients:
 Назва, адреса та часовий пояс|Name, address and time zone
 Послуг у каталозі:|Catalog services:
+Запити на початок зміни|Shift start requests
+Підтвердіть, коли майстер на місці. Зміна рахується з моменту підтвердження.|Confirm when the master is on site. The shift counts from the confirmation.
+Запит о|Requested at
+Причина відмови, необов’язково|Reason for rejection, optional
+Підтвердження початку зміни|Shift start confirmation
+Майстер починає зміну лише після підтвердження власника або адміністратора.|A master's shift starts only after an owner or admin confirms it.
+Адміністратор або власник має підтвердити початок зміни.|An admin or the owner must confirm the shift start.
+Запит відхилено|Request rejected
+Скасувати запит|Cancel request
+Не вдалося зберегти|Could not save
+Свою зміну підтверджує інший адміністратор або власник|Your own shift is confirmed by another admin or the owner
+Запит уже розглянуто|This request has already been handled
+Клієнтів у базі:|Clients in the database:
 Майстрів у команді:|Team members:
 Необов’язково — можна зробити пізніше|Optional; you can do this later
 Почніть вводити ім’я або телефон|Start typing a name or phone number

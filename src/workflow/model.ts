@@ -14,8 +14,9 @@ export type Earning={id:string;staff_id:string;work_order_id:string;job_id:strin
 export type JobEvent={id:string;job_id:string;actor_id:string|null;event:string;detail:Record<string,unknown>;created_at:string}
 export type Payout={id:string;earning_id:string;amount:number;method:string;note:string;created_at:string}
 export type Service={id:string;name:string;price:number}
-export type WorkflowData={can_view_finance?:boolean;jobs:Job[];shifts:Attendance[];earnings:Earning[];events:JobEvent[];payouts:Payout[];services:Service[]}
-export const emptyData:WorkflowData={jobs:[],shifts:[],earnings:[],events:[],payouts:[],services:[]}
+export type ShiftRequest={id:string;staff_id:string;requested_at:string;status:'pending'|'rejected';reason:string|null}
+export type WorkflowData={can_view_finance?:boolean;jobs:Job[];shifts:Attendance[];shift_requests:ShiftRequest[];earnings:Earning[];events:JobEvent[];payouts:Payout[];services:Service[]}
+export const emptyData:WorkflowData={jobs:[],shifts:[],shift_requests:[],earnings:[],events:[],payouts:[],services:[]}
 export const jobLabels:Record<JobStatus,string>={new:'Потрібно призначити',assigned:'Призначено',in_progress:'Виконується',waiting:'Пауза / доопрацювання',review:'На перевірці',approved:'Підтверджено'}
 export const eventLabels:Record<string,string>={assigned:'Призначення й умови збережено',start:'Розпочато роботу',pause:'Роботу призупинено',check:'Оновлено чек-лист',submit:'Здано на перевірку',return:'Повернуто на доопрацювання',approve:'Перевірено та нараховано',note:'Додано коментар',photo:'Додано фото',media:'Додано матеріали роботи',paint:'Оновлено заміри покриття'}
 export const money=(n:number)=>new Intl.NumberFormat(localeTag(),{maximumFractionDigits:2}).format(n)+' ₴'

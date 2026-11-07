@@ -6,9 +6,11 @@ const member={id:staff,tenant_id:studio,user_id:owner,full_name:'Тестови�
 const service={id:'service',name:'Комплексне полірування',price:1500,duration_minutes:120,active:true,category:'Полірування',description:'Відновлення блиску кузова',variants:[]}
 export const baseOrder={id:order,tenant_id:studio,client_id:client,clients:clients[0],staff_id:staff,staff_profiles:member,title:'Комплексне полірування',vehicle_label:'Mercedes-Benz GLE · TEST 001',service_summary:'Полірування кузова',status:'review',total:1500,deposit:500,created_at:now,status_changed_at:now,checklist:[],post_id:'post',started_at:now,planned_duration_minutes:120,appointment_id:'appointment'}
 const job={id:'job',tenant_id:studio,work_order_id:order,staff_id:staff,service_id:'service',title:service.name,stage:'Виконання',position:0,status:'review',price:1500,pay_mode:'percent',rate:30,checklist:[{id:'check',title:'Кузов підготовлено',done:true}],attachments:[],note:'',review_note:'',worked_seconds:7200,running_since:null,version:1,created_at:now,updated_at:now,submitted_at:now}
-export async function mockService(page:Page,role:'owner'|'master'|'super_admin'|'guest'='owner',scenario:{status?:string;reason?:string;attachments?:any[];aal?:string;plan?:string;totpSetup?:boolean}={}){
+export async function mockService(page:Page,role:'owner'|'master'|'super_admin'|'guest'='owner',scenario:{status?:string;reason?:string;attachments?:any[];aal?:string;plan?:string;totpSetup?:boolean;shiftRequest?:'none'|'pending'}={}){
  const calls:{name:string;body:any}[]=[]
  let orders=[baseOrder,{...baseOrder,id:'ready-order',appointment_id:null,status:'ready',vehicle_label:'BMW X5 · READY',post_id:null},{...baseOrder,id:'archived-order',appointment_id:null,status:'issued',vehicle_label:'Archived Volvo',status_changed_at:'2020-01-01',post_id:null}]
+ const openShift={id:'shift',staff_id:staff,started_at:now,ended_at:null,paused_at:null,pause_seconds:0,breaks:[]},pendingRequest={id:'shift-request',staff_id:staff,requested_at:now,status:'pending',reason:null}
+ let shifts:any[]=scenario.shiftRequest?[]:[openShift],shiftRequests:any[]=scenario.shiftRequest==='pending'?[pendingRequest]:[]
  let jobs:any[]=[{...job,status:scenario.status||job.status,review_note:scenario.reason||'',attachments:scenario.attachments||[]}],cards=structuredClone(clients)
  await page.addInitScript(({owner,role,aal})=>{localStorage.setItem('detailflow.locale','uk');if(role!=='guest'){const exp=Math.floor(Date.now()/1000)+36000;const token=btoa(JSON.stringify({alg:'HS256',typ:'JWT'}))+'.'+btoa(JSON.stringify({sub:owner,exp,aal:aal||'aal2',amr:[{method:'password',timestamp:Math.floor(Date.now()/1000)}],role:'authenticated'}))+'.test-signature';localStorage.setItem('sb-stxfbarigoutglfqqhwi-auth-token',JSON.stringify({access_token:token,refresh_token:'test-refresh',expires_at:exp,expires_in:36000,token_type:'bearer',user:{id:owner,email:'test@example.com',aud:'authenticated',role:'authenticated',user_metadata:{},app_metadata:{provider:'email'},created_at:new Date().toISOString()}}))}}, {owner,role,aal:scenario.aal})
  await page.routeWebSocket(/supabase/,ws=>ws.close())
@@ -41,7 +43,7 @@ export async function mockService(page:Page,role:'owner'|'master'|'super_admin'|
  case 'close_overdue_shifts':data=0;break
  case 'get_studio_orders':data=orders;break
  case 'get_team_profiles':data=[member];break
- case 'get_workflow_snapshot':data={can_view_finance:role!=='master',jobs,shifts:[{id:'shift',staff_id:staff,started_at:now,ended_at:null,paused_at:null,pause_seconds:0,breaks:[]}],earnings:[],events:[],payouts:[],services:[service]};break
+ case 'get_workflow_snapshot':data={can_view_finance:role!=='master',jobs,shifts,shift_requests:shiftRequests,earnings:[],events:[],payouts:[],services:[service]};break
  case 'get_studio_entitlements':data={id:scenario.plan||'studio'};break
  case 'get_studio_billing':data={subscription:{plan:'studio',status:'active',current_period_end:'2027-01-01',trial_ends_at:null,staff_limit:10},staff_count:1,orders:[]};break
  case 'studio_setup':data={completed:true};break
@@ -55,6 +57,8 @@ export async function mockService(page:Page,role:'owner'|'master'|'super_admin'|
  case 'act_work_job':jobs=jobs.map(j=>({...j,status:({approve:'approved',start:'in_progress',pause:'waiting',submit:'review'} as Record<string,string>)[body.action_input]||j.status,review_note:body.action_input==='submit'?'':j.review_note,version:j.version+1}));data=null;break
  case 'solo_work_action':jobs=jobs.map(j=>({...j,status:body.action_input==='start'?'in_progress':'approved',version:j.version+1}));data=null;break
  case 'save_job_evidence':jobs=jobs.map(j=>({...j,version:j.version+1,attachments:body.payload.action==='remove'?j.attachments.filter((a:any)=>a.path!==body.payload.path):body.payload.action==='media'?[...j.attachments.filter((a:any)=>a.path!==body.payload.replace_path),{...body.payload,mime:'image/png'}]:j.attachments}));data=null;break
+ case 'manage_master_shift':if(body.action_input==='start'&&!shifts.length)shiftRequests=[pendingRequest];if(body.action_input==='cancel_request')shiftRequests=[];data=null;break
+ case 'decide_shift_request':shiftRequests=body.approve?[]:[{...pendingRequest,status:'rejected',reason:body.reason_input}];if(body.approve)shifts=[openShift];data=null;break
  case 'create_manual_booking':data={id:'created-appointment',client_id:client};break
  default:data=[]
  }

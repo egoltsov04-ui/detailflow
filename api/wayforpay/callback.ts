@@ -19,7 +19,7 @@ export function createCallbackHandler(makeClient:typeof createClient=createClien
     if(error)throw error
     const time = Math.floor(Date.now() / 1000)
     return response.status(200).json({ orderReference: payload.orderReference, status: 'accept', time, signature: hmacMd5([payload.orderReference, 'accept', time]) })
-  } catch (error) { return response.status(500).json({ error: error instanceof Error ? error.message : 'Unable to process payment' }) }
+  } catch (error) { console.error('WayForPay callback failed', error instanceof Error ? error.name : (error as {code?:string})?.code); return response.status(500).json({ error: 'Unable to process payment' }) }
 }
 }
 export default createCallbackHandler()

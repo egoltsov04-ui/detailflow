@@ -21,7 +21,7 @@ export function createPublicBookingHandler(makeClient:typeof createClient=create
     if(!tenant)return response.status(404).json({error:'Студію не знайдено.'})
     let buckets
     try {
-      buckets=publicBookingRateLimitKeys(request.headers||{},tenant.id,required('SUPABASE_SERVICE_ROLE_KEY'))
+      buckets=publicBookingRateLimitKeys(request.headers||{},tenant.id,required('SUPABASE_SERVICE_ROLE_KEY'),request.method==='POST')
     } catch {
       return response.status(503).json({error:'Онлайн-запис тимчасово недоступний. Спробуйте пізніше.'})
     }
@@ -39,7 +39,7 @@ export function createPublicBookingHandler(makeClient:typeof createClient=create
     const [services,staff,appointments,schedules]=await Promise.all([
       supabase.from('services').select('*').eq('tenant_id',tenant.id).eq('active',true).order('created_at'),
       supabase.from('staff_profiles').select('id,full_name,specialty,all_services,staff_services(service_id)').eq('tenant_id',tenant.id).eq('active',true).order('created_at'),
-      readAllPages((from,to)=>supabase.from('appointments').select('staff_id,starts_at,ends_at').eq('tenant_id',tenant.id).in('status',['confirmed','in_progress']).gte('ends_at',new Date(now).toISOString()).lte('starts_at',horizon).order('id').range(from,to)),
+      readAllPages((from,to)=>supabase.from('appointments').select('staff_id,starts_at,ends_at').eq('tenant_id',tenant.id).in('status',['pending','confirmed','in_progress']).gte('ends_at',new Date(now).toISOString()).lte('starts_at',horizon).order('id').range(from,to)),
       supabase.from('work_schedules').select('staff_id,weekday,starts_at,ends_at').eq('tenant_id',tenant.id)
     ])
     if(services.error||staff.error||appointments.error||schedules.error)throw services.error||staff.error||appointments.error||schedules.error
