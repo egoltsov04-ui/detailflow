@@ -1,0 +1,24 @@
+# Staging stack next to production on one server: own project name, network and container names,
+# no public ports. The shared Caddy reaches the gateway as supabase-staging-envoy:8000.
+# The gateway is on 127.0.0.1:8100 only, for Studio through an SSH tunnel.
+name: supabase-staging
+services:
+  studio: {container_name: supabase-staging-studio}
+  api-gw:
+    container_name: supabase-staging-envoy
+    ports: !override ["127.0.0.1:8100:8000/tcp"]
+  auth: {container_name: supabase-staging-auth}
+  rest: {container_name: supabase-staging-rest}
+  realtime:
+    container_name: realtime-dev.supabase-staging-realtime
+    networks:
+      default:
+        aliases: [realtime-dev.supabase-realtime]
+  storage: {container_name: supabase-staging-storage}
+  imgproxy: {container_name: supabase-staging-imgproxy}
+  meta: {container_name: supabase-staging-meta}
+  functions: {container_name: supabase-staging-edge-functions}
+  db: {container_name: supabase-staging-db}
+  supavisor:
+    container_name: supabase-staging-pooler
+    ports: !reset []
