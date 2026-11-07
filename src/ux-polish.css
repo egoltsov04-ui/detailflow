@@ -22,7 +22,6 @@ body .master-shift.active{background:var(--color-border);color:var(--color-text)
 .modal-close{display:grid;place-items:center;width:32px;height:32px;padding:4px;right:12px;top:12px}
 .order-board{scroll-snap-type:x proximity;scroll-padding-inline:8px;overscroll-behavior-x:contain}.order-column{scroll-snap-align:start}
 .order-card{touch-action:pan-x pan-y}.order-card .order-card-details strong{line-height:1.6}
-.order-actions{display:flex;gap:6px;flex-wrap:wrap}.order-actions button{padding:8px 10px;background:var(--color-border);border:1px solid var(--border);color:var(--accent);font-size:12px}
 .sync-warning{margin:12px 20px;padding:12px 16px;border:1px solid #b99756;border-radius:10px;background:#332f25;color:#f4d496}
 .calendar-filters>label,.report-filters>label,.cashflow-filters>label{flex:1 1 170px;min-width:0}
 .schedule-form>label,.compensation-base>label{min-width:0;display:grid;gap:6px}
@@ -68,7 +67,6 @@ body .master-shift.active{background:var(--color-border);color:var(--color-text)
 
 .order-job-assignments{display:grid;gap:12px;margin:14px 0}.order-job-assignment{border-top:1px solid #39414c;padding-top:12px;min-width:0}.order-job-assignment label{display:grid;gap:8px;font-size:12px}.order-job-assignment label>span{overflow-wrap:anywhere;color:var(--color-text-secondary)}.order-job-assignment small{display:block;margin-top:6px}.order-job-assignment [role=alert]{color:#ffadb9}
 /* Keep warehouse entries readable without sideways navigation on phones. */
-@media(max-width:700px){.inventory-table{overflow:visible;background:transparent;border:0}.inventory-table .table-head{display:none}.inventory-table .table-row{min-width:0;grid-template-columns:minmax(0,1fr);gap:12px;margin-bottom:12px;padding:16px;border:1px solid #343a43;border-radius:12px;background:var(--color-surface)}.inventory-table .table-row>span{overflow-wrap:anywhere;white-space:normal}.inventory-table .table-row>span[data-label]::before{content:attr(data-label);display:block;color:#a7b0bf;font-size:12px;margin-bottom:5px}}
 .inventory-page .search{display:flex;width:100%;min-width:0}.inventory-page .search svg{flex-shrink:0}
 
 /* Dark theme: status columns on task, lead and order boards keep the dark surface.

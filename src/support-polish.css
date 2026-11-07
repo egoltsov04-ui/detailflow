@@ -131,11 +131,9 @@
 .support-workspace .founder-price-help>div{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 .support-workspace .founder-price-help span{color:var(--color-text-secondary);font-size:12px}
 .support-workspace .founder-price-help b{color:#c5e98f;overflow-wrap:anywhere}
-.support-workspace .studio-card-title{gap:8px;align-items:flex-start}
-.support-workspace .studio-card-title .support-badge{flex:0 1 auto}
 .support-workspace .support-actions>button{min-height:44px}
 .support-workspace .support-pagination{flex-wrap:wrap;color:#b9c2ce}
-.support-workspace .support-feedback,.support-workspace [role=status]{overflow-wrap:anywhere;line-height:1.6}
+.support-workspace [role=status]{overflow-wrap:anywhere;line-height:1.6}
 @media(max-width:767px){
   .support-workspace>header{padding:14px 16px}
   .support-workspace>header>div{flex:1;font-size:13px}
