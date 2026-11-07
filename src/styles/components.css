@@ -367,3 +367,6 @@ a.lp-brand,a.access-home,.ob-header a{display:inline-flex;align-items:center;min
 .reminder-settings .reminder-form>p{color:var(--color-text-muted);padding-block:var(--space-2)}
 .reminder-settings summary{color:var(--color-text);font-weight:var(--weight-bold)}
 .reminder-settings details{border-top:1px solid var(--color-border)}
+
+/* Master shift: pause and end are real buttons side by side */
+.wf-shift .wf-actions{display:flex;flex-wrap:wrap;gap:var(--space-2)}
