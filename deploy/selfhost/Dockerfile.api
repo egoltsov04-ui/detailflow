@@ -1,0 +1,21 @@
+# Node server for api/ (server/node.ts). Built with the repo's own tsc, no extra dependencies.
+FROM node:24-slim AS build
+WORKDIR /app
+COPY package.json package-lock.json ./
+# extra_ca is optional: only for build machines behind a TLS-inspecting proxy
+RUN --mount=type=secret,id=extra_ca,required=false NODE_EXTRA_CA_CERTS=/run/secrets/extra_ca npm ci --ignore-scripts
+COPY tsconfig.json tsconfig.api.json tsconfig.server.json ./
+COPY api api
+COPY server server
+COPY src/lib src/lib
+RUN npx tsc -p tsconfig.server.json
+
+FROM node:24-slim
+WORKDIR /app
+ENV NODE_ENV=production PORT=3000
+COPY package.json package-lock.json ./
+RUN --mount=type=secret,id=extra_ca,required=false NODE_EXTRA_CA_CERTS=/run/secrets/extra_ca npm ci --omit=dev --ignore-scripts && npm cache clean --force
+COPY --from=build /app/build/server ./build/server
+USER node
+EXPOSE 3000
+CMD ["node","build/server/server/node.js"]
