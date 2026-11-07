@@ -73,7 +73,7 @@ begin
 end $$;
 
 drop function if exists public.save_shift_limits(uuid,integer,integer,time);
-create function public.save_shift_limits(studio uuid,hours_input integer,break_input integer,close_input time default null,approval_input boolean default null) returns void language plpgsql security definer set search_path=public as $$begin
+create or replace function public.save_shift_limits(studio uuid,hours_input integer,break_input integer,close_input time default null,approval_input boolean default null) returns void language plpgsql security definer set search_path=public as $$begin
  if not is_tenant_manager(studio) then raise exception 'Немає доступу';end if;
  if hours_input is null or hours_input not between 1 and 24 or break_input is null or break_input not between 15 and 480 then raise exception 'Перевірте ліміти зміни та перерви';end if;
  update tenants set shift_max_hours=hours_input,break_max_minutes=break_input,shift_close_time=close_input,shift_approval=coalesce(approval_input,shift_approval) where id=studio;
