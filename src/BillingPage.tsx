@@ -14,7 +14,7 @@ function BillingSummary({data,tenantId,timezone,refresh}:{data:any;tenantId:stri
 export function PlanCards({studioId='',subscription}:{studioId?:string;subscription?:any}){
  const contact=import.meta.env.VITE_BILLING_TELEGRAM||'detailflow'
  return <div className="billing-plans">{subscriptionPlans.map(p=>{
-  const current=subscription?.plan===p.id,price=current?effectivePrice(subscription):p.price,Icon=p.id==='solo'?UserRound:p.id==='studio'?Users:Layers
+  const current=subscription?.plan===p.id,main=current||(!subscription?.plan&&p.id==='studio'),price=current?effectivePrice(subscription):p.price,Icon=p.id==='solo'?UserRound:p.id==='studio'?Users:Layers
   const features=[...planFeatures,p.features.finance_full?'Повні фінанси та аналітика':'Базові доходи, витрати та огляд',...(p.features.team_module?['Кабінети майстрів, зміни та зарплата']:[]),...(p.features.warehouse?['Склад']:[]),...(p.features.repeat_visit_reminders?['Нагадування про повторний візит']:[]),...(p.features.priority_support?['Пріоритетна підтримка']:[])]
   return <Card as="article" className={'panel billing-plan'+(p.id==='studio'?' billing-plan-featured':'')+(current?' billing-plan-current':'')} key={p.id}>
    <div className="plan-topline"><span className="plan-icon"><Icon size={22}/></span><span className="plan-label">{t(current?'Ваш тариф':p.id==='solo'?'Самостійна робота':p.id==='studio'?'Для команди':'Для масштабування')}</span></div>
@@ -23,7 +23,7 @@ export function PlanCards({studioId='',subscription}:{studioId?:string;subscript
    <dl className="plan-capacity"><div><dt><Users size={16}/>{t('Майстри')}</dt><dd>{p.staffLimit??t('Без ліміту')}</dd></div><div><dt><ShieldCheck size={16}/>{t('Адміністратори')}</dt><dd>{p.adminLimit??t('Без ліміту')}</dd></div><div><dt><HardDrive size={16}/>{t('Фото та відео')}</dt><dd>{p.storageGB} {t('ГБ')}</dd></div></dl>
    <div className="plan-includes"><h3>{t('Що входить')}</h3><ul>{features.map(f=><li key={f}><Check size={17} aria-hidden="true"/><span>{t(f)}</span></li>)}</ul></div>
    {p.id==='solo'&&<p className="plan-scope-note">{t('Для власника, який працює сам. Команда та склад — у тарифах Студія і Pro.')}</p>}
-   <a className="primary" {...(studioId?{target:'_blank',rel:'noopener noreferrer'}:{})} href={studioId?managerLink(contact,`Detailflow: прошу підключити тариф ${p.name} на 1 місяць (${price} грн). Студія: ${studioId}.`):'/register?plan='+p.id}><span>{t(studioId?(current?'Продовжити тариф':'Звернутися в Telegram'):'Підключити студію')}</span><ArrowUpRight size={18}/></a>
+   <a className={main?'primary':'secondary'} {...(studioId?{target:'_blank',rel:'noopener noreferrer'}:{})} href={studioId?managerLink(contact,`Detailflow: прошу підключити тариф ${p.name} на 1 місяць (${price} грн). Студія: ${studioId}.`):'/register?plan='+p.id}><span>{t(studioId?(current?'Продовжити тариф':'Звернутися в Telegram'):'Підключити студію')}</span><ArrowUpRight size={18}/></a>
   </Card>
  })}</div>
 }
