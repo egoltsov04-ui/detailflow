@@ -383,3 +383,5 @@ a.lp-brand,a.access-home,.ob-header a{display:inline-flex;align-items:center;min
 .shift-approval-toggle>span{display:grid;gap:2px}
 .shift-approval-toggle small{color:var(--color-text-muted);font-weight:var(--weight-regular)}
 .shift-approval-toggle input{width:20px;height:20px;flex:none;accent-color:var(--color-accent)}
+/* plate ink must win over muted text colours of the card it sits in */
+.vehicle-tag .plate .plate-text{color:var(--plate-ink)}
