@@ -1004,6 +1004,7 @@ VIP, корпоративний, повторний|VIP, corporate, returning
 · Клієнтів:|· Clients:
 Назва, адреса та часовий пояс|Name, address and time zone
 Послуг у каталозі:|Catalog services:
+Клієнтів у базі:|Clients in the database:
 Майстрів у команді:|Team members:
 Необов’язково — можна зробити пізніше|Optional; you can do this later
 Почніть вводити ім’я або телефон|Start typing a name or phone number

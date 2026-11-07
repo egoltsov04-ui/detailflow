@@ -348,3 +348,22 @@ a.lp-brand,a.access-home,.ob-header a{display:inline-flex;align-items:center;min
 .shift-warnings-row:empty{display:none}
 .shift-warnings-row:empty+.team-schedules{padding-top:var(--space-8)}
 .page-actions{display:flex;flex-wrap:wrap;gap:var(--space-2);align-items:center}
+
+/* Settings: studio data, launch checklist, client reminders */
+.form-status{font-size:var(--text-sm);font-weight:var(--weight-bold)}
+.form-status[data-tone=success]{color:var(--color-success)}
+.form-status[data-tone=danger]{color:var(--color-danger)}
+.setup-steps{list-style:none;margin:0;padding:0;display:grid}
+.setup-steps>li{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3) 0;border-top:1px solid var(--color-border)}
+.setup-steps>li>div{display:grid;gap:2px;flex:1;min-width:0}
+.setup-steps>li b{color:var(--color-text);font-size:var(--text-sm)}
+.setup-steps>li span:not(.setup-step-mark){color:var(--color-text-muted);font-size:var(--text-sm)}
+.setup-step-mark{flex:none;width:28px;height:28px;border-radius:var(--radius-full);display:grid;place-items:center;border:1px solid var(--color-border-strong);color:var(--color-text-secondary);font-size:var(--text-sm);font-weight:var(--weight-bold)}
+.setup-steps>li[data-done] .setup-step-mark{background:var(--color-accent-soft);border-color:var(--color-accent);color:var(--color-accent)}
+.reminder-settings .reminder-form{display:grid;gap:var(--space-2)}
+.reminder-settings .reminder-form label:has(input[type=checkbox]){min-height:var(--touch-target);padding:0;border-bottom:1px solid var(--color-border);font-weight:var(--weight-medium);cursor:pointer}
+.reminder-settings input[type=checkbox]{width:20px;height:20px;flex:none;accent-color:var(--color-accent)}
+.reminder-settings :is(p,details){font-size:var(--text-sm);color:var(--color-text-secondary);margin:0}
+.reminder-settings .reminder-form>p{color:var(--color-text-muted);padding-block:var(--space-2)}
+.reminder-settings summary{color:var(--color-text);font-weight:var(--weight-bold)}
+.reminder-settings details{border-top:1px solid var(--color-border)}
