@@ -305,6 +305,9 @@ a.lp-brand,a.access-home,.ob-header a{display:inline-flex;align-items:center;min
 .order-danger-zone{order:99;display:flex;justify-content:flex-end;padding-top:var(--space-4);border-top:1px solid var(--color-border)}
 .wf-job-meta{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-2);margin-bottom:var(--space-1)}
 .wf-job-meta>small{color:var(--color-text-muted)}
+.wf-job-master{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-2);margin-top:var(--space-1)}
+.wf-job-master>span{display:inline-flex;align-items:center;gap:var(--space-1);color:var(--color-text-secondary)}
+.wf-job-master>button{min-height:var(--touch-target)}
 /* A text button that opens an order from a table cell: vehicle, then the client line under it */
 :is(td,.ui-table-value) .text-btn:has(.vehicle-tag){display:grid;justify-items:start;gap:var(--space-1);text-align:left}
 :is(td,.ui-table-value) .text-btn:has(.vehicle-tag)>small{color:var(--color-text-muted);font-weight:var(--weight-medium)}
@@ -385,3 +388,36 @@ a.lp-brand,a.access-home,.ob-header a{display:inline-flex;align-items:center;min
 .shift-approval-toggle input{width:20px;height:20px;flex:none;accent-color:var(--color-accent)}
 /* plate ink must win over muted text colours of the card it sits in */
 .vehicle-tag .plate .plate-text{color:var(--plate-ink)}
+
+/* New order: the modal's negative heading margin pulled the total over its label */
+.order-money>div:first-child{display:grid;gap:var(--space-2);align-content:start}
+.order-money>div:first-child>span{font-size:var(--text-sm);font-weight:var(--weight-bold)}
+.order-money h2{margin:0;line-height:var(--leading-tight)}
+
+/* Dialogs sit above the fixed bottom navigation, otherwise it covers their last button on phones */
+body .overlay{z-index:var(--z-overlay)}
+
+/* Legal: consent at registration, notice under online booking, document links */
+.legal-consent{display:flex!important;align-items:flex-start;gap:var(--space-3);min-height:var(--touch-target);font-weight:var(--weight-medium);font-size:var(--text-sm);color:var(--color-text-secondary);cursor:pointer}
+.legal-consent input{width:20px;height:20px;flex:none;margin:2px 0 0;padding:0;accent-color:var(--color-accent)}
+/* the registration form is a two-column grid: the consent takes a full row */
+.owner-registration .legal-consent{grid-column:1/-1}
+:is(.legal-consent,.ob-consent) a{color:var(--color-accent);text-decoration:none}
+:is(.legal-consent,.ob-consent) a:hover{text-decoration:underline}
+body .access-legal a{color:var(--color-text-secondary)}
+body .access-legal a:hover{color:var(--color-text)}
+.ob-consent{font-size:var(--text-sm);color:var(--color-text-muted);margin:0}
+.access-legal{display:flex;flex-wrap:wrap;gap:var(--space-2) var(--space-5);font-size:var(--text-sm)}
+.access-legal{justify-content:center;margin-top:var(--space-6)}
+ .access-legal a{display:inline-flex;align-items:center;min-height:var(--touch-target)}
+
+/* Footer links on phones: a full 44 px tap area */
+.ob-footer a{display:inline-flex;align-items:center;min-height:var(--touch-target)}
+
+/* Sign-in entry: language switcher on the brand line, three roles in one row, space before the sign-up link */
+.access-portal>.language-switcher{position:absolute;top:18px;right:34px;margin:0}
+@media(max-width:680px){.access-portal>.language-switcher{top:20px;right:20px}}
+.access-roles button{align-content:start}
+.owner-registration label:has(input[type=password]){grid-column:1/-1}
+@media(min-width:900px){.access-portal .access-roles{grid-template-columns:repeat(3,minmax(0,1fr));max-width:1040px}}
+.access-portal>.text-btn[href="/register"]{margin-top:var(--space-6)}

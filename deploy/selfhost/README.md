@@ -23,3 +23,13 @@ Behind a TLS-inspecting proxy, build the API image with `docker build -f deploy/
 - `send-reminders`: wrong secret 401; pg_cron fires every minute through pg_net and reaches the Node server (503 only because SendPulse and VAPID keys are not set locally).
 - Storage `job-photos`: upload, signed URL read, private bucket, delete.
 - Headers from `vercel.json` and the 41 old-address redirects (307).
+
+## Server: staging and production side by side
+
+One Caddy for the whole server (`edge/`), the only container with public ports. App stacks start without their own Caddy.
+
+1. Supabase in `/srv/supabase-<stack>` (`setup.sh --ref self-hosted/v0.8.4`), with `supabase-staging.override.yml` copied in (for production replace `staging` with `production` and the port 8100 with 8101), in `.env`: `COMPOSE_FILE=docker-compose.yml:docker-compose.<stack>.yml`, public URLs, `chmod 600 .env`. No pooler or gateway ports outside; Studio: `ssh -L 8100:127.0.0.1:8100 deploy@<server>`, then `http://localhost:8100`.
+2. Database and schedule as in steps 2-3 above, through `docker exec -i supabase-<stack>-db psql -U postgres`.
+3. App `.env`: `VITE_SUPABASE_URL=http://supabase-<stack>-envoy:8000` (inside Docker), `SUPABASE_NETWORK=supabase-<stack>_default`; then `docker compose -p detailflow-<stack> --env-file .env up -d --build api`.
+4. Frontend built with the public `https://api-<stack>.<domain>` (staging build also needs `DEPLOYMENT_ENV=staging`, `SUPABASE_SERVICE_ROLE_KEY`, `APP_URL` for the isolation check).
+5. `edge/`: add the stack's two sites to `edge/Caddyfile` (with its Supabase origin for the CSP) and its network and dist to `edge/docker-compose.yml`, then `docker compose up -d` there. After `git pull` or `git reset` that touches `Caddyfile` or `app.caddy`, run `docker compose restart caddy` in `edge/`: Git writes new files and the container keeps the old ones until restarted.

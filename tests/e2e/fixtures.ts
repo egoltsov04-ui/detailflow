@@ -1,6 +1,6 @@
 import {type Page} from '@playwright/test'
 export const studio='10000000-0000-4000-8000-000000000001',owner='10000000-0000-4000-8000-000000000002',client='10000000-0000-4000-8000-000000000003',staff='10000000-0000-4000-8000-000000000004',order='10000000-0000-4000-8000-000000000005'
-const now=new Date().toISOString(),today=now.slice(0,10)
+const now=new Date().toISOString(),today=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Kyiv'}).format(new Date()) // studio day, not UTC: after 22:00 UTC Kyiv is already on the next date
 export const clients=[{id:client,tenant_id:studio,full_name:'Тестовий клієнт',phone:'+380000000000',email:'test@example.com',notes:'Перед видачею зателефонувати',tags:['Постійний'],followup_enabled:true,vehicles:[{id:'vehicle',make:'Mercedes-Benz',model:'GLE',plate_number:'TEST 001',year:2023,notes:''}]}]
 const member={id:staff,tenant_id:studio,user_id:owner,full_name:'Тестовий майстер',specialty:'Мийка та полірування',color:'#a7d65c',compensation_percent:30,hourly_rate:0,profile_completed_at:now,all_services:true,staff_services:[]}
 const service={id:'service',name:'Комплексне полірування',price:1500,duration_minutes:120,active:true,category:'Полірування',description:'Відновлення блиску кузова',variants:[]}
@@ -12,7 +12,7 @@ export async function mockService(page:Page,role:'owner'|'master'|'super_admin'|
  const openShift={id:'shift',staff_id:staff,started_at:now,ended_at:null,paused_at:null,pause_seconds:0,breaks:[]},pendingRequest={id:'shift-request',staff_id:staff,requested_at:now,status:'pending',reason:null}
  let shifts:any[]=scenario.shiftRequest?[]:[openShift],shiftRequests:any[]=scenario.shiftRequest==='pending'?[pendingRequest]:[]
  let jobs:any[]=[{...job,status:scenario.status||job.status,review_note:scenario.reason||'',attachments:scenario.attachments||[]}],cards=structuredClone(clients)
- await page.addInitScript(({owner,role,aal})=>{localStorage.setItem('detailflow.locale','uk');if(role!=='guest'){const exp=Math.floor(Date.now()/1000)+36000;const token=btoa(JSON.stringify({alg:'HS256',typ:'JWT'}))+'.'+btoa(JSON.stringify({sub:owner,exp,aal:aal||'aal2',amr:[{method:'password',timestamp:Math.floor(Date.now()/1000)}],role:'authenticated'}))+'.test-signature';localStorage.setItem('sb-stxfbarigoutglfqqhwi-auth-token',JSON.stringify({access_token:token,refresh_token:'test-refresh',expires_at:exp,expires_in:36000,token_type:'bearer',user:{id:owner,email:'test@example.com',aud:'authenticated',role:'authenticated',user_metadata:{},app_metadata:{provider:'email'},created_at:new Date().toISOString()}}))}}, {owner,role,aal:scenario.aal})
+ await page.addInitScript(({owner,role,aal})=>{localStorage.setItem('detailflow.locale','uk');localStorage.setItem('detailflow.iosInstallHint','1');if(role!=='guest'){const exp=Math.floor(Date.now()/1000)+36000;const token=btoa(JSON.stringify({alg:'HS256',typ:'JWT'}))+'.'+btoa(JSON.stringify({sub:owner,exp,aal:aal||'aal2',amr:[{method:'password',timestamp:Math.floor(Date.now()/1000)}],role:'authenticated'}))+'.test-signature';localStorage.setItem('sb-stxfbarigoutglfqqhwi-auth-token',JSON.stringify({access_token:token,refresh_token:'test-refresh',expires_at:exp,expires_in:36000,token_type:'bearer',user:{id:owner,email:'test@example.com',aud:'authenticated',role:'authenticated',user_metadata:{},app_metadata:{provider:'email'},created_at:new Date().toISOString()}}))}}, {owner,role,aal:scenario.aal})
  await page.routeWebSocket(/supabase/,ws=>ws.close())
  await page.route('**/*',async route=>{const req=route.request(),url=new URL(req.url());let data:any
  const respond=(body:any)=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body),headers:{'access-control-allow-origin':'*'}})
@@ -65,7 +65,7 @@ export async function mockService(page:Page,role:'owner'|'master'|'super_admin'|
  }else{
  switch(name){
  case 'tenants':data={id:studio,name:'Test Studio',slug:'test',address:'Київ',timezone:'Europe/Kyiv',phone:'+380000000000',shift_max_hours:16,break_max_minutes:120,shift_close_time:null};break
- case 'clients':data=cards;break
+ case 'clients':data=req.method()==='POST'?{id:'new-client'}:cards;break
  case 'services':data=[service];break
  case 'staff_profiles':data=[member];break
  case 'appointments':data=[{id:'appointment',client_id:client,staff_id:staff,starts_at:today+'T09:00:00Z',ends_at:today+'T11:00:00Z',status:'confirmed',source:'admin',clients:clients[0],staff_profiles:member,appointment_services:[{service_name:service.name,unit_price:1500,duration_minutes:120}],receipts:[],vehicles:clients[0].vehicles[0]}];break

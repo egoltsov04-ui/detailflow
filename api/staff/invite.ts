@@ -47,7 +47,7 @@ export function createStaffMailHandler(makeClient:typeof createClient=createClie
     const {error:membershipError}=await db.from('tenant_memberships').upsert({tenant_id:staff.tenant_id,user_id:data.user.id,role:'master'},{onConflict:'tenant_id,user_id',ignoreDuplicates:true})
     if(membershipError)return response.status(500).json({error:'Лист надіслано, але доступ до студії не збережено. Зверніться до підтримки.'})
     return response.status(200).json({ok:true,message:'Запрошення надіслано. Майстер має перевірити пошту та спам.'})
-  }catch(error){return response.status(500).json({error:error instanceof Error?error.message:'Unable to invite master'})}
+  }catch(error){console.error('Staff invite failed',error instanceof Error?error.name:'error');return response.status(500).json({error:'Unable to invite master'})}
 }
 
 }

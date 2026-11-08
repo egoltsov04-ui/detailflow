@@ -2,7 +2,8 @@ import {createClient} from '@supabase/supabase-js'
 type Request={method?:string}
 type Response={status:(code:number)=>Response;json:(body:unknown)=>void}
 export default async function health(req:Request,res:Response){
- if(req.method!=='GET')return res.status(405).json({status:'method_not_allowed'})
+ // HEAD too: uptime monitors (UptimeRobot) check with HEAD by default
+ if(req.method!=='GET'&&req.method!=='HEAD')return res.status(405).json({status:'method_not_allowed'})
  const url=process.env.VITE_SUPABASE_URL,secret=process.env.SUPABASE_SERVICE_ROLE_KEY
  if(!url||!secret)return res.status(503).json({status:'unavailable'})
  try{

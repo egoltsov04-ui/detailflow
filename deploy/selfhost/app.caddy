@@ -1,0 +1,78 @@
+# The Detailflow app site: headers, old-address redirects, /api/* on the Node server, the SPA.
+# Mirrors vercel.json. Usage inside a site block: import detailflow_app <api upstream> <dist root> <Supabase origin> <Supabase websocket origin>
+# CSP enforced since 2026-11-08 after a walk-through with zero violations; on a new external source, switch to Content-Security-Policy-Report-Only first.
+# If BILLING_MODE=wayforpay is ever enabled, add https://secure.wayforpay.com to form-action: the checkout posts a form there.
+(detailflow_app) {
+	encode zstd gzip
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		X-Frame-Options DENY
+		Permissions-Policy "camera=(self), microphone=(), geolocation=()"
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: {args[2]}; font-src 'self'; connect-src 'self' {args[2]} {args[3]}; worker-src 'self' blob:; manifest-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+		-Server
+	}
+	header /sw.js {
+		Cache-Control no-cache
+		Service-Worker-Allowed /
+	}
+
+	# Old addresses, kept from vercel.json
+	redir /privacy.html /privacy permanent
+	redir /terms.html /terms permanent
+	redir /overview /app/overview 307
+	redir /calendar /app/work/calendar 307
+	redir /orders /app/work/kanban 307
+	redir /work-orders /app/work/kanban 307
+	redir /clients /app/clients 307
+	redir /leads /app/clients/requests 307
+	redir /media /app/clients/media 307
+	redir /finance /app/finance/payments 307
+	redir /payments /app/finance/payments 307
+	redir /expenses /app/finance/expenses 307
+	redir /sales /app/finance/sales 307
+	redir /invoices /app/finance/invoices 307
+	redir /receipts /app/finance/documents 307
+	redir /team /app/team 307
+	redir /tasks /app/team/tasks 307
+	redir /warehouse /app/warehouse 307
+	redir /inventory /app/warehouse 307
+	redir /analytics /app/analytics 307
+	redir /reports /app/analytics 307
+	redir /settings /app/settings 307
+	redir /services /app/settings/services 307
+	redir /billing /app/settings/billing 307
+	redir /booking-requests /app/work/requests 307
+	redir /app/calendar /app/work/calendar 307
+	redir /app/orders /app/work/kanban 307
+	redir /app/work-orders /app/work/kanban 307
+	redir /app/leads /app/clients/requests 307
+	redir /app/media /app/clients/media 307
+	redir /app/finance /app/finance/payments 307
+	redir /app/payments /app/finance/payments 307
+	redir /app/expenses /app/finance/expenses 307
+	redir /app/sales /app/finance/sales 307
+	redir /app/invoices /app/finance/invoices 307
+	redir /app/receipts /app/finance/documents 307
+	redir /app/tasks /app/team/tasks 307
+	redir /app/inventory /app/warehouse 307
+	redir /app/reports /app/analytics 307
+	redir /app/services /app/settings/services 307
+	redir /app/billing /app/settings/billing 307
+	redir /app/booking-requests /app/work/requests 307
+	redir /app/work/list /app/work/kanban 307
+
+	handle /api/* {
+		# Caddy replaces any X-Forwarded-For the client sent; the booking rate limit relies on it.
+		reverse_proxy {args[0]} {
+			# The booking rate limit prefers this header (set by Vercel); here a client could forge it.
+			header_up -X-Vercel-Forwarded-For
+		}
+	}
+	handle {
+		root * {args[1]}
+		@spa path /login /register /app /app/* /admin /admin/* /about /contacts /privacy /terms /refund
+		rewrite @spa /index.html
+		file_server
+	}
+}

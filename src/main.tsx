@@ -6,7 +6,7 @@ import { createRoot } from 'react-dom/client'
 import './styles/fonts.css'
 import './styles/tokens.css'
 import './styles.css'
-import PwaControls from './components/PwaControls'
+import PwaControls,{IosInstallHint} from './components/PwaControls'
 import { Dialogs, ErrorBoundary, ModalAccessibility } from './components/Dialogs'
 import './ux-polish.css'
 // Base components last among global styles, so they win ties with legacy rules
@@ -16,7 +16,9 @@ import { entryRoute } from './lib/entryRoute'
 document.documentElement.lang=getLocale()
 const LandingPage = lazy(() => import('./LandingPage'))
 const App = lazy(() => import('./App'))
-const isLanding = entryRoute(window.location.pathname, window.location.search, window.location.hash) === 'landing'
+const SitePages = lazy(() => import('./site/SitePages'))
+const route = entryRoute(window.location.pathname, window.location.search, window.location.hash)
+const isLanding = route === 'landing'
 
 function SessionEntry(){
  const [state,setState]=useState<'checking'|'guest'|'signed-in'>(supabase?'checking':'guest')
@@ -29,4 +31,4 @@ function SessionEntry(){
 }
 
 const Preview=import.meta.env.DEV?(window.location.pathname==='/__qa/booking'?lazy(()=>import('./dev/PublicBookingPreview')):window.location.pathname==='/__qa'?lazy(()=>import('./dev/ServicePreview')):null):null
-createRoot(document.getElementById('root')!).render(<StrictMode><ErrorBoundary><Suspense fallback={<main className="access-portal">{t("Завантаження Detailflow…")}</main>}>{Preview?<Preview/>:isLanding?<SessionEntry/>:<App/>}</Suspense><PwaControls/><Dialogs/><ModalAccessibility/></ErrorBoundary></StrictMode>)
+createRoot(document.getElementById('root')!).render(<StrictMode><ErrorBoundary><Suspense fallback={<main className="access-portal">{t("Завантаження Detailflow…")}</main>}>{Preview?<Preview/>:route==='site'?<SitePages path={window.location.pathname.replace(/\/$/,'') as never}/>:isLanding?<SessionEntry/>:<App/>}</Suspense><PwaControls/><IosInstallHint/><Dialogs/><ModalAccessibility/></ErrorBoundary></StrictMode>)

@@ -1,0 +1,37 @@
+# One Caddy for the whole server: the only container with public ports (80, 443).
+# Staging and production stacks run side by side; Caddy reaches them by container name on their Supabase networks.
+# On the Supabase host only the client APIs are public; Studio is reached through an SSH tunnel to the gateway on 127.0.0.1.
+import app.caddy
+
+(supabase_gateway) {
+	# Only sign-in attempts are logged (no bodies, credentials redacted by Caddy); fail2ban bans IPs that keep failing.
+	@not_token not path /auth/v1/token
+	log_skip @not_token
+	log {
+		output file /var/log/caddy/auth-token.log {
+			roll_size 10MiB
+			roll_keep 5
+		}
+		format json
+	}
+	header Strict-Transport-Security "max-age=31536000; includeSubDomains"
+	request_body {
+		max_size 55MB
+	}
+	@client path /auth/v1/* /rest/v1/* /storage/v1/* /realtime/v1/*
+	handle @client {
+		reverse_proxy {args[0]}
+	}
+	handle {
+		respond 404
+	}
+}
+
+staging.detailflow.com.ua {
+	header Strict-Transport-Security "max-age=31536000; includeSubDomains"
+	import detailflow_app detailflow-staging-api-1:3000 /srv/staging https://api-staging.detailflow.com.ua wss://api-staging.detailflow.com.ua
+}
+
+api-staging.detailflow.com.ua {
+	import supabase_gateway supabase-staging-envoy:8000
+}
