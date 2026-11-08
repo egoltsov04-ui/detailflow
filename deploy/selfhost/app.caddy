@@ -1,5 +1,7 @@
 # The Detailflow app site: headers, old-address redirects, /api/* on the Node server, the SPA.
-# Mirrors vercel.json. Usage inside a site block: import detailflow_app <api upstream> <dist root>
+# Mirrors vercel.json. Usage inside a site block: import detailflow_app <api upstream> <dist root> <Supabase origin> <Supabase websocket origin>
+# CSP enforced since 2026-11-08 after a walk-through with zero violations; on a new external source, switch to Content-Security-Policy-Report-Only first.
+# If BILLING_MODE=wayforpay is ever enabled, add https://secure.wayforpay.com to form-action: the checkout posts a form there.
 (detailflow_app) {
 	encode zstd gzip
 	header {
@@ -7,6 +9,7 @@
 		Referrer-Policy strict-origin-when-cross-origin
 		X-Frame-Options DENY
 		Permissions-Policy "camera=(self), microphone=(), geolocation=()"
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: {args[2]}; font-src 'self'; connect-src 'self' {args[2]} {args[3]}; worker-src 'self' blob:; manifest-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
 		-Server
 	}
 	header /sw.js {

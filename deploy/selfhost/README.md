@@ -32,4 +32,4 @@ One Caddy for the whole server (`edge/`), the only container with public ports. 
 2. Database and schedule as in steps 2-3 above, through `docker exec -i supabase-<stack>-db psql -U postgres`.
 3. App `.env`: `VITE_SUPABASE_URL=http://supabase-<stack>-envoy:8000` (inside Docker), `SUPABASE_NETWORK=supabase-<stack>_default`; then `docker compose -p detailflow-<stack> --env-file .env up -d --build api`.
 4. Frontend built with the public `https://api-<stack>.<domain>` (staging build also needs `DEPLOYMENT_ENV=staging`, `SUPABASE_SERVICE_ROLE_KEY`, `APP_URL` for the isolation check).
-5. `edge/`: add the stack's two sites to `edge/Caddyfile` and its network and dist to `edge/docker-compose.yml`, then `docker compose up -d` there.
+5. `edge/`: add the stack's two sites to `edge/Caddyfile` (with its Supabase origin for the CSP) and its network and dist to `edge/docker-compose.yml`, then `docker compose up -d` there. After `git pull` or `git reset` that touches `Caddyfile` or `app.caddy`, run `docker compose restart caddy` in `edge/`: Git writes new files and the container keeps the old ones until restarted.
