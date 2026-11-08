@@ -404,17 +404,15 @@ body .overlay{z-index:var(--z-overlay)}
 .owner-registration .legal-consent{grid-column:1/-1}
 :is(.legal-consent,.ob-consent) a{color:var(--color-accent);text-decoration:none}
 :is(.legal-consent,.ob-consent) a:hover{text-decoration:underline}
-body :is(.lp-legal,.access-legal) a{color:var(--color-text-secondary)}
-body :is(.lp-legal,.access-legal) a:hover{color:var(--color-text)}
-.lp-footer .lp-legal{order:2;width:100%}
-.lp-footer>a[href="/login"]{margin-left:auto}
+body .access-legal a{color:var(--color-text-secondary)}
+body .access-legal a:hover{color:var(--color-text)}
 .ob-consent{font-size:var(--text-sm);color:var(--color-text-muted);margin:0}
-.lp-legal,.access-legal{display:flex;flex-wrap:wrap;gap:var(--space-2) var(--space-5);font-size:var(--text-sm)}
+.access-legal{display:flex;flex-wrap:wrap;gap:var(--space-2) var(--space-5);font-size:var(--text-sm)}
 .access-legal{justify-content:center;margin-top:var(--space-6)}
-:is(.lp-legal,.access-legal) a{display:inline-flex;align-items:center;min-height:var(--touch-target)}
+ .access-legal a{display:inline-flex;align-items:center;min-height:var(--touch-target)}
 
 /* Footer links on phones: a full 44 px tap area */
-.ob-footer a,.lp-footer>a[href="/login"]{display:inline-flex;align-items:center;min-height:var(--touch-target)}
+.ob-footer a{display:inline-flex;align-items:center;min-height:var(--touch-target)}
 
 /* Sign-in entry: language switcher on the brand line, three roles in one row, space before the sign-up link */
 .access-portal>.language-switcher{position:absolute;top:18px;right:34px;margin:0}

@@ -91,7 +91,7 @@ Excel або CSV з прикладами та поясненнями колон�
 Виходьте на зміну, виконуйте призначені роботи, додавайте фото й отримуйте нарахування після перевірки.|Start your shift, complete assigned work, add photos and receive earnings after approval.
 Для вашого формату роботи|For the way you work
 Від одного майстра до команди|From one detailer to a team
-Пробний період — 14 днів після активації менеджером.|A 14-day trial starts after activation by a manager.
+Пробний період — 5 днів після активації менеджером.|A 5-day trial starts after activation by a manager.
 Запитання перед стартом|Questions before you start
 Підключення|Get started
 Відкрито пілот для перших студій|Pilot open to the first studios
@@ -1004,6 +1004,59 @@ VIP, корпоративний, повторний|VIP, corporate, returning
 Послуг:|Services:
 · Майстрів:|· Professionals:
 · Клієнтів:|· Clients:
+Гольцов Єгор Ілліч|Yehor Holtsov
+Робочий простір детейлінг-студії: запис, роботи, команда і фінанси в одному місці.|A workspace for detailing studios: bookings, jobs, team and finance in one place.
+Пошта|Email
+Продукт|Product
+Перенесення клієнтів|Client import
+Компанія|Company
+Про нас|About us
+Контакти|Contacts
+Підтримка|Support
+Обмін і повернення|Plan changes and refunds
+Усі права захищені.|All rights reserved.
+Є питання? Напишіть нам|Questions? Write to us
+Пн–Пт 9:00–21:00, Сб–Нд 10:00–20:00 (за Києвом)|Mon–Fri 9:00–21:00, Sat–Sun 10:00–20:00 (Kyiv time)
+Написати в Telegram|Write in Telegram
+Закрити підтримку|Close support
+Правове|Legal
+Про Detailflow|About Detailflow
+Робочий простір для детейлінг-студій: запис, замовлення, майстри, фінанси та склад в одному місці.|A workspace for detailing studios: bookings, orders, masters, finance and stock in one place.
+Навіщо ми це робимо|Why we build it
+Записи в блокноті й Telegram, таблиця з клієнтами, суперечки про зарплату майстрів і незрозуміло, яке авто зараз на якому посту, — знайомо кожній студії. Ми робимо Detailflow, щоб власник бачив усю студію на одному екрані, а майстри працювали без зайвих дзвінків.|Bookings in a notebook and Telegram, a spreadsheet of clients, arguments about masters' pay and no idea which car is on which bay — every studio knows this. We build Detailflow so the owner sees the whole studio on one screen and masters work without extra calls.
+Що вміє продукт|What the product does
+Наші принципи|Our principles
+Готові спробувати?|Ready to try?
+5 днів безкоштовно після активації. Менеджер допоможе з налаштуванням.|5 days free after activation. A manager helps with the setup.
+Підключення, підтримка, оплата і співпраця — пишіть, відповімо в робочий час.|Connection, support, payment and partnership — write to us, we reply during working hours.
+Найшвидші відповіді|Fastest replies
+Питання, дані, повернення коштів|Questions, data, refunds
+Час роботи|Working hours
+Пн–Пт 9:00–21:00|Mon–Fri 9:00–21:00
+Сб–Нд 10:00–20:00, за Києвом|Sat–Sun 10:00–20:00, Kyiv time
+Хто відповідає|Who replies
+Засновник Detailflow|Founder of Detailflow
+Хочете підключити студію?|Want to connect your studio?
+Залиште заявку — менеджер зв’яжеться з вами в Telegram.|Send a request and a manager will contact you in Telegram.
+Онлайн-запис і календар постів|Online booking and a bay calendar
+Замовлення від запису до видачі авто|Orders from booking to car hand-over
+Кабінет майстра: зміни, фото до і після, заміри|Master workspace: shifts, before and after photos, measurements
+Перевірка робіт і нарахування майстрам|Job review and masters' pay
+Чеки, оплати, витрати та склад|Receipts, payments, expenses and stock
+Просто|Simple
+Розібратися може кожен майстер: одна панель замовлення, без зайвих кроків.|Any master can figure it out: one order panel, no extra steps.
+Чесно|Honest
+Прозорі тарифи без дрібного шрифту, пробний період без картки.|Clear plans without fine print, a trial without a card.
+Надійно|Reliable
+Дані кожної студії ізольовані, резервні копії шифруються.|Each studio's data is isolated, backups are encrypted.
+Поруч|Close by
+Підтримка в Telegram без ботів: відповідає людина, яка робить продукт.|Support in Telegram without bots: the person who builds the product replies.
+Встановити Detailflow на iPhone|Install Detailflow on iPhone
+Встановіть Detailflow на iPhone|Install Detailflow on your iPhone
+Відкривайте як застосунок з екрана «Додому», без адресного рядка, і отримуйте сповіщення.|Open it as an app from the Home Screen, without the address bar, and get notifications.
+Натисніть «Поділитися» внизу Safari|Tap Share at the bottom of Safari
+Оберіть «На екран «Додому»»|Choose Add to Home Screen
+Натисніть «Додати»|Tap Add
 Назва, адреса та часовий пояс|Name, address and time zone
 Послуг у каталозі:|Catalog services:
 Погоджуюсь з|I agree to the
