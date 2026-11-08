@@ -1,6 +1,6 @@
 import {createClient} from '@supabase/supabase-js'
 import {createHash,timingSafeEqual} from 'node:crypto'
-import {sendTelegram,telegramBot} from '../server/lib/telegram.js'
+import {escapeHtml,sendTelegram,telegramBot} from '../server/lib/telegram.js'
 type Request={method?:string;headers:Record<string,string|string[]|undefined>;body?:any}
 type Response={status:(code:number)=>Response;json:(body:unknown)=>void}
 const digest=(value:string)=>createHash('sha256').update(value).digest()
@@ -27,7 +27,7 @@ export function createTelegramHandler(makeClient:typeof createClient=createClien
   const db=makeClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}})
   if(command==='/start'&&/^[a-f0-9]{32}$/.test(arg)){
    const r=await db.rpc('telegram_bind',{token_input:arg,chat_input:chat.id,locale_input:i?'en':'uk'});if(r.error)throw r.error
-   reply=r.data?.status==='staff'?replies.staff[i]:r.data?.status==='client'?`Готово. Сюди прийде підтвердження запису до «${r.data.studio}» і нагадування перед візитом. Відписатися: /stop.`:replies.invalid[i]
+   reply=r.data?.status==='staff'?replies.staff[i]:r.data?.status==='client'?`<b>Підписку оформлено</b>\nСюди прийде підтвердження запису до <b>${escapeHtml(r.data.studio)}</b> і нагадування перед візитом.\n\nВідписатися: /stop`:replies.invalid[i]
   }else if(command==='/stop'){const r=await db.rpc('telegram_unbind',{chat_input:chat.id});if(r.error)throw r.error;reply=replies.stop[i]}
   else reply=replies.help[i]
  }catch{return res.status(503).json({error:'Telegram link unavailable'})} // Telegram retries the update
