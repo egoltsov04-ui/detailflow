@@ -1032,6 +1032,13 @@ VIP, корпоративний, повторний|VIP, corporate, returning
 % на першу оплату|% off the first payment
 Промокод не знайдено або його строк минув|Promo code not found or expired
 Є промокод?|Have a promo code?
+Отримувати нагадування в Telegram|Get reminders in Telegram
+Підключити Telegram|Connect Telegram
+Відключити Telegram|Disconnect Telegram
+Відкрити бота|Open the bot
+Підключено: робочі сповіщення приходять у Telegram.|Connected: work notifications arrive in Telegram.
+У боті натисніть «Start». Посилання діє 15 хвилин.|Press «Start» in the bot. The link is valid for 15 minutes.
+Не вдалося змінити Telegram. Спробуйте ще раз.|Could not change Telegram. Please try again.
 Історія онлайн-платежів|Online payment history
 Застосовано|Applied
 Не застосовано: не діяв на момент активації|Not applied: it was not valid at activation
