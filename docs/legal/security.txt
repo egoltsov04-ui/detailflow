@@ -1,4 +1,4 @@
-Contact: mailto:detailflow@gmail.com
+Contact: mailto:support.detailflow@gmail.com
 Expires: 2027-11-07T00:00:00.000Z
 Preferred-Languages: uk, en
 Policy: https://detailflow.com.ua/security
