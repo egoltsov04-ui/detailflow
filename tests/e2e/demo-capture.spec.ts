@@ -2,10 +2,14 @@ import {test,expect,type Page,type Locator} from '@playwright/test'
 import {mkdir,writeFile} from 'node:fs/promises'
 import {mockService} from './fixtures'
 test.skip(process.env.CAPTURE_DEMO!=='1','Run explicitly when updating landing screenshots')
+// Retina-sharp images; the landing frame does the rounding, so the captured element is flat (no own corners, border or shadow).
+test.use({deviceScaleFactor:2})
+// Trims 1 CSS pixel on each side: a modal on a fractional position otherwise brings a line of the page behind it.
 async function capture(page:Page,target:Locator,name:string){
  await page.evaluate(()=>document.fonts.ready)
+ await target.evaluate(el=>{el.style.borderRadius='0';el.style.border='0';el.style.boxShadow='none';el.style.outline='0'})
  const png=await target.screenshot({animations:'disabled'})
- const webp=await page.evaluate(async data=>{const img=new Image();img.src=data;await img.decode();const canvas=document.createElement('canvas');canvas.width=img.width;canvas.height=img.height;canvas.getContext('2d')!.drawImage(img,0,0);return canvas.toDataURL('image/webp',.88).split(',')[1]},'data:image/png;base64,'+png.toString('base64'))
+ const webp=await page.evaluate(async data=>{const img=new Image();img.src=data;await img.decode();const canvas=document.createElement('canvas');canvas.width=img.width-4;canvas.height=img.height-4;canvas.getContext('2d')!.drawImage(img,-2,-2);return canvas.toDataURL('image/webp',.88).split(',')[1]},'data:image/png;base64,'+png.toString('base64'))
  await mkdir('public/demo',{recursive:true});await writeFile('public/demo/'+name+'.webp',Buffer.from(webp,'base64'))
 }
 test('capture owner overview and workflow screens',async({page})=>{
