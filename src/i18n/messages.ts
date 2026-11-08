@@ -478,6 +478,7 @@ Email для запрошення|Invitation email
 Конвеєр робіт за автомобілями|Vehicle work pipeline
 Показувати скасовані|Show cancelled
 Перетягніть сюди замовлення|Drag an order here
+Немає замовлень на цьому етапі|No orders at this stage
 Роботи та перевірка|Jobs and review
 Призначити майстра|Assign professional
 Підтвердити та нарахувати|Approve and accrue pay
