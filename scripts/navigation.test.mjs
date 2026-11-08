@@ -10,6 +10,8 @@ test('legacy and canonical routes resolve to existing views',()=>{
  assert.equal(pageFromUrl('/app','?payment=ok'),'Тариф')
  assert.equal(sectionFor('Фінанси'),'finance');assert.equal(sectionFor('Роботи'),'work')
  const config=JSON.parse(readFileSync(new URL('../vercel.json',import.meta.url)))
- for(const redirect of config.redirects){assert.ok(Object.values(pages).includes(redirect.destination)||sitePagePaths.includes(redirect.destination));assert.notEqual(redirect.source,redirect.destination)}
+ // the old Vercel address sends everything to the new domain
+ assert.ok(config.redirects.some(r=>r.has?.[0]?.value==='detailflow-xi.vercel.app'&&r.destination==='https://detailflow.com.ua/:path*'))
+ for(const redirect of config.redirects.filter(r=>!r.has)){assert.ok(Object.values(pages).includes(redirect.destination)||sitePagePaths.includes(redirect.destination));assert.notEqual(redirect.source,redirect.destination)}
  assert.ok(config.rewrites.some(r=>r.source==='/app/:path*'))
 })
