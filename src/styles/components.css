@@ -421,3 +421,12 @@ body .access-legal a:hover{color:var(--color-text)}
 .owner-registration label:has(input[type=password]){grid-column:1/-1}
 @media(min-width:900px){.access-portal .access-roles{grid-template-columns:repeat(3,minmax(0,1fr));max-width:1040px}}
 .access-portal>.text-btn[href="/register"]{margin-top:var(--space-6)}
+
+/* Promo code at registration and in /admin */
+.owner-registration .promo-toggle{grid-column:1/-1;justify-self:start}
+.owner-registration label:has(.promo-result),.owner-registration label:has(input[maxlength="32"]){grid-column:1/-1}
+.promo-result{font-size:var(--text-sm);color:var(--color-danger)}
+.promo-result.is-valid{color:var(--color-success)}
+.support-promo-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:var(--space-4);align-items:end;margin-bottom:var(--space-6)}
+.support-promo-form h2,.support-promo-form .form-error,.support-promo-form>button{grid-column:1/-1}
+.support-promo-form>button{justify-self:start}

@@ -30,7 +30,7 @@ test('billing presents current plan, real limits and renewal link',async({page},
  await page.goto('/app/settings/billing')
  const current=page.locator('.billing-plan-current')
  await expect(current).toContainText('Ваш тариф')
- await expect(current.locator('.plan-price')).toContainText('1')
+ await expect(current.locator('.plan-price')).toContainText('590')
  await expect(current.getByRole('link',{name:'Продовжити тариф'})).toHaveAttribute('href',new RegExp(studio))
  await expect(page.locator('.billing-plan').first()).toContainText('Команда та склад — у тарифах Студія і Pro.')
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true)

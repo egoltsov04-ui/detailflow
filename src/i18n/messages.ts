@@ -1004,6 +1004,50 @@ VIP, корпоративний, повторний|VIP, corporate, returning
 Послуг:|Services:
 · Майстрів:|· Professionals:
 · Клієнтів:|· Clients:
+на першу оплату|on the first payment
+днів пробного періоду|extra trial days
+Промокоди|Promo codes
+Новий промокод|New promo code
+Код|Code
+Латиниця, цифри й дефіс, 4–32 символи|Latin letters, digits and hyphen, 4–32 characters
+Бонус|Bonus
+Знижка на першу оплату, %|Discount on the first payment, %
+Додаткові дні пробного періоду|Extra trial days
+Знижка, %|Discount, %
+Днів|Days
+Діє до (включно), необов’язково|Valid until (inclusive), optional
+Ліміт використань, необов’язково|Usage limit, optional
+Примітка для себе|Private note
+Наприклад: Instagram, жовтень|For example: Instagram, October
+Створити промокод|Create promo code
+Усі промокоди|All promo codes
+Діє до|Valid until
+Безстроково|No end date
+Використано|Used
+Промокодів ще немає.|No promo codes yet.
+Обраний тариф|Selected plan
+Промокод|Promo code
+Промокод діє: +|Promo code works: +
+Промокод діє: −|Promo code works: −
+% на першу оплату|% off the first payment
+Промокод не знайдено або його строк минув|Promo code not found or expired
+Є промокод?|Have a promo code?
+Історія онлайн-платежів|Online payment history
+Застосовано|Applied
+Не застосовано: не діяв на момент активації|Not applied: it was not valid at activation
+Діє|Active
+Завершився|Ended
+Вимкнути|Disable
+Увімкнути|Enable
+Такий промокод уже існує|This promo code already exists
+Промокод уже використано: змінити можна лише строк, ліміт, активність і примітку|The promo code has been used: only the end date, limit, status and note can change
+Команда з 2–3 майстрів|A team of 2–3 detailers
+4+ майстрів та адміністратори|4+ detailers and administrators
+Період оплати|Billing period
+Щомісяця|Monthly
+Щороку|Yearly
+на рік|per year
+Замість|Instead of
 Гольцов Єгор Ілліч|Yehor Holtsov
 Робочий простір детейлінг-студії: запис, роботи, команда і фінанси в одному місці.|A workspace for detailing studios: bookings, jobs, team and finance in one place.
 Пошта|Email
