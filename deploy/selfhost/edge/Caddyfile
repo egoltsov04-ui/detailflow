@@ -31,8 +31,10 @@ import app.caddy
 # /api/* stays open: pg_cron calls /api/send-reminders, and the API checks its own auth. Remove the import at launch.
 (preview_gate) {
 	# No service worker while gated: Chrome does not send basic-auth credentials on its fetches, so pages ask for the password again and again.
-	@sw path /sw.js
-	respond @sw 404
+	# handle, not respond: respond runs after the site's handle blocks and would never fire.
+	handle /sw.js {
+		respond 404
+	}
 	@gated not path /api/*
 	basic_auth @gated {
 		{$PREVIEW_USER} {$PREVIEW_HASH}
