@@ -153,3 +153,10 @@ test('a master shift starts only after an owner or admin confirms it',async t=>{
  await as(MASTER,()=>db.query(`select manage_master_shift('${M}','start')`))
  assert.equal(await open(),1)
 })
+
+test('a studio approved by support gets a 5-day trial (migration 064)',async t=>{
+ const db=await schema();t.after(()=>db.close())
+ const [fn]=(await db.query("select prosrc from pg_proc where proname='support_review_application'")).rows
+ assert.match(fn.prosrc,/now\(\)\+interval '5 days'/)
+ assert.doesNotMatch(fn.prosrc,/14 days/)
+})

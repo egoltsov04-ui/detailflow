@@ -18,6 +18,8 @@
 	}
 
 	# Old addresses, kept from vercel.json
+	redir /privacy.html /privacy permanent
+	redir /terms.html /terms permanent
 	redir /overview /app/overview 307
 	redir /calendar /app/work/calendar 307
 	redir /orders /app/work/kanban 307
@@ -69,7 +71,7 @@
 	}
 	handle {
 		root * {args[1]}
-		@spa path /login /register /app /app/* /admin /admin/*
+		@spa path /login /register /app /app/* /admin /admin/* /about /contacts /privacy /terms /refund
 		rewrite @spa /index.html
 		file_server
 	}

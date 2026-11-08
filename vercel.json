@@ -23,6 +23,26 @@
     {
       "source": "/app/:path*",
       "destination": "/index.html"
+    },
+    {
+      "source": "/about",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/contacts",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/privacy",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/terms",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/refund",
+      "destination": "/index.html"
     }
   ],
   "headers": [
@@ -76,6 +96,16 @@
     }
   },
   "redirects": [
+    {
+      "source": "/privacy.html",
+      "destination": "/privacy",
+      "permanent": true
+    },
+    {
+      "source": "/terms.html",
+      "destination": "/terms",
+      "permanent": true
+    },
     {
       "source": "/overview",
       "destination": "/app/overview",
