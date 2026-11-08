@@ -4,6 +4,7 @@
 import app.caddy
 
 (supabase_gateway) {
+	header Strict-Transport-Security "max-age=31536000; includeSubDomains"
 	request_body {
 		max_size 10MB
 	}
@@ -17,7 +18,8 @@ import app.caddy
 }
 
 staging.detailflow.com.ua {
-	import detailflow_app detailflow-staging-api-1:3000 /srv/staging
+	header Strict-Transport-Security "max-age=31536000; includeSubDomains"
+	import detailflow_app detailflow-staging-api-1:3000 /srv/staging https://api-staging.detailflow.com.ua wss://api-staging.detailflow.com.ua
 }
 
 api-staging.detailflow.com.ua {

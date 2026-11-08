@@ -4,7 +4,7 @@
 import app.caddy
 
 {$APP_SITE::80} {
-	import detailflow_app api:3000 /srv
+	import detailflow_app api:3000 /srv http://localhost:8001 ws://localhost:8001
 }
 
 {$SUPABASE_SITE::8001} {
