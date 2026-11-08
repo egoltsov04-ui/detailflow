@@ -393,3 +393,16 @@ a.lp-brand,a.access-home,.ob-header a{display:inline-flex;align-items:center;min
 
 /* Dialogs sit above the fixed bottom navigation, otherwise it covers their last button on phones */
 body .overlay{z-index:var(--z-overlay)}
+
+/* Legal: consent at registration, notice under online booking, document links */
+.legal-consent{display:flex!important;align-items:flex-start;gap:var(--space-3);min-height:var(--touch-target);font-weight:var(--weight-medium);font-size:var(--text-sm);color:var(--color-text-secondary);cursor:pointer}
+.legal-consent input{width:20px;height:20px;flex:none;margin-top:2px;accent-color:var(--color-accent)}
+:is(.legal-consent,.ob-consent) a{color:var(--color-accent)}
+body :is(.lp-legal,.access-legal) a{color:var(--color-text-secondary)}
+body :is(.lp-legal,.access-legal) a:hover{color:var(--color-text)}
+.lp-footer .lp-legal{order:2;width:100%}
+.lp-footer>a[href="/login"]{margin-left:auto}
+.ob-consent{font-size:var(--text-sm);color:var(--color-text-muted);margin:0}
+.lp-legal,.access-legal{display:flex;flex-wrap:wrap;gap:var(--space-2) var(--space-5);font-size:var(--text-sm)}
+.access-legal{justify-content:center;margin-top:var(--space-6)}
+:is(.lp-legal,.access-legal) a{display:inline-flex;align-items:center;min-height:var(--touch-target)}
