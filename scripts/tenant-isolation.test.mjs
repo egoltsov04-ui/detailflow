@@ -159,4 +159,8 @@ test('a studio approved by support gets a 5-day trial (migration 064)',async t=>
  const [fn]=(await db.query("select prosrc from pg_proc where proname='support_review_application'")).rows
  assert.match(fn.prosrc,/now\(\)\+interval '5 days'/)
  assert.doesNotMatch(fn.prosrc,/14 days/)
+ // migration 065: the database plan limits match src/lib/plans.ts
+ const {subscriptionPlans}=await import('../src/lib/plans.ts')
+ const [{cfg}]=(await db.query('select plan_configuration() cfg')).rows
+ for(const p of subscriptionPlans){const d=cfg.find(x=>x.id===p.id);assert.deepEqual([d.price,d.staffLimit,d.adminLimit],[p.price,p.staffLimit,p.adminLimit],p.id)}
 })

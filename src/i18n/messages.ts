@@ -1004,6 +1004,14 @@ VIP, корпоративний, повторний|VIP, corporate, returning
 Послуг:|Services:
 · Майстрів:|· Professionals:
 · Клієнтів:|· Clients:
+Команда з 2–3 майстрів|A team of 2–3 detailers
+4+ майстрів та адміністратори|4+ detailers and administrators
+Період оплати|Billing period
+Щомісяця|Monthly
+Щороку|Yearly
+2 місяці в подарунок|2 months free
+на рік|per year
+Замість|Instead of
 Гольцов Єгор Ілліч|Yehor Holtsov
 Робочий простір детейлінг-студії: запис, роботи, команда і фінанси в одному місці.|A workspace for detailing studios: bookings, jobs, team and finance in one place.
 Пошта|Email

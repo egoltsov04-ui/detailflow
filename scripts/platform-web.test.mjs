@@ -49,7 +49,7 @@ test('payment endpoint verifies active studio manager, signature and atomic data
  const checkout=createCheckoutHandler(makeClient),callback=createCallbackHandler(makeClient)
  async function invoke(handler,body){let code,result;await handler({method:'POST',headers:{authorization:'Bearer test'},body},{status(n){code=n;return this},json(v){result=v}});return {code,result}}
  active=false;assert.equal((await invoke(checkout,{tenantId:'studio',plan:'studio'})).code,403);assert.equal(writes.length,0)
- active=true;const purchase=await invoke(checkout,{tenantId:'studio',plan:'studio',amount:1});assert.equal(purchase.code,200);assert.equal(purchase.result.fields.amount,'1190.00');assert.ok(filters.some(([k,v])=>k==='active'&&v===true))
+ active=true;const purchase=await invoke(checkout,{tenantId:'studio',plan:'studio',amount:1});assert.equal(purchase.code,200);assert.equal(purchase.result.fields.amount,'590.00');assert.ok(filters.some(([k,v])=>k==='active'&&v===true))
  role='master';assert.equal((await invoke(checkout,{tenantId:'studio',plan:'studio'})).code,403);role='admin';assert.equal((await invoke(checkout,{tenantId:'studio',plan:'studio'})).code,200);staffCount=6;assert.equal((await invoke(checkout,{tenantId:'studio',plan:'studio'})).code,409);assert.equal((await invoke(checkout,{tenantId:'studio',plan:'pro'})).code,200);
  delete process.env.BILLING_MODE;assert.equal((await invoke(checkout,{tenantId:'studio',plan:'studio'})).result.code,'MANUAL_BILLING');
  const payload={merchantAccount:'merchant',orderReference:'DF-test',amount:690,currency:'UAH',transactionStatus:'Approved',authCode:'test',cardPan:'test',reasonCode:1100}
