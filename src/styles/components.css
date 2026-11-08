@@ -305,6 +305,9 @@ a.lp-brand,a.access-home,.ob-header a{display:inline-flex;align-items:center;min
 .order-danger-zone{order:99;display:flex;justify-content:flex-end;padding-top:var(--space-4);border-top:1px solid var(--color-border)}
 .wf-job-meta{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-2);margin-bottom:var(--space-1)}
 .wf-job-meta>small{color:var(--color-text-muted)}
+.wf-job-master{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-2);margin-top:var(--space-1)}
+.wf-job-master>span{display:inline-flex;align-items:center;gap:var(--space-1);color:var(--color-text-secondary)}
+.wf-job-master>button{min-height:var(--touch-target)}
 /* A text button that opens an order from a table cell: vehicle, then the client line under it */
 :is(td,.ui-table-value) .text-btn:has(.vehicle-tag){display:grid;justify-items:start;gap:var(--space-1);text-align:left}
 :is(td,.ui-table-value) .text-btn:has(.vehicle-tag)>small{color:var(--color-text-muted);font-weight:var(--weight-medium)}

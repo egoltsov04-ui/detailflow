@@ -62,7 +62,10 @@
 
 	handle /api/* {
 		# Caddy replaces any X-Forwarded-For the client sent; the booking rate limit relies on it.
-		reverse_proxy {args[0]}
+		reverse_proxy {args[0]} {
+			# The booking rate limit prefers this header (set by Vercel); here a client could forge it.
+			header_up -X-Vercel-Forwarded-For
+		}
 	}
 	handle {
 		root * {args[1]}

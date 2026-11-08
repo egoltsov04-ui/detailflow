@@ -7,7 +7,10 @@ services:
   api-gw:
     container_name: supabase-staging-envoy
     ports: !override ["127.0.0.1:8100:8000/tcp"]
-  auth: {container_name: supabase-staging-auth}
+  auth:
+    container_name: supabase-staging-auth
+    environment:
+      GOTRUE_PASSWORD_MIN_LENGTH: 8
   rest: {container_name: supabase-staging-rest}
   realtime:
     container_name: realtime-dev.supabase-staging-realtime

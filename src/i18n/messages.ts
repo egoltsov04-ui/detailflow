@@ -501,6 +501,7 @@ Email для запрошення|Invitation email
 Зберегти коментар|Save comment
 Додати фото (JPG, PNG, WebP до 8 МБ)|Add photo (JPG, PNG, WebP up to 8 MB)
 Призначити / умови|Assignment / terms
+Змінити|Change
 Призупинити|Pause
 Здати на перевірку|Submit for review
 Перевірити роботу|Review job

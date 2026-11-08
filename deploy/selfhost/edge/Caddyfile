@@ -4,9 +4,19 @@
 import app.caddy
 
 (supabase_gateway) {
+	# Only sign-in attempts are logged (no bodies, credentials redacted by Caddy); fail2ban bans IPs that keep failing.
+	@not_token not path /auth/v1/token
+	log_skip @not_token
+	log {
+		output file /var/log/caddy/auth-token.log {
+			roll_size 10MiB
+			roll_keep 5
+		}
+		format json
+	}
 	header Strict-Transport-Security "max-age=31536000; includeSubDomains"
 	request_body {
-		max_size 10MB
+		max_size 55MB
 	}
 	@client path /auth/v1/* /rest/v1/* /storage/v1/* /realtime/v1/*
 	handle @client {
