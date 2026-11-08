@@ -65,7 +65,7 @@ export async function mockService(page:Page,role:'owner'|'master'|'super_admin'|
  }else{
  switch(name){
  case 'tenants':data={id:studio,name:'Test Studio',slug:'test',address:'Київ',timezone:'Europe/Kyiv',phone:'+380000000000',shift_max_hours:16,break_max_minutes:120,shift_close_time:null};break
- case 'clients':data=cards;break
+ case 'clients':data=req.method()==='POST'?{id:'new-client'}:cards;break
  case 'services':data=[service];break
  case 'staff_profiles':data=[member];break
  case 'appointments':data=[{id:'appointment',client_id:client,staff_id:staff,starts_at:today+'T09:00:00Z',ends_at:today+'T11:00:00Z',status:'confirmed',source:'admin',clients:clients[0],staff_profiles:member,appointment_services:[{service_name:service.name,unit_price:1500,duration_minutes:120}],receipts:[],vehicles:clients[0].vehicles[0]}];break

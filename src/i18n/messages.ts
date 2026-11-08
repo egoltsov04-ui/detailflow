@@ -1004,6 +1004,10 @@ VIP, корпоративний, повторний|VIP, corporate, returning
 · Клієнтів:|· Clients:
 Назва, адреса та часовий пояс|Name, address and time zone
 Послуг у каталозі:|Catalog services:
+Ім’я клієнта|Client name
+Вкажіть ім’я клієнта.|Enter the client name.
+Не вдалося створити клієнта.|Could not create the client.
++ Новий клієнт|+ New client
 Запити на початок зміни|Shift start requests
 Підтвердіть, коли майстер на місці. Зміна рахується з моменту підтвердження.|Confirm when the master is on site. The shift counts from the confirmation.
 Запит о|Requested at
