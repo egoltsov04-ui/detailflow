@@ -8,6 +8,7 @@ import publicBooking from '../api/public/booking.js'
 import bookingRequestUpdate from '../api/booking-requests/update.js'
 import push from '../api/push.js'
 import sendReminders from '../api/send-reminders.js'
+import telegram from '../api/telegram.js'
 import staffInvite from '../api/staff/invite.js'
 import staffAdministrator from '../api/staff/administrator.js'
 import wayforpayCallback from '../api/wayforpay/callback.js'
@@ -21,6 +22,7 @@ export const routes:Record<string,Handler>={
  '/api/booking-requests/update':bookingRequestUpdate,
  '/api/push':push,
  '/api/send-reminders':sendReminders,
+ '/api/telegram':telegram,
  '/api/staff/invite':staffInvite,
  '/api/staff/administrator':staffAdministrator,
  '/api/wayforpay/callback':wayforpayCallback,

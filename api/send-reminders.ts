@@ -1,4 +1,5 @@
 import {deliverPushQueue} from '../server/lib/push.js'
+import {deliverTelegramQueue} from '../server/lib/telegram.js'
 import {createClient} from '@supabase/supabase-js'
 import {bookingEmail} from '../server/lib/bookingContact.js'
 import {sendEmail,EmailDeliveryError} from '../server/lib/sendpulse.js'
@@ -49,7 +50,7 @@ export function createReminderHandler(makeClient:typeof createClient=createClien
    }catch(error){status=!attempted?'failed':error instanceof EmailDeliveryError&&!error.uncertain?'failed':'uncertain';reason=!attempted?'Could not prepare delivery':status==='uncertain'?'Delivery acknowledgement unknown; check provider before retry':'Provider rejected delivery'}
    const done=await db.rpc('finish_notification',{job_input:job.id,token_input:job.claim_token,status_input:status,error_input:reason,provider_input:provider});if(done.error||done.data!==true)throw new Error('Could not save delivery result');counts[status]++
   }
-  const push=await deliverPushQueue(db);return res.status(emailConfigured||push.configured?200:503).json({...counts,emailConfigured,push})
+  const push=await deliverPushQueue(db),telegram=await deliverTelegramQueue(db);return res.status(emailConfigured||push.configured||telegram.configured?200:503).json({...counts,emailConfigured,push,telegram})
  }catch{return res.status(503).json({error:'Notification processing unavailable'})}
 }}
 export default createReminderHandler()
