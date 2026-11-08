@@ -14,9 +14,6 @@ services:
       - /var/log/caddy:/var/log/caddy
       - caddy_data:/data
       - caddy_config:/config
-    environment:
-      PREVIEW_USER: ${PREVIEW_USER:-}
-      PREVIEW_HASH: ${PREVIEW_HASH:-}
     networks: [supabase-staging, supabase-production]
 networks:
   supabase-staging:
