@@ -27,6 +27,30 @@ import app.caddy
 	}
 }
 
+# Until launch the production site asks for a password (edge/.env: PREVIEW_USER, PREVIEW_HASH from caddy hash-password).
+# /api/* stays open: pg_cron calls /api/send-reminders, and the API checks its own auth. Remove the import at launch.
+(preview_gate) {
+	# No service worker while gated: Chrome does not send basic-auth credentials on its fetches, so pages ask for the password again and again.
+	# handle, not respond: respond runs after the site's handle blocks and would never fire.
+	handle /sw.js {
+		respond 404
+	}
+	@gated not path /api/*
+	basic_auth @gated {
+		{$PREVIEW_USER} {$PREVIEW_HASH}
+	}
+}
+
+detailflow.com.ua {
+	header Strict-Transport-Security "max-age=31536000; includeSubDomains"
+	import preview_gate
+	import detailflow_app detailflow-production-api-1:3000 /srv/production https://api.detailflow.com.ua wss://api.detailflow.com.ua
+}
+
+api.detailflow.com.ua {
+	import supabase_gateway supabase-production-envoy:8000
+}
+
 staging.detailflow.com.ua {
 	header Strict-Transport-Security "max-age=31536000; includeSubDomains"
 	import detailflow_app detailflow-staging-api-1:3000 /srv/staging https://api-staging.detailflow.com.ua wss://api-staging.detailflow.com.ua

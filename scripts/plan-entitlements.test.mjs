@@ -81,8 +81,8 @@ commit;`
  const summary=(await db.query('select support_platform_summary(current_date-1,current_date) data')).rows[0].data;assert.equal(Number(summary.mrr),0);assert.deepEqual(summary.paid_by_plan,{});assert.equal(Number(summary.converted),0)
  await db.query("select support_founder_price($1,299,false,'Price for this period')",[studio]);await db.query("select support_add_payment($1,gen_random_uuid(),390,'transfer',current_date,1,'Renew at standard price')",[studio]);await db.exec('reset role');assert.equal((await db.query('select price_override from subscriptions where tenant_id=$1',[studio])).rows[0].price_override,null)
  await db.query("update subscriptions set plan='studio' where tenant_id=$1",[studio])
- for(let i=0;i<5;i++)await db.query("insert into staff_profiles(tenant_id,full_name) values($1,$2)",[studio,'Master '+i])
- await assert.rejects(db.query("insert into staff_profiles(tenant_id,full_name) values($1,'Sixth')",[studio]),/STAFF_LIMIT_REACHED/)
+ for(let i=0;i<3;i++)await db.query("insert into staff_profiles(tenant_id,full_name) values($1,$2)",[studio,'Master '+i])
+ await assert.rejects(db.query("insert into staff_profiles(tenant_id,full_name) values($1,'Fourth')",[studio]),/STAFF_LIMIT_REACHED/)
  await assert.rejects(db.query("update staff_profiles set user_id=null where id=$1",[staff.id]),/STAFF_LIMIT_REACHED/)
  await assert.rejects(db.query("update subscriptions set plan='solo' where tenant_id=$1",[studio]),/STAFF_LIMIT_REACHED/)
  // A newly registered Solo owner gets the chosen plan and the canonical work

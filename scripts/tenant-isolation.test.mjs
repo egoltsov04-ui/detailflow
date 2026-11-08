@@ -159,4 +159,74 @@ test('a studio approved by support gets a 5-day trial (migration 064)',async t=>
  const [fn]=(await db.query("select prosrc from pg_proc where proname='support_review_application'")).rows
  assert.match(fn.prosrc,/now\(\)\+interval '5 days'/)
  assert.doesNotMatch(fn.prosrc,/14 days/)
+ // migration 065: the database plan limits match src/lib/plans.ts
+ const {subscriptionPlans}=await import('../src/lib/plans.ts')
+ const [{cfg}]=(await db.query('select plan_configuration() cfg')).rows
+ for(const p of subscriptionPlans){const d=cfg.find(x=>x.id===p.id);assert.deepEqual([d.price,d.staffLimit,d.adminLimit],[p.price,p.staffLimit,p.adminLimit],p.id)}
+})
+
+test('promo codes: support creates them, signup stores the code, approval applies it once (migration 066)',async t=>{
+ const db=await schema();t.after(()=>db.close())
+ const q=async(s,p)=>(await db.query(s,p)).rows
+ const SUPPORT=id(81),SERVICE=id(82),OWNER1=id(83),OWNER2=id(84)
+ await db.exec(`set session_replication_role=replica;insert into auth.users(id,email,email_confirmed_at) values('${SUPPORT}','s@x.test',now());insert into profiles(id,full_name) values('${SUPPORT}','Support');insert into tenants(id,name,slug,is_internal) values('${SERVICE}','Detailflow Support','support-x',true);insert into tenant_memberships(tenant_id,user_id,role,active) values('${SERVICE}','${SUPPORT}','super_admin',true);set session_replication_role=default;`)
+ const claims=(user,extra={})=>JSON.stringify({sub:user,role:'authenticated',aal:'aal2',amr:[{method:'password',timestamp:Math.floor(Date.now()/1000)}],...extra})
+ async function as(user,fn,aal2=true){await db.exec(`reset role;select set_config('request.jwt.claim.sub','${user}',false);select set_config('request.jwt.claims','${aal2?claims(user):JSON.stringify({sub:user,role:'authenticated',aal:'aal1'})}',false);set role ${user?'authenticated':'anon'};`);try{return await fn()}finally{await db.exec('reset role')}}
+ const save=(code,kind,value,max=null)=>as(SUPPORT,()=>q(`select support_save_promo_code(null,$1,$2,$3,current_date+30,$4,true,'test') id`,[code,kind,value,max]))
+ const [{id:days}]=await save('extra7','trial_days',7);const [{id:half}]=await save('HALF50','percent',50,1)
+ assert.deepEqual((await as(null,()=>q("select check_promo_code(' extra7 ') r")))[0].r,{valid:true,kind:'trial_days',value:7})
+ assert.deepEqual((await as(null,()=>q("select check_promo_code('NOPE') r")))[0].r,{valid:false})
+ await assert.rejects(as(null,()=>q('select * from promo_codes')),/permission denied/)
+ await assert.rejects(as(OWNER,()=>q(`select support_save_promo_code(null,'HACK','percent',100,null,null,true,'')`)),/Потрібні права/)
+ for(const [user,code,email] of [[OWNER1,'extra7','a@x.test'],[OWNER2,'half50','b@x.test']])
+  await db.query(`insert into auth.users(id,email,email_confirmed_at,raw_user_meta_data) values($1,$2,now(),$3)`,[user,email,JSON.stringify({requested_role:'owner',studio_name:'S '+code,selected_plan:'studio',promo_code:code})])
+ const reqs=await q(`select id,user_id,promo_code from studio_access_requests where user_id in ($1,$2) order by promo_code`,[OWNER1,OWNER2])
+ assert.deepEqual(reqs.map(r=>r.promo_code),['EXTRA7','HALF50'])
+ const approve=req=>as(SUPPORT,()=>q(`select support_review_application($1,true,'ok') id`,[req]))
+ const [{id:s1}]=await approve(reqs.find(r=>r.user_id===OWNER1).id),[{id:s2}]=await approve(reqs.find(r=>r.user_id===OWNER2).id)
+ assert.equal((await q(`select round(extract(epoch from trial_ends_at-now())/86400) d from subscriptions where tenant_id=$1`,[s1]))[0].d,'12')
+ assert.equal(Number((await q(`select price_override from subscriptions where tenant_id=$1`,[s2]))[0].price_override),295)
+ assert.deepEqual((await q(`select code,uses from promo_codes order by code`)).map(r=>[r.code,r.uses]),[['EXTRA7',1],['HALF50',1]])
+ // HALF50 allowed one use: it is now spent, and a used code keeps its kind and value
+ assert.deepEqual((await as(null,()=>q("select check_promo_code('HALF50') r")))[0].r,{valid:false})
+ await assert.rejects(as(SUPPORT,()=>q(`select support_save_promo_code($1,'HALF50','percent',90,null,null,true,'')`,[half])),/уже використано/)
+})
+
+test('Telegram: one-time links, chats hidden from the app, jobs for staff and the subscribed client (migration 067)',async t=>{
+ const db=await schema();t.after(()=>db.close());await seed(db)
+ const q=async(s,p)=>(await db.query(s,p)).rows
+ async function as(user,fn){await db.exec(`reset role;select set_config('request.jwt.claim.sub','${user||''}',false);select set_config('request.jwt.claims','${JSON.stringify({sub:user,role:user?'authenticated':'anon'})}',false);set role ${user?'authenticated':'anon'};`);try{return await fn()}finally{await db.exec('reset role')}}
+ for(const fn of ['telegram_bind(text,bigint,text)','telegram_unbind(bigint)','enqueue_telegram_reminders()'])
+  for(const role of ['anon','authenticated'])assert.equal((await q(`select has_function_privilege('${role}','public.${fn}','EXECUTE') ok`))[0].ok,false,`${role} must not run ${fn}`)
+ await assert.rejects(as(null,()=>q('select create_my_telegram_link()')),/permission denied|Потрібен/)
+ await assert.rejects(as(OWNER,()=>q('select * from telegram_chats')),/permission denied/)
+ await assert.rejects(as(OWNER,()=>q('select * from telegram_link_tokens')),/permission denied/)
+ // staff: link, a second link replaces the first, a used link is spent
+ const link=async user=>(await as(user,()=>q('select create_my_telegram_link() t')))[0].t
+ const old=await link(MASTER),token=await link(MASTER)
+ assert.match(token,/^[a-f0-9]{32}$/)
+ assert.equal((await q(`select telegram_bind($1,100,'uk') r`,[old]))[0].r.status,'invalid')
+ assert.equal((await q(`select telegram_bind($1,100,'uk') r`,[token]))[0].r.status,'staff')
+ assert.equal((await q(`select telegram_bind($1,100,'uk') r`,[token]))[0].r.status,'invalid')
+ assert.equal((await q(`select telegram_bind($1,200,'en') r`,[await link(OWNER)]))[0].r.status,'staff')
+ assert.equal((await as(MASTER,()=>q('select my_telegram_linked() v')))[0].v,true)
+ assert.equal((await as(ADMIN,()=>q('select my_telegram_linked() v')))[0].v,false)
+ const late=await link(ADMIN);await db.query(`update telegram_link_tokens set expires_at=now()-interval '1 minute' where token=$1`,[late])
+ assert.equal((await q(`select telegram_bind($1,300,'uk') r`,[late]))[0].r.status,'invalid')
+ // work assigned to the master and a new online request for owner/admins go to linked chats only
+ await db.query(`update work_order_jobs set status='review' where id=$1`,[id(71)]);await db.query(`update work_order_jobs set status='assigned' where id=$1`,[id(71)])
+ const appt=id(91),starts="now()+interval '90 minutes'"
+ await db.exec(`insert into appointments(id,tenant_id,client_id,starts_at,ends_at,status,source) values('${appt}','${A}','${id(41)}',${starts},${starts}+interval '1 hour','pending','public')`)
+ const jobs=await q(`select kind,recipient_user_id u from notification_jobs where channel='telegram' order by kind,recipient_user_id`)
+ assert.deepEqual(jobs.map(j=>[j.kind,j.u]),[['booking_request',OWNER],['work_assigned',MASTER],['work_review',OWNER]])
+ // client: subscribes to this booking, gets the confirmation and the 2-hour reminder
+ await db.query(`insert into telegram_link_tokens(token,appointment_id,expires_at) values($1,$2,now()+interval '1 hour')`,['c'.repeat(32),appt])
+ assert.deepEqual((await q(`select telegram_bind($1,555,'uk') r`,['c'.repeat(32)]))[0].r,{status:'client',studio:'A'})
+ await db.query(`update reminder_settings set reminder_2h_enabled=true where tenant_id=$1`,[A])
+ await db.query(`update appointments set status='confirmed' where id=$1`,[appt])
+ await q('select enqueue_telegram_reminders()');await q('select enqueue_telegram_reminders()')
+ assert.deepEqual((await q(`select kind from notification_jobs where channel='telegram' and recipient_user_id is null order by kind`)).map(r=>r.kind),['booking_confirmed','visit_2'])
+ // /stop removes every link of the chat; unlinking in the app removes the staff link
+ assert.equal((await q('select telegram_unbind(555) n'))[0].n,1)
+ await as(MASTER,()=>q('select unlink_my_telegram()'));assert.equal((await as(MASTER,()=>q('select my_telegram_linked() v')))[0].v,false)
 })

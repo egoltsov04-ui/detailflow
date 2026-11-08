@@ -6,7 +6,7 @@ const member={id:staff,tenant_id:studio,user_id:owner,full_name:'Тестови�
 const service={id:'service',name:'Комплексне полірування',price:1500,duration_minutes:120,active:true,category:'Полірування',description:'Відновлення блиску кузова',variants:[]}
 export const baseOrder={id:order,tenant_id:studio,client_id:client,clients:clients[0],staff_id:staff,staff_profiles:member,title:'Комплексне полірування',vehicle_label:'Mercedes-Benz GLE · TEST 001',service_summary:'Полірування кузова',status:'review',total:1500,deposit:500,created_at:now,status_changed_at:now,checklist:[],post_id:'post',started_at:now,planned_duration_minutes:120,appointment_id:'appointment'}
 const job={id:'job',tenant_id:studio,work_order_id:order,staff_id:staff,service_id:'service',title:service.name,stage:'Виконання',position:0,status:'review',price:1500,pay_mode:'percent',rate:30,checklist:[{id:'check',title:'Кузов підготовлено',done:true}],attachments:[],note:'',review_note:'',worked_seconds:7200,running_since:null,version:1,created_at:now,updated_at:now,submitted_at:now}
-export async function mockService(page:Page,role:'owner'|'master'|'super_admin'|'guest'='owner',scenario:{status?:string;reason?:string;attachments?:any[];aal?:string;plan?:string;totpSetup?:boolean;shiftRequest?:'none'|'pending'}={}){
+export async function mockService(page:Page,role:'owner'|'master'|'super_admin'|'guest'='owner',scenario:{status?:string;reason?:string;attachments?:any[];aal?:string;plan?:string;totpSetup?:boolean;shiftRequest?:'none'|'pending';telegram?:boolean}={}){
  const calls:{name:string;body:any}[]=[]
  let orders=[baseOrder,{...baseOrder,id:'ready-order',appointment_id:null,status:'ready',vehicle_label:'BMW X5 · READY',post_id:null},{...baseOrder,id:'archived-order',appointment_id:null,status:'issued',vehicle_label:'Archived Volvo',status_changed_at:'2020-01-01',post_id:null}]
  const openShift={id:'shift',staff_id:staff,started_at:now,ended_at:null,paused_at:null,pause_seconds:0,breaks:[]},pendingRequest={id:'shift-request',staff_id:staff,requested_at:now,status:'pending',reason:null}
@@ -17,6 +17,8 @@ export async function mockService(page:Page,role:'owner'|'master'|'super_admin'|
  await page.route('**/*',async route=>{const req=route.request(),url=new URL(req.url());let data:any
  const respond=(body:any)=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body),headers:{'access-control-allow-origin':'*'}})
  if(url.pathname==='/api/push/public-key')return respond({publicKey:null})
+ if(url.pathname==='/api/telegram')return respond({bot:scenario.telegram?'detailflow_ua_bot':null})
+ if(url.pathname==='/api/public/booking'&&req.method()==='POST')return route.fulfill({status:201,contentType:'application/json',body:JSON.stringify({ok:true,status:'pending',...(scenario.telegram?{telegram:{bot:'detailflow_ua_bot',token:'c'.repeat(32)}}:{})})})
  if(url.pathname==='/api/public/booking')return respond({studio:{name:'Test Detailflow',address:'Київ',timezone:'Europe/Kyiv'},services:[service],staff:[member],schedules:Array.from({length:7},(_,weekday)=>({staff_id:staff,weekday,starts_at:'08:00',ends_at:'20:00'})),appointments:[]})
  if(url.hostname==='127.0.0.1'||url.hostname==='localhost')return route.continue()
  if(!url.hostname.endsWith('.supabase.co'))return route.abort()
@@ -59,6 +61,11 @@ export async function mockService(page:Page,role:'owner'|'master'|'super_admin'|
  case 'save_job_evidence':jobs=jobs.map(j=>({...j,version:j.version+1,attachments:body.payload.action==='remove'?j.attachments.filter((a:any)=>a.path!==body.payload.path):body.payload.action==='media'?[...j.attachments.filter((a:any)=>a.path!==body.payload.replace_path),{...body.payload,mime:'image/png'}]:j.attachments}));data=null;break
  case 'manage_master_shift':if(body.action_input==='start'&&!shifts.length)shiftRequests=[pendingRequest];if(body.action_input==='cancel_request')shiftRequests=[];data=null;break
  case 'decide_shift_request':shiftRequests=body.approve?[]:[{...pendingRequest,status:'rejected',reason:body.reason_input}];if(body.approve)shifts=[openShift];data=null;break
+ case 'my_telegram_linked':data=false;break
+ case 'create_my_telegram_link':data='f'.repeat(32);break
+ case 'check_promo_code':data=String(body.code_input).toUpperCase()==='WELCOME'?{valid:true,kind:'trial_days',value:7}:{valid:false};break
+ case 'support_promo_codes':data=[{id:'promo',code:'WELCOME',kind:'trial_days',value:7,valid_until:null,max_uses:null,uses:2,active:true,note:'Instagram',usable:true,created_at:now}];break
+ case 'support_save_promo_code':data='promo-new';break
  case 'create_manual_booking':data={id:'created-appointment',client_id:client};break
  default:data=[]
  }

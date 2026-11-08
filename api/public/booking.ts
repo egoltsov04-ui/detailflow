@@ -1,5 +1,7 @@
 import { readAllPages } from '../../src/lib/pagination.js'
 import { createClient } from '@supabase/supabase-js'
+import { randomBytes } from 'node:crypto'
+import { telegramBot } from '../../server/lib/telegram.js'
 import { availableStaff, bookingTotals, resolveBookingServices, type BookingData, type BookingService } from '../../src/lib/bookingAvailability.js'
 import { publicBookingRateLimitKeys } from '../../server/lib/publicBookingRateLimit.js'
 
@@ -79,7 +81,11 @@ export function createPublicBookingHandler(makeClient:typeof createClient=create
       if(cleanup.error)console.error('Public booking cleanup failed',cleanup.error.code)
       throw serviceError
     }
-    return response.status(201).json({ok:true,status:'pending'})
+    // One-time link for Telegram reminders about this booking, valid until the visit. Booking works without it.
+    let telegram:{bot:string;token:string}|undefined
+    const bot=telegramBot()
+    if(bot){const token=randomBytes(16).toString('hex'),link=await supabase.from('telegram_link_tokens').insert({token,appointment_id:appointment.id,expires_at:startsAt.toISOString()});if(!link.error)telegram={bot,token}}
+    return response.status(201).json({ok:true,status:'pending',...(telegram?{telegram}:{})})
   }catch(error){
     if((error as {message?:string})?.message?.includes('Період доступу завершено'))return response.status(409).json({error:'Онлайн-запис тимчасово недоступний. Зв’яжіться зі студією, щоб домовитися про візит.'})
     console.error('Public booking failed',error instanceof Error?error.name:(error as {code?:string})?.code)
