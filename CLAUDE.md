@@ -21,7 +21,7 @@ SaaS для детейлинг-студий в Украине: запис, за�
 - База, авторизация, файлы: Supabase (PostgreSQL, Auth, Storage, бакет `job-photos`). В браузере используются `VITE_SUPABASE_URL` и `VITE_SUPABASE_ANON_KEY`, поэтому граница между студиями это RLS и права RPC, а не фронтенд.
 - Письма приложения: SendPulse API. Письма Supabase Auth (приглашения, сброс пароля): отдельный SMTP в настройках Auth.
 - Push: Web Push (VAPID). Оплата подписок: WayForPay в коде, по умолчанию режим `manual` (оплата и продление через менеджера в Telegram).
-- Бэкапы: `scripts/weekly-encrypted-backup.mjs` и `scripts/restore-backup.mjs` для self-hosted стека, хранилище Backblaze B2 через rclone crypt, инструкция и журнал восстановлений в `docs/BACKUPS.md`. Восстановление проверено на локальном стеке, с настоящим B2 ещё нет.
+- Бэкапы: `scripts/weekly-encrypted-backup.mjs` и `scripts/restore-backup.mjs` для self-hosted стека, хранилище Backblaze B2 через rclone crypt, инструкция и журнал восстановлений в `docs/BACKUPS.md`. Восстановление с настоящего B2 проверено на сервере 2026-11-08 (staging). Для восстановления нужен ещё ключ Vault `pgsodium_root.key`, см. `docs/BACKUPS.md`.
 - Тесты: Playwright в `tests/e2e/`, CI в `.github/workflows/`.
 - Хостинг сейчас: Vercel и Supabase Cloud. Цель: собственный сервер (скилл `detailflow-selfhost-infra`).
 
