@@ -97,6 +97,17 @@
   },
   "redirects": [
     {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "detailflow-xi.vercel.app"
+        }
+      ],
+      "destination": "https://detailflow.com.ua/:path*",
+      "permanent": false
+    },
+    {
       "source": "/privacy.html",
       "destination": "/privacy",
       "permanent": true
