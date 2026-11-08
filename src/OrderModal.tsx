@@ -9,9 +9,11 @@ import {resolveBookingServices,type BookingService} from './lib/bookingAvailabil
 import {t,localeTag} from './i18n/core'
 import type {WorkOrder} from './WorkOrders'
 type Person={id:string|number;name:string;car?:string}
-export default function OrderModal({services,clients,staff,close,add}:{services:BookingService[];clients:Person[];staff:Person[];close:()=>void;add:(item:WorkOrder)=>Promise<string>}){
+const NEW='new'
+export default function OrderModal({services,clients,staff,close,add,createClient}:{services:BookingService[];clients:Person[];staff:Person[];close:()=>void;add:(item:WorkOrder)=>Promise<string>;createClient:(name:string,phone:string,car:string)=>Promise<{id?:string|number;error?:string}>}){
  const timezone=useStudioTimezone(),[requestId]=useState(()=>crypto.randomUUID())
  const [clientId,setClientId]=useState(''),[staffId,setStaffId]=useState(''),[vehicle,setVehicle]=useState(''),[deposit,setDeposit]=useState('0'),[dueAt,setDueAt]=useState(''),[notes,setNotes]=useState(''),[error,setError]=useState(''),[saving,setSaving]=useState(false)
+ const [newName,setNewName]=useState(''),[newPhone,setNewPhone]=useState(''),[created,setCreated]=useState<Person|null>(null)
  const [lines,setLines]=useState([{key:crypto.randomUUID(),service:'',variant:''}])
  const client=clients.find(c=>String(c.id)===clientId),member=staff.find(s=>String(s.id)===staffId)
  let chosen:BookingService[]=[],selectionError=''
@@ -19,11 +21,15 @@ export default function OrderModal({services,clients,staff,close,add}:{services:
  const total=chosen.reduce((n,s)=>n+s.price,0),money=(n:number)=>n.toLocaleString(localeTag())+' ₴'
  async function submit(e:FormEvent){
   e.preventDefault();if(saving)return;setError('')
-  if(!client){setError('Оберіть клієнта.');return}
+  if(clientId===NEW&&!newName.trim()){setError('Вкажіть ім’я клієнта.');return}
+  if(clientId!==NEW&&!client){setError('Оберіть клієнта.');return}
   if(selectionError){setError(selectionError);return}
   const prepay=Number(deposit);if(!Number.isFinite(prepay)||prepay<0||prepay>total){setError('Передоплата не може бути більшою за суму замовлення.');return}
   setSaving(true)
   try{
+   // the new client is created once; a retry after a failed order reuses it instead of creating a duplicate
+   let client=clientId===NEW?created:clients.find(c=>String(c.id)===clientId)
+   if(!client){const r=await createClient(newName.trim(),newPhone.trim(),vehicle.trim());if(!r.id){setError(r.error||'Не вдалося створити клієнта.');return}client={id:r.id,name:newName.trim(),car:vehicle.trim()};setCreated(client)}
    const now=new Date().toISOString(),summary=chosen.map(s=>s.name).join(', ')
    const result=await add({id:requestId,clientId:client.id,clientName:client.name,staffId:member?.id||null,staffName:member?.name||'',title:summary.slice(0,180),vehicle:vehicle.trim()||client.car||'',serviceSummary:summary,status:member?'assigned':'new',total,deposit:prepay,dueAt:dueAt?studioDateTime(dueAt.slice(0,10),dueAt.slice(11,16),timezone).toISOString():'',notes:notes.trim(),createdAt:now,statusChangedAt:now,checklist:chosen.map((s,i)=>({id:lines[i].key,title:s.name,done:false})),compensationPercent:null,compensationFixed:null,submittedForReviewAt:'',reviewNote:'',catalogServices:chosen.map((s,i)=>({service_id:s.id,variant_id:lines[i].variant,expected_price:s.price}))})
    if(result)setError(result)
@@ -31,7 +37,8 @@ export default function OrderModal({services,clients,staff,close,add}:{services:
  }
  return <div className="overlay"><Modal as="form" className="modal order-modal" onSubmit={submit} aria-label={t('Нове замовлення')}>
   <button type="button" className="modal-close" disabled={saving} onClick={close} aria-label={t('Закрити')}><X size={20}/></button><p>{t('Замовлення на роботи')}</p><h2>{t('Нове замовлення')}</h2>
-  <FormField>{t('Клієнт')}<Select required value={clientId} onChange={e=>{setClientId(e.target.value);setVehicle('')}}><option value="">{t('Оберіть клієнта')}</option>{clients.map(c=><option key={c.id} value={String(c.id)}>{c.name}</option>)}</Select></FormField>
+  <FormField>{t('Клієнт')}<Select required value={clientId} onChange={e=>{setClientId(e.target.value);setVehicle('')}}><option value="">{t('Оберіть клієнта')}</option><option value={NEW}>{t('+ Новий клієнт')}</option>{clients.map(c=><option key={c.id} value={String(c.id)}>{c.name}</option>)}</Select></FormField>
+  {clientId===NEW&&<><FormField>{t('Ім’я клієнта')}<input required value={newName} disabled={!!created} onChange={e=>setNewName(e.target.value)} autoComplete="off"/></FormField><FormField>{t('Телефон')}<input type="tel" value={newPhone} disabled={!!created} onChange={e=>setNewPhone(e.target.value)} placeholder="+380" autoComplete="off"/></FormField></>}
   <FormField>{t('Автомобіль')}<input value={vehicle} onChange={e=>setVehicle(e.target.value)} placeholder={client?.car||t('Марка, модель, номер')}/></FormField>
   <fieldset className="order-service-list"><legend>{t('Послуги з каталогу')}</legend>{lines.map((line,i)=>{const service=services.find(s=>s.id===line.service);return <div className="order-service-line" key={line.key}>
    <FormField>{t('Послуга')} {i+1}<Select required value={line.service} onChange={e=>setLines(rows=>rows.map(l=>l.key===line.key?{...l,service:e.target.value,variant:''}:l))}><option value="">{t('Оберіть послугу')}</option>{services.map(s=><option key={s.id} value={s.id}>{s.name}{!s.variants?.length?' · '+money(s.price):''}</option>)}</Select></FormField>
