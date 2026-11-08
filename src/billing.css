@@ -24,5 +24,6 @@
 @media(max-width:1100px){.billing-plans{gap:14px}.billing-plans .billing-plan{padding:22px}.plan-price strong{font-size:36px}}
 @media(max-width:900px){.billing-plans{grid-template-columns:1fr;gap:24px}.plan-heading p{min-height:0}.plan-price{min-height:0}.billing-plans .billing-plan{padding:26px}.billing-plan .plan-includes ul{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:480px){.billing-plans .billing-plan{padding:22px;gap:21px}.billing-plan .plan-includes ul{grid-template-columns:1fr}.plan-price strong{font-size:40px}}
-.billing-period{justify-content:center;margin-bottom:var(--space-6)}
+.billing-period{display:flex!important;flex-wrap:wrap;justify-content:center;gap:var(--space-2);margin-bottom:var(--space-6)}
+.billing-period button{width:auto!important}
 .billing-period button{display:inline-flex;align-items:center;gap:var(--space-2)}

@@ -59,6 +59,9 @@ export async function mockService(page:Page,role:'owner'|'master'|'super_admin'|
  case 'save_job_evidence':jobs=jobs.map(j=>({...j,version:j.version+1,attachments:body.payload.action==='remove'?j.attachments.filter((a:any)=>a.path!==body.payload.path):body.payload.action==='media'?[...j.attachments.filter((a:any)=>a.path!==body.payload.replace_path),{...body.payload,mime:'image/png'}]:j.attachments}));data=null;break
  case 'manage_master_shift':if(body.action_input==='start'&&!shifts.length)shiftRequests=[pendingRequest];if(body.action_input==='cancel_request')shiftRequests=[];data=null;break
  case 'decide_shift_request':shiftRequests=body.approve?[]:[{...pendingRequest,status:'rejected',reason:body.reason_input}];if(body.approve)shifts=[openShift];data=null;break
+ case 'check_promo_code':data=String(body.code_input).toUpperCase()==='WELCOME'?{valid:true,kind:'trial_days',value:7}:{valid:false};break
+ case 'support_promo_codes':data=[{id:'promo',code:'WELCOME',kind:'trial_days',value:7,valid_until:null,max_uses:null,uses:2,active:true,note:'Instagram',usable:true,created_at:now}];break
+ case 'support_save_promo_code':data='promo-new';break
  case 'create_manual_booking':data={id:'created-appointment',client_id:client};break
  default:data=[]
  }

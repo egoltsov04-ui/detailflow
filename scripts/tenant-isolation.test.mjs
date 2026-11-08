@@ -164,3 +164,30 @@ test('a studio approved by support gets a 5-day trial (migration 064)',async t=>
  const [{cfg}]=(await db.query('select plan_configuration() cfg')).rows
  for(const p of subscriptionPlans){const d=cfg.find(x=>x.id===p.id);assert.deepEqual([d.price,d.staffLimit,d.adminLimit],[p.price,p.staffLimit,p.adminLimit],p.id)}
 })
+
+test('promo codes: support creates them, signup stores the code, approval applies it once (migration 066)',async t=>{
+ const db=await schema();t.after(()=>db.close())
+ const q=async(s,p)=>(await db.query(s,p)).rows
+ const SUPPORT=id(81),SERVICE=id(82),OWNER1=id(83),OWNER2=id(84)
+ await db.exec(`set session_replication_role=replica;insert into auth.users(id,email,email_confirmed_at) values('${SUPPORT}','s@x.test',now());insert into profiles(id,full_name) values('${SUPPORT}','Support');insert into tenants(id,name,slug,is_internal) values('${SERVICE}','Detailflow Support','support-x',true);insert into tenant_memberships(tenant_id,user_id,role,active) values('${SERVICE}','${SUPPORT}','super_admin',true);set session_replication_role=default;`)
+ const claims=(user,extra={})=>JSON.stringify({sub:user,role:'authenticated',aal:'aal2',amr:[{method:'password',timestamp:Math.floor(Date.now()/1000)}],...extra})
+ async function as(user,fn,aal2=true){await db.exec(`reset role;select set_config('request.jwt.claim.sub','${user}',false);select set_config('request.jwt.claims','${aal2?claims(user):JSON.stringify({sub:user,role:'authenticated',aal:'aal1'})}',false);set role ${user?'authenticated':'anon'};`);try{return await fn()}finally{await db.exec('reset role')}}
+ const save=(code,kind,value,max=null)=>as(SUPPORT,()=>q(`select support_save_promo_code(null,$1,$2,$3,current_date+30,$4,true,'test') id`,[code,kind,value,max]))
+ const [{id:days}]=await save('extra7','trial_days',7);const [{id:half}]=await save('HALF50','percent',50,1)
+ assert.deepEqual((await as(null,()=>q("select check_promo_code(' extra7 ') r")))[0].r,{valid:true,kind:'trial_days',value:7})
+ assert.deepEqual((await as(null,()=>q("select check_promo_code('NOPE') r")))[0].r,{valid:false})
+ await assert.rejects(as(null,()=>q('select * from promo_codes')),/permission denied/)
+ await assert.rejects(as(OWNER,()=>q(`select support_save_promo_code(null,'HACK','percent',100,null,null,true,'')`)),/Потрібні права/)
+ for(const [user,code,email] of [[OWNER1,'extra7','a@x.test'],[OWNER2,'half50','b@x.test']])
+  await db.query(`insert into auth.users(id,email,email_confirmed_at,raw_user_meta_data) values($1,$2,now(),$3)`,[user,email,JSON.stringify({requested_role:'owner',studio_name:'S '+code,selected_plan:'studio',promo_code:code})])
+ const reqs=await q(`select id,user_id,promo_code from studio_access_requests where user_id in ($1,$2) order by promo_code`,[OWNER1,OWNER2])
+ assert.deepEqual(reqs.map(r=>r.promo_code),['EXTRA7','HALF50'])
+ const approve=req=>as(SUPPORT,()=>q(`select support_review_application($1,true,'ok') id`,[req]))
+ const [{id:s1}]=await approve(reqs.find(r=>r.user_id===OWNER1).id),[{id:s2}]=await approve(reqs.find(r=>r.user_id===OWNER2).id)
+ assert.equal((await q(`select round(extract(epoch from trial_ends_at-now())/86400) d from subscriptions where tenant_id=$1`,[s1]))[0].d,'12')
+ assert.equal(Number((await q(`select price_override from subscriptions where tenant_id=$1`,[s2]))[0].price_override),295)
+ assert.deepEqual((await q(`select code,uses from promo_codes order by code`)).map(r=>[r.code,r.uses]),[['EXTRA7',1],['HALF50',1]])
+ // HALF50 allowed one use: it is now spent, and a used code keeps its kind and value
+ assert.deepEqual((await as(null,()=>q("select check_promo_code('HALF50') r")))[0].r,{valid:false})
+ await assert.rejects(as(SUPPORT,()=>q(`select support_save_promo_code($1,'HALF50','percent',90,null,null,true,'')`,[half])),/уже використано/)
+})
