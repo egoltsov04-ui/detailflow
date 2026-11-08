@@ -501,6 +501,7 @@ Email для запрошення|Invitation email
 Зберегти коментар|Save comment
 Додати фото (JPG, PNG, WebP до 8 МБ)|Add photo (JPG, PNG, WebP up to 8 MB)
 Призначити / умови|Assignment / terms
+Змінити|Change
 Призупинити|Pause
 Здати на перевірку|Submit for review
 Перевірити роботу|Review job
@@ -1004,6 +1005,15 @@ VIP, корпоративний, повторний|VIP, corporate, returning
 · Клієнтів:|· Clients:
 Назва, адреса та часовий пояс|Name, address and time zone
 Послуг у каталозі:|Catalog services:
+Погоджуюсь з|I agree to the
+Умовами користування|Terms of Use
+та|and
+Політикою конфіденційності|Privacy Policy
+Політика конфіденційності|Privacy Policy
+Умови користування|Terms of Use
+Документи|Documents
+Надсилаючи заявку, ви передаєте свої дані студії|By sending the request, you pass your details to the studio
+для запису.|for the booking.
 Ім’я клієнта|Client name
 Вкажіть ім’я клієнта.|Enter the client name.
 Не вдалося створити клієнта.|Could not create the client.

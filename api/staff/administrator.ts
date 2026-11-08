@@ -45,6 +45,6 @@ export function createAdministratorHandler(makeClient:typeof createClient=create
    if(linked.error)return res.status(202).json({message:'Лист надіслано. Прив’язка до студії завершиться автоматично після підтвердження email.'})
   }
   return res.status(200).json({message:'Адміністратора запрошено. Доступ до фінансів вимкнено.'})
- }catch(e){return res.status(500).json({error:e instanceof Error?e.message:(e as {message?:string})?.message||'Помилка запрошення'})}
+ }catch(e){console.error('Administrator invite failed',e instanceof Error?e.name:'error');return res.status(500).json({error:'Помилка запрошення'})}
 }}
 export default createAdministratorHandler()
