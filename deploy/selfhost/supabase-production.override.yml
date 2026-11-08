@@ -1,0 +1,27 @@
+# Production stack next to staging on one server: own project name, network and container names,
+# no public ports. The shared Caddy reaches the gateway as supabase-production-envoy:8000.
+# The gateway is on 127.0.0.1:8101 only, for Studio through an SSH tunnel (8101 for production).
+name: supabase-production
+services:
+  studio: {container_name: supabase-production-studio}
+  api-gw:
+    container_name: supabase-production-envoy
+    ports: !override ["127.0.0.1:8101:8000/tcp"]
+  auth:
+    container_name: supabase-production-auth
+    environment:
+      GOTRUE_PASSWORD_MIN_LENGTH: 8
+  rest: {container_name: supabase-production-rest}
+  realtime:
+    container_name: realtime-dev.supabase-production-realtime
+    networks:
+      default:
+        aliases: [realtime-dev.supabase-realtime]
+  storage: {container_name: supabase-production-storage}
+  imgproxy: {container_name: supabase-production-imgproxy}
+  meta: {container_name: supabase-production-meta}
+  functions: {container_name: supabase-production-edge-functions}
+  db: {container_name: supabase-production-db}
+  supavisor:
+    container_name: supabase-production-pooler
+    ports: !reset []

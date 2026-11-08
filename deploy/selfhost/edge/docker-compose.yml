@@ -10,14 +10,21 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ../app.caddy:/etc/caddy/app.caddy:ro
       - ${STAGING_DIST:-/srv/detailflow/dist}:/srv/staging:ro
+      - ${PRODUCTION_DIST:-/srv/detailflow-production/dist}:/srv/production:ro
       - /var/log/caddy:/var/log/caddy
       - caddy_data:/data
       - caddy_config:/config
-    networks: [supabase-staging]
+    environment:
+      PREVIEW_USER: ${PREVIEW_USER:-}
+      PREVIEW_HASH: ${PREVIEW_HASH:-}
+    networks: [supabase-staging, supabase-production]
 networks:
   supabase-staging:
     external: true
     name: supabase-staging_default
+  supabase-production:
+    external: true
+    name: supabase-production_default
 volumes:
   caddy_data:
   caddy_config:
