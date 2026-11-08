@@ -15,7 +15,8 @@
 3. **Ключи, хранить в менеджере паролей и офлайн, не на сервере:**
    - приватный ключ `age` (файл от `age-keygen`);
    - два пароля rclone crypt;
-   - файл `.env` стека Supabase. В нём `JWT_SECRET`, ключи API и `VAULT_ENC_KEY`: без того же `VAULT_ENC_KEY` секреты Vault (адрес и секрет расписания) не расшифруются, и их придётся записать заново.
+   - файл `.env` стека Supabase (`JWT_SECRET`, ключи API, пароли);
+   - ключ Vault: файл `/etc/postgresql-custom/pgsodium_root.key` в Docker-томе `<стек>_db-config` (`docker exec <стек>-db cat /etc/postgresql-custom/pgsodium_root.key`). Секреты Vault шифруются им, а не `VAULT_ENC_KEY` из `.env` (тот нужен только pooler). Без этого ключа `vault.decrypted_secrets` в восстановленной базе падает с `invalid ciphertext`, и адрес и секрет расписания придётся записать заново. Проверено 2026-11-08.
 
 Без приватного ключа `age` или паролей rclone бэкап не восстановить никак.
 
@@ -50,7 +51,7 @@ BACKUP_STORAGE_SOURCE=/srv/supabase/volumes/storage
 
 Только в **свежий** стек: скрипт отказывается работать, если в базе уже есть таблицы Detailflow.
 
-1. Поднять стек Supabase с сохранённым `.env` (`docker compose up -d`), дождаться `healthy` у auth и storage.
+1. Поднять стек Supabase с сохранённым `.env` (`docker compose up -d`), дождаться `healthy` у auth и storage. Записать сохранённый ключ Vault: `docker exec -i -u postgres <стек>-db sh -c 'cat > /etc/postgresql-custom/pgsodium_root.key'` и `docker compose restart db`.
 2. Положить ключ `age` во временный файл, настроить rclone, как выше.
 3. Найти нужную копию: `rclone lsd backup:detailflow-backups/production`.
 4. Проверить и восстановить:
@@ -70,4 +71,6 @@ BACKUP_STORAGE_SOURCE=/srv/supabase/volumes/storage
 
 | 2026-11-07 | production, Supabase Cloud (бесплатный план, своих бэкапов нет) | ручной `pg_dump` схем public, auth, storage, 0.6 МБ, 80 таблиц с данными | | Копия у владельца на компьютере, файл читается `pg_restore --list`. Восстановление не проверялось. Фото в копию не входят. |
 
-Настоящий B2 и время на реальном объёме ещё не проверены: первая строка с B2 появится после создания бакета.
+| 2026-11-08 | сервер Contabo, staging (`self-hosted/v0.8.4`) -> настоящий B2 `detailflowv1` через rclone crypt -> отдельный чистый стек на том же сервере | дамп 0.9 МБ, 2 студии, 3 пользователя, 0 фото | бэкап 3 с, чистый стек 54 с, восстановление 5 с | Совпали студии, пользователи, клиенты, заказы, TOTP-факторы, RLS у всех таблиц, задача pg_cron. В B2 зашифрованы и имена. Найдено: секреты Vault не читались, пока в новый стек не записали `pgsodium_root.key` staging; после этого оба секрета на месте. Тестовый стек удалён сразу (его pg_cron дублировал бы напоминания). |
+
+На реальном объёме production время ещё не измерено.

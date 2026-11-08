@@ -2,6 +2,10 @@
 
 Этот файл читает сессия Claude Code, которая работает на самом сервере (Remote Control). Работай по скиллу `detailflow-selfhost-infra` и его чек-листу из 20 пунктов.
 
+## Как изменения с сервера попадают в GitHub
+
+Ключ сервера к GitHub только на чтение, и так остаётся: на бесплатном тарифе нельзя запретить прямой пуш в `main`, а взломанный сервер с ключом на запись смог бы выкатить свой код через Vercel. Правки файлов репозитория на сервере коммить локально, затем `git format-patch --stdout origin/codex/staging-preview > /home/deploy/server-changes.patch`, владелец скачивает файл через `scp` и передаёт его в облачную сессию, там изменения проверяются и идут через PR. После слияния: `git fetch`, убедиться, что коммиты есть в origin, сбросить локальную ветку на `origin/codex/staging-preview`, удалить патч.
+
 ## Сделано (2026-11-07, владелец вручную по инструкции)
 
 - Contabo Cloud VPS 6, EU, Ubuntu 24.04, IPv4 `45.13.235.3`, IPv6 `2a02:c207:2373:5088::1/64`. Auto Backup выключен (бэкапы в B2). Цена в панели $10.80 в месяц: владелец проверяет, нет ли лишней платной опции.
@@ -21,6 +25,6 @@
 3. **Файрвол.** Сделано: наружу слушают только 80 и 443 (общий Caddy, `deploy/selfhost/edge`), шлюз Supabase staging только на `127.0.0.1:8100` (Studio через SSH-туннель), pooler без портов. Проверить снаружи после DNS: `nmap -p 5432,6543,8000,8100,3000 45.13.235.3` должен показать закрыто.
 4. **Staging-стек.** Сделано 2026-11-07: Supabase в `/srv/supabase-staging` (контейнеры `supabase-staging-*`, сеть `supabase-staging_default`, новые секреты, `.env` 600), схема и миграции 001-063 (45 таблиц, у всех RLS), pg_cron + pg_net + Vault и задача `detailflow-notifications`, API `detailflow-staging-api-1` (`/api/health` 200), фронтенд собран с `https://api-staging.detailflow.com.ua`, в `dist/` нет service-ключа. Сертификаты Let's Encrypt выданы, HTTPS и редирект с HTTP работают, pg_cron вызывает `/api/send-reminders` (200). Auth SMTP: SendPulse (`smtp-pulse.com:587`, отправитель `noreply@detailflow.com.ua`, домен подтверждён, SPF, DKIM `sign._domainkey`, DMARC `p=none`; бесплатный тариф 12 000 писем в месяц, 50 в час). `ADDITIONAL_REDIRECT_URLS=https://staging.detailflow.com.ua/**`. Регистрация по телефону выключена (`ENABLE_PHONE_SIGNUP=false`, `ENABLE_PHONE_AUTOCONFIRM=false`), на production так же. Аккаунт support `support.detailflow@gmail.com` с TOTP, панель `/admin` открывается. Осталось: тестовая студия и заказ в браузере.
 5. **Проверки staging:** вход, заказ, онлайн-запись, фото, pg_cron + Vault, push и письма (ключи SendPulse и VAPID через владельца), заголовки, HTTPS. Добавить в Caddy HSTS и Content-Security-Policy.
-6. **Бэкапы:** владелец создаёт Application Key только к `detailflowv1` (Read and Write), ключ сразу в `/etc/detailflow/backup.env` и rclone; учения восстановления с настоящим B2 по `docs/BACKUPS.md`, запись в журнал.
+6. **Бэкапы.** Сделано 2026-11-08 для staging: `age`, `rclone`, Node 24 на сервере, remote `backup` (crypt поверх `b2:detailflowv1`) в `/root/.config/rclone/rclone.conf`, `/etc/detailflow/backup.env` и `b2.env` (600), crontab root: база каждый день 03:17, база и фото по воскресеньям 03:47 (время сервера Europe/Berlin), лог `/var/log/detailflow-backup.log`. Восстановление с настоящего B2 проверено, запись в `docs/BACKUPS.md`. Приватного ключа `age` на сервере нет, он у владельца. Для production: свой `backup.env` с `BACKUP_ENV=production` после переключения.
 7. **Мониторинг:** внешняя проверка `https://detailflow.com.ua/` и `/api/health` (UptimeRobot или Better Stack) с уведомлениями владельцу; место на диске.
 8. **Production-стек** рядом со staging, затем перенос данных (этап 8 скилла) и переключение.
