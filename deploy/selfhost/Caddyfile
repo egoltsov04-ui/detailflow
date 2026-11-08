@@ -1,10 +1,11 @@
 # Detailflow behind Caddy: the built frontend, /api/* on the Node server, the Supabase gateway on its own host.
 # Mirrors vercel.json (headers, redirects, SPA rewrites). Sites come from the environment, e.g.
 # APP_SITE=app.example.com SUPABASE_SITE=api.example.com; locally :80 and :8001 over plain HTTP.
+# SUPABASE_PUBLIC_URL and SUPABASE_PUBLIC_WS: the Supabase address the frontend was built with, for the CSP (local default: port 8000).
 import app.caddy
 
 {$APP_SITE::80} {
-	import detailflow_app api:3000 /srv http://localhost:8001 ws://localhost:8001
+	import detailflow_app api:3000 /srv {$SUPABASE_PUBLIC_URL:http://localhost:8000} {$SUPABASE_PUBLIC_WS:ws://localhost:8000}
 }
 
 {$SUPABASE_SITE::8001} {
