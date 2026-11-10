@@ -4,6 +4,8 @@ import { confirmAction } from './components/Dialogs'
 import { DateInput } from './components/FormInputs'
 import { FormEvent, useMemo, useState } from 'react'
 import { Plus, X } from 'lucide-react'
+import {financeDay} from './lib/finance'
+import {useStudioTimezone} from './lib/StudioTimezone'
 
 export type TaskStatus = 'todo' | 'in_progress' | 'blocked' | 'done'
 export type TaskPriority = 'low' | 'normal' | 'high' | 'urgent'
@@ -22,7 +24,7 @@ const statusLabel:Record<TaskStatus,string> = {todo:'Нові',in_progress:'У �
 
 export default function Tasks({tasks,staff,clients,add,update,remove}:{tasks:Task[];staff:Person[];clients:Person[];add:(task:Task)=>Promise<string>;update:(id:Task['id'],patch:Partial<Pick<Task,'status'|'priority'|'dueDate'|'staffId'|'clientId'|'title'|'description'>>)=>Promise<string>;remove:(id:Task['id'])=>Promise<string>}) {
   const [open,setOpen]=useState(false),[filter,setFilter]=useState<'all'|'assigned'|'overdue'>('all'),[staffFilter,setStaffFilter]=useState(''),[query,setQuery]=useState(''),[message,setMessage]=useState('')
-  const today=new Date().toISOString().slice(0,10)
+  const timezone=useStudioTimezone(),today=financeDay(new Date().toISOString(),timezone)
   const visible=useMemo(()=>tasks.filter(task=>{
     const matchesQuery=[task.title,task.description,task.staffName,task.clientName].join(' ').toLowerCase().includes(query.toLowerCase())
     if(!matchesQuery)return false
@@ -42,7 +44,8 @@ export default function Tasks({tasks,staff,clients,add,update,remove}:{tasks:Tas
 }
 
 function TaskCard({task,updateStatus,remove}:{task:Task;updateStatus:(task:Task,status:TaskStatus)=>Promise<void>;remove:(id:Task['id'])=>Promise<void>}) {
-  const overdue=task.status!=='done'&&Boolean(task.dueDate)&&task.dueDate<new Date().toISOString().slice(0,10)
+  const timezone=useStudioTimezone()
+  const overdue=task.status!=='done'&&Boolean(task.dueDate)&&task.dueDate<financeDay(new Date().toISOString(),timezone)
   return <article className="task-card"><div className="task-card-top"><span className={'priority-badge '+priorityClass[task.priority]}>{t(priorityLabel[task.priority])}</span><button className="text-btn danger" aria-label={t("Видалити завдання")} onClick={()=>void remove(task.id)}>×</button></div><b>{task.title}</b>{task.description&&<p>{task.description}</p>}<div className="task-meta">{task.staffName&&<span>{t("Майстер: ")}{task.staffName}</span>}{task.clientName&&<span>{t("Клієнт: ")}{task.clientName}</span>}{task.dueDate&&<span className={overdue?'overdue':''}>{t("До ")}{new Date(`${task.dueDate}T12:00:00`).toLocaleDateString(localeTag(),{day:'numeric',month:'short'})}</span>}</div><select aria-label={`Статус: ${task.title}`} value={task.status} onChange={event=>void updateStatus(task,event.target.value as TaskStatus)}>{columns.map(column=><option value={column.status} key={column.status}>{t(statusLabel[column.status])}</option>)}</select></article>
 }
 

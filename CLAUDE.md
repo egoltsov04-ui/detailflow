@@ -37,7 +37,7 @@ server/lib/          общие серверные помощники
 src/                 React-приложение, компоненты, локализация
 supabase/audits/     SQL только для чтения
 supabase/deploy/     SQL для деплоя и проверок
-supabase/migrations/ миграции 001-067
+supabase/migrations/ миграции 001-069
 supabase/rollback/   откаты выбранных миграций
 tests/e2e/           сквозные тесты
 ```
@@ -79,9 +79,9 @@ tests/e2e/           сквозные тесты
 
 ## Рабочий процесс
 
-- Актуальная ветка: `codex/staging-preview`, `main` с ней слит 2026-11-07. Миграции 001-063 применены на staging и production, 064 на production. 065-067 ждут применения. На production (бесплатный план Supabase) бэкапов нет: перед любым SQL там сначала копия базы.
+- Актуальная ветка: `codex/staging-preview` (staging, `/srv/detailflow`), production собирается из `main` (`/srv/detailflow-production`). Production работает на своём сервере с 2026-11-08 (`docs/SERVER_SETUP.md`). Миграции 001-069 применены на staging, 001-067 на production, 068-069 ждут подтверждения. Перед любым SQL на production сначала бэкап (`/etc/detailflow/backup-production.env`).
 - Отдельная ветка на каждую задачу, маленькие коммиты.
-- Миграции: следующий номер после последней в папке (сейчас 067), откат в `supabase/rollback/` (скилл `detailflow-database`).
+- Миграции: следующий номер после последней в папке (сейчас 069), откат в `supabase/rollback/` (скилл `detailflow-database`).
 - Перед завершением запусти lint, unit и нужные E2E и покажи результат.
 - Сначала проверь, что уже сделано в коде, и только потом реализуй: часть задач из списков могла быть выполнена раньше.
 
