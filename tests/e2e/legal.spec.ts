@@ -13,13 +13,14 @@ test('registration needs consent and records it',async({page})=>{
  expect(request.postDataJSON().data).toMatchObject({terms_version:'2026-11-08',studio_name:'Shine'})
  expect(Date.parse(request.postDataJSON().data.terms_accepted_at)).toBeGreaterThan(0)
 })
-test('company and legal pages open from the landing footer',async({page})=>{
+// One test per page: on a slow machine six page loads in one test ran past the 30-second limit.
+for(const [name,h1] of [['Політика конфіденційності','Політика конфіденційності'],['Умови користування','Умови користування'],['Обмін і повернення','Умови обміну та повернення'],['Про нас','Про Detailflow'],['Контакти','Контакти']])test('landing footer opens '+name,async({page})=>{
+ await mockService(page,'guest');await page.goto('/');await page.locator('.site-footer').getByRole('link',{name,exact:true}).click()
+ await expect(page.getByRole('heading',{level:1,name:h1})).toBeVisible()
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true)
+})
+test('terms include the data processing appendix and the 5-day trial',async({page})=>{
  await mockService(page,'guest')
- for(const [name,h1] of [['Політика конфіденційності','Політика конфіденційності'],['Умови користування','Умови користування'],['Обмін і повернення','Умови обміну та повернення'],['Про нас','Про Detailflow'],['Контакти','Контакти']]){
-  await page.goto('/');await page.locator('.site-footer').getByRole('link',{name,exact:true}).click()
-  await expect(page.getByRole('heading',{level:1,name:h1})).toBeVisible()
-  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true)
- }
  await page.goto('/terms');await expect(page.getByRole('heading',{name:'Додаток. Обробка персональних даних клієнтів студії'})).toBeVisible()
  await expect(page.getByText('безкоштовний пробний період 5 днів')).toBeVisible()
 })
