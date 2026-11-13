@@ -40,7 +40,7 @@ RCLONE_BACKUP_REMOTE=backup
 BACKUP_STORAGE_SOURCE=/srv/supabase/volumes/storage
 ```
 
-Расписание (crontab root): база каждый день, база и фото раз в неделю.
+Расписание (crontab root): staging база каждый день и фото раз в неделю, production база и фото каждый день (03:27).
 
 ```cron
 17 3 * * *  cd /srv/detailflow && set -a && . /etc/detailflow/backup.env && set +a && BACKUP_STORAGE_SOURCE= node scripts/weekly-encrypted-backup.mjs --apply >> /var/log/detailflow-backup.log 2>&1
