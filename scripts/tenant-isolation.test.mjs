@@ -264,3 +264,23 @@ test('support deletes a whole studio; other studios, guards and the support stud
  assert.deepEqual((await q(`select payments from deleted_studios where studio_id=$1`,[A]))[0].payments.map(p=>[p.source,Number(p.amount),p.paid_on]),[['manual',590,'2026-11-01']])
  await assert.rejects(as(OWNER_B,()=>q('select * from deleted_studios')).then(rows=>{if(!rows.length)throw new Error('hidden')}),/hidden/)
 })
+
+test('support exports one studio: only its rows, only with 2FA and a fresh password, and it is logged (migration 071)',async t=>{
+ const db=await schema();t.after(()=>db.close());await seed(db)
+ const q=async(s,p)=>(await db.query(s,p)).rows
+ const SUPPORT=id(93),SERVICE=id(94)
+ await db.exec(`set session_replication_role=replica;insert into auth.users(id,email,email_confirmed_at) values('${SUPPORT}','s@x.test',now());insert into profiles(id,full_name) values('${SUPPORT}','Support');
+ insert into tenants(id,name,slug,is_internal) values('${SERVICE}','Detailflow Support','support-y',true);insert into tenant_memberships(tenant_id,user_id,role) values('${SERVICE}','${SUPPORT}','super_admin');set session_replication_role=origin;`)
+ const claims=(user,aal,age=0)=>JSON.stringify({sub:user,role:'authenticated',aal,amr:[{method:'password',timestamp:Math.floor(Date.now()/1000)-age}]})
+ async function as(user,fn,aal='aal2',age=0){await db.exec(`reset role;select set_config('request.jwt.claim.sub','${user}',false);select set_config('request.jwt.claims','${claims(user,aal,age)}',false);set role authenticated;`);try{return await fn()}finally{await db.exec('reset role')}}
+ await assert.rejects(as(OWNER,()=>q(`select support_export_studio('${A}')`)),/Потрібні права/)
+ await assert.rejects(as(SUPPORT,()=>q(`select support_export_studio('${A}')`),'aal1'),/Потрібні права/)
+ await assert.rejects(as(SUPPORT,()=>q(`select support_export_studio('${A}')`),'aal2',600),/пароль/)
+ const [{r}]=await as(SUPPORT,()=>q(`select support_export_studio('${A}') r`))
+ const sheet=name=>r.find(s=>s.name===name).rows
+ assert.equal(sheet('studio')[0].name,'A')
+ assert.deepEqual(sheet('clients').map(c=>c.full_name),['Client A'])
+ assert.equal(sheet('work_orders').length,1);assert.equal(sheet('tenant_memberships').length,5)
+ assert.ok(r.every(s=>s.rows.every(row=>!('tenant_id' in row)||row.tenant_id===A)),'no rows of another studio')
+ assert.equal((await q(`select count(*) n from audit_logs where tenant_id=$1 and action='export'`,[A]))[0].n,1)
+})

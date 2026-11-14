@@ -1,5 +1,11 @@
 // Display strings only. Database status codes, option values and customer data stay unchanged.
 const rows=`
+Вивантаження даних|Data export
+Немає даних|No data
+Вивантажити дані студії|Export studio data
+Файл із даними студії завантажено|Studio data file downloaded
+Вивантаження перевіряється з підключеною базою|Export is checked with a connected database
+Усі дані студії одним файлом Excel: клієнти, авто, записи, замовлення, оплати, фінанси, склад, команда. Фото не входять. Вивантаження записується в журнал студії.|All studio data in one Excel file: clients, cars, bookings, orders, payments, finance, stock, team. Photos are not included. The export is recorded in the studio log.
 Видалення студії|Delete studio
 Буде видалено назавжди|To be deleted permanently
 Замовлень|Orders
