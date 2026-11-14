@@ -230,3 +230,37 @@ test('Telegram: one-time links, chats hidden from the app, jobs for staff and th
  assert.equal((await q('select telegram_unbind(555) n'))[0].n,1)
  await as(MASTER,()=>q('select unlink_my_telegram()'));assert.equal((await as(MASTER,()=>q('select my_telegram_linked() v')))[0].v,false)
 })
+
+test('support deletes a whole studio; other studios, guards and the support studio stay intact (migration 070)',async t=>{
+ const db=await schema();t.after(()=>db.close());await seed(db)
+ const q=async(s,p)=>(await db.query(s,p)).rows
+ const SUPPORT=id(91),SERVICE=id(92)
+ await db.exec(`set session_replication_role=replica;insert into auth.users(id,email,email_confirmed_at) values('${SUPPORT}','s@x.test',now());insert into profiles(id,full_name) values('${SUPPORT}','Support');
+ insert into tenants(id,name,slug,is_internal) values('${SERVICE}','Detailflow Support','support-x',true);insert into tenant_memberships(tenant_id,user_id,role) values('${SERVICE}','${SUPPORT}','super_admin');
+ update work_order_jobs set attachments='[{"path":"x"}]' where id='${id(71)}';update work_orders set approved_at=now() where id='${id(51)}';
+ insert into storage.objects(bucket_id,name) values('job-photos','${A}/job/photo.jpg'),('job-photos','${B}/job/photo.jpg');
+ insert into payments(id,studio_id,amount,method,paid_on,months_added,period_from,period_to,created_by) values(gen_random_uuid(),'${A}',590,'transfer','2026-11-01',1,'2026-11-01','2026-12-01','${SUPPORT}');set session_replication_role=origin;`)
+ const claims=(user,aal)=>JSON.stringify({sub:user,role:'authenticated',aal,amr:[{method:'password',timestamp:Math.floor(Date.now()/1000)}]})
+ async function as(user,fn,aal='aal2'){await db.exec(`reset role;select set_config('request.jwt.claim.sub','${user}',false);select set_config('request.jwt.claims','${claims(user,aal)}',false);set role authenticated;`);try{return await fn()}finally{await db.exec('reset role')}}
+ // Guards still protect history for everyone else.
+ await assert.rejects(as(OWNER,()=>q(`delete from work_orders where id='${id(51)}'`),'aal1'),/виконаною роботою/)
+ await assert.rejects(as(OWNER,()=>q(`select support_delete_studio('${A}','A')`)),/Потрібні права/)
+ await assert.rejects(as(SUPPORT,()=>q(`select support_delete_studio('${A}','A')`),'aal1'),/Потрібні права/)
+ await assert.rejects(as(SUPPORT,()=>q(`select support_delete_studio('${A}','B')`)),/не збігається/)
+ await assert.rejects(as(SUPPORT,()=>q(`select support_delete_studio('${SERVICE}','Detailflow Support')`)),/Службову/)
+ const [{p}]=await as(SUPPORT,()=>q(`select support_studio_deletion_preview('${A}') p`))
+ assert.deepEqual([p.name,p.orders,p.clients,p.photos,p.accounts,p.support],['A',1,1,1,5,false])
+ const [{r}]=await as(SUPPORT,()=>q(`select support_delete_studio('${A}',' A ') r`))
+ assert.deepEqual([...r.users].sort(),[OWNER,ADMIN,ADMIN_FIN,MASTER,MASTER2].sort())
+ assert.deepEqual(r.files,[`${A}/job/photo.jpg`])
+ const left=await q(`select c.table_name t from information_schema.columns c join pg_tables x on x.schemaname='public' and x.tablename=c.table_name where c.table_schema='public' and c.column_name in ('tenant_id','studio_id') and c.table_name<>'deleted_studios'`)
+ for(const {t:table} of left){const col=(await q(`select column_name from information_schema.columns where table_schema='public' and table_name=$1 and column_name in ('tenant_id','studio_id')`,[table]))[0].column_name
+  assert.equal(Number((await q(`select count(*) n from ${table} where ${col}=$1`,[A]))[0].n),0,table)}
+ assert.equal((await q(`select count(*) n from tenants where id=$1`,[A]))[0].n,0)
+ assert.deepEqual((await q(`select full_name from clients where tenant_id=$1`,[B])).map(r=>r.full_name),['Client B'])
+ assert.equal((await q(`select count(*) n from tenant_memberships where tenant_id in ($1,$2)`,[B,SERVICE]))[0].n,2)
+ assert.equal((await q(`select studio_name from deleted_studios where studio_id=$1`,[A]))[0].studio_name,'A')
+ // the platform keeps the studio's subscription payments
+ assert.deepEqual((await q(`select payments from deleted_studios where studio_id=$1`,[A]))[0].payments.map(p=>[p.source,Number(p.amount),p.paid_on]),[['manual',590,'2026-11-01']])
+ await assert.rejects(as(OWNER_B,()=>q('select * from deleted_studios')).then(rows=>{if(!rows.length)throw new Error('hidden')}),/hidden/)
+})

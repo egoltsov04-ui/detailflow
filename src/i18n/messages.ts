@@ -1,5 +1,21 @@
 // Display strings only. Database status codes, option values and customer data stay unchanged.
 const rows=`
+Видалення студії|Delete studio
+Буде видалено назавжди|To be deleted permanently
+Замовлень|Orders
+Фото|Photos
+акаунтів|accounts
+Акаунтів співробітників без інших студій|Staff accounts without other studios
+Усі дані студії, її фото та ці акаунти буде видалено без можливості відновлення в застосунку. У зашифрованих резервних копіях дані зберігаються до 90 днів.|All studio data, its photos and these accounts will be deleted and cannot be restored in the app. Encrypted backups keep the data for up to 90 days.
+Введіть назву студії для підтвердження|Type the studio name to confirm
+Видалити студію назавжди|Delete studio permanently
+Студію видалено|Studio deleted
+Не вдалося видалити студію|Could not delete the studio
+Частину фото або акаунтів не вдалося прибрати, повідомте розробнику.|Some photos or accounts could not be removed, tell the developer.
+Видалення перевіряється з підключеною базою|Deletion is checked with a connected database
+Службову студію підтримки видалити не можна|The support studio cannot be deleted
+Назва студії не збігається|The studio name does not match
+Увійдіть повторно|Sign in again
 клієнт|client
 клієнти|clients
 Відкрити канбан|Open the kanban

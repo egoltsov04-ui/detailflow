@@ -11,6 +11,7 @@ import sendReminders from '../api/send-reminders.js'
 import telegram from '../api/telegram.js'
 import staffInvite from '../api/staff/invite.js'
 import staffAdministrator from '../api/staff/administrator.js'
+import supportDeleteStudio from '../api/support/delete-studio.js'
 import wayforpayCallback from '../api/wayforpay/callback.js'
 import wayforpayCheckout from '../api/wayforpay/checkout.js'
 import wayforpayReturn from '../api/wayforpay/return.js'
@@ -25,6 +26,7 @@ export const routes:Record<string,Handler>={
  '/api/telegram':telegram,
  '/api/staff/invite':staffInvite,
  '/api/staff/administrator':staffAdministrator,
+ '/api/support/delete-studio':supportDeleteStudio,
  '/api/wayforpay/callback':wayforpayCallback,
  '/api/wayforpay/checkout':wayforpayCheckout,
  '/api/wayforpay/return':wayforpayReturn,
