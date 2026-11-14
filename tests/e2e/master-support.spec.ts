@@ -51,3 +51,12 @@ test('support deletes a studio only after typing its name and confirming passwor
  expect(calls.filter(c=>c.name==='delete-studio').map(c=>c.body)).toEqual([{studioId:expect.any(String),confirmName:'Нова студія без підписки'}])
  await noOverflow(page);await page.screenshot({path:info.outputPath('support-delete-studio.png'),fullPage:true})
 })
+test('support exports studio data as one Excel file after confirming password and code',async({page})=>{
+ const calls=await mockService(page,'super_admin');await page.goto('/admin');await page.getByRole('button',{name:'Студії та підписки',exact:true}).click()
+ await page.getByRole('button',{name:'Нова студія без підписки',exact:true}).click();await page.getByRole('button',{name:'Вивантаження даних',exact:true}).click()
+ await page.getByRole('button',{name:'Вивантажити дані студії'}).click();await expect(page.getByRole('heading',{name:'Підтвердіть зміну доступу'})).toBeVisible();expect(calls.some(c=>c.name==='support_export_studio')).toBe(false)
+ await page.getByLabel('Пароль',{exact:true}).fill('Test-password');await page.getByRole('button',{name:'Підтвердити',exact:true}).click();await page.getByLabel('Код автентифікації').fill('123456')
+ const download=page.waitForEvent('download');await page.getByRole('button',{name:'Підтвердити',exact:true}).click()
+ expect((await download).suggestedFilename()).toMatch(/^detailflow-test-\d{4}-\d{2}-\d{2}\.xlsx$/)
+ await expect(page.getByText('Файл із даними студії завантажено')).toBeVisible();await noOverflow(page)
+})
