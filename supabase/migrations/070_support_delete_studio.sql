@@ -12,6 +12,8 @@ create table if not exists public.deleted_studios(
  deleted_at timestamptz not null default now(),
  counts jsonb not null default '{}'
 );
+-- Subscription payments the studio made: the platform's income records outlive the studio.
+alter table public.deleted_studios add column if not exists payments jsonb not null default '[]';
 alter table public.deleted_studios enable row level security;
 revoke all on public.deleted_studios from public, anon, authenticated;
 drop policy if exists "support reads deleted studios" on public.deleted_studios;
@@ -85,7 +87,7 @@ begin
 end $$;
 
 create or replace function public.support_delete_studio(studio uuid, confirm_name text) returns jsonb language plpgsql security definer set search_path=public,storage as $$
-declare studio_name text; users uuid[]; files text[]; counts jsonb; remaining text[]; next text[]; item text; done jsonb='{}'; n bigint;
+declare studio_name text; users uuid[]; files text[]; counts jsonb; paid jsonb; remaining text[]; next text[]; item text; done jsonb='{}'; n bigint;
 begin
  perform require_support_write();
  select name into studio_name from tenants where id=studio for update;
@@ -95,6 +97,8 @@ begin
  -- Accounts that belong only to this studio, and its photos: the API removes them after the commit.
  select coalesce(array_agg(distinct m.user_id),'{}') into users from tenant_memberships m where m.tenant_id=studio and m.user_id is not null and not exists(select 1 from tenant_memberships o where o.user_id=m.user_id and o.tenant_id<>studio);
  select coalesce(array_agg(name),'{}') into files from storage.objects where bucket_id='job-photos' and name like studio::text||'/%';
+ select coalesce((select jsonb_agg(jsonb_build_object('source','manual','paid_on',p.paid_on,'amount',p.amount,'method',p.method,'months',p.months_added,'period_from',p.period_from,'period_to',p.period_to,'comment',p.comment) order by p.paid_on) from payments p where p.studio_id=studio),'[]')
+  ||coalesce((select jsonb_agg(jsonb_build_object('source','wayforpay','paid_at',o.paid_at,'amount',o.amount,'currency',o.currency,'plan',o.plan,'order_reference',o.order_reference) order by o.paid_at) from payment_orders o where o.tenant_id=studio and o.status='approved'),'[]') into paid;
  perform set_config('detailflow.deleting_studio',studio::text,true);
  -- Every table that holds studio rows; children without a studio column go through their foreign keys.
  select array_agg(c.table_name||':'||c.column_name order by c.table_name) into remaining from information_schema.columns c join pg_tables t on t.schemaname='public' and t.tablename=c.table_name
@@ -114,7 +118,7 @@ begin
   remaining=next;
  end loop;
  delete from tenants where id=studio;
- insert into deleted_studios(studio_id,studio_name,deleted_by,counts) values(studio,studio_name,auth.uid(),done);
+ insert into deleted_studios(studio_id,studio_name,deleted_by,counts,payments) values(studio,studio_name,auth.uid(),done,paid);
  return jsonb_build_object('name',studio_name,'users',to_jsonb(users),'files',to_jsonb(files),'counts',done);
 end $$;
 

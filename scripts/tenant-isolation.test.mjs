@@ -238,7 +238,8 @@ test('support deletes a whole studio; other studios, guards and the support stud
  await db.exec(`set session_replication_role=replica;insert into auth.users(id,email,email_confirmed_at) values('${SUPPORT}','s@x.test',now());insert into profiles(id,full_name) values('${SUPPORT}','Support');
  insert into tenants(id,name,slug,is_internal) values('${SERVICE}','Detailflow Support','support-x',true);insert into tenant_memberships(tenant_id,user_id,role) values('${SERVICE}','${SUPPORT}','super_admin');
  update work_order_jobs set attachments='[{"path":"x"}]' where id='${id(71)}';update work_orders set approved_at=now() where id='${id(51)}';
- insert into storage.objects(bucket_id,name) values('job-photos','${A}/job/photo.jpg'),('job-photos','${B}/job/photo.jpg');set session_replication_role=origin;`)
+ insert into storage.objects(bucket_id,name) values('job-photos','${A}/job/photo.jpg'),('job-photos','${B}/job/photo.jpg');
+ insert into payments(id,studio_id,amount,method,paid_on,months_added,period_from,period_to,created_by) values(gen_random_uuid(),'${A}',590,'transfer','2026-11-01',1,'2026-11-01','2026-12-01','${SUPPORT}');set session_replication_role=origin;`)
  const claims=(user,aal)=>JSON.stringify({sub:user,role:'authenticated',aal,amr:[{method:'password',timestamp:Math.floor(Date.now()/1000)}]})
  async function as(user,fn,aal='aal2'){await db.exec(`reset role;select set_config('request.jwt.claim.sub','${user}',false);select set_config('request.jwt.claims','${claims(user,aal)}',false);set role authenticated;`);try{return await fn()}finally{await db.exec('reset role')}}
  // Guards still protect history for everyone else.
@@ -259,5 +260,7 @@ test('support deletes a whole studio; other studios, guards and the support stud
  assert.deepEqual((await q(`select full_name from clients where tenant_id=$1`,[B])).map(r=>r.full_name),['Client B'])
  assert.equal((await q(`select count(*) n from tenant_memberships where tenant_id in ($1,$2)`,[B,SERVICE]))[0].n,2)
  assert.equal((await q(`select studio_name from deleted_studios where studio_id=$1`,[A]))[0].studio_name,'A')
+ // the platform keeps the studio's subscription payments
+ assert.deepEqual((await q(`select payments from deleted_studios where studio_id=$1`,[A]))[0].payments.map(p=>[p.source,Number(p.amount),p.paid_on]),[['manual',590,'2026-11-01']])
  await assert.rejects(as(OWNER_B,()=>q('select * from deleted_studios')).then(rows=>{if(!rows.length)throw new Error('hidden')}),/hidden/)
 })
