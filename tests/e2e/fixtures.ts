@@ -17,6 +17,7 @@ export async function mockService(page:Page,role:'owner'|'master'|'super_admin'|
  await page.route('**/*',async route=>{const req=route.request(),url=new URL(req.url());let data:any
  const respond=(body:any)=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body),headers:{'access-control-allow-origin':'*'}})
  if(url.pathname==='/api/push/public-key')return respond({publicKey:null})
+ if(url.pathname==='/api/support/delete-studio'){calls.push({name:'delete-studio',body:req.postDataJSON()});return respond({name:'Нова студія без підписки',photos:1,accounts:2,cleanupComplete:true})}
  if(url.pathname==='/api/telegram')return respond({bot:scenario.telegram?'detailflow_ua_bot':null})
  if(url.pathname==='/api/public/booking'&&req.method()==='POST')return route.fulfill({status:201,contentType:'application/json',body:JSON.stringify({ok:true,status:'pending',...(scenario.telegram?{telegram:{bot:'detailflow_ua_bot',token:'c'.repeat(32)}}:{})})})
  if(url.pathname==='/api/public/booking')return respond({studio:{name:'Test Detailflow',address:'Київ',timezone:'Europe/Kyiv'},services:[service],staff:[member],schedules:Array.from({length:7},(_,weekday)=>({staff_id:staff,weekday,starts_at:'08:00',ends_at:'20:00'})),appointments:[]})
@@ -50,6 +51,7 @@ export async function mockService(page:Page,role:'owner'|'master'|'super_admin'|
  case 'get_studio_billing':data={subscription:{plan:'studio',status:'active',current_period_end:'2027-01-01',trial_ends_at:null,staff_limit:10},staff_count:1,orders:[]};break
  case 'studio_setup':data={completed:true};break
  case 'support_studios_page':data={rows:[{id:studio,name:'Нова студія без підписки',slug:'test',timezone:'Europe/Kyiv',phone:'+380000000000',email:'qa@example.com',plan:null,status:null,staff_count:1,client_count:1,priority_support:true}],total:1};break
+ case 'support_studio_deletion_preview':data={name:'Нова студія без підписки',orders:2,clients:3,photos:1,accounts:2,support:false};break
  case 'support_platform_summary':data={paid_by_plan:{solo:2,studio:1},mrr:1970,trial:1,ending:1,cohort:4,converted:2};break
  case 'support_applications_queue':data=[{id:'request',full_name:'Новий власник',studio_name:'Нова студія',email:'new@example.com',email_confirmed:true,phone:'+380000000000',messenger:'Telegram',contact:'@new',status:'pending',created_at:now}];break
  case 'support_list_studios':data=[{id:studio,name:'Нова студія без підписки',slug:'test',timezone:'Europe/Kyiv',phone:'+380000000000',email:'qa@example.com',plan:null,status:null,staff_count:1,client_count:1}];break
