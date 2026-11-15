@@ -1,0 +1,32 @@
+<!doctype html><html lang="uk"><head><meta charset="utf-8"><link rel="stylesheet" href="base.css"><style>
+.clock{font:800 56px Montserrat;color:var(--acc);margin-bottom:12px}
+.tl{position:absolute;left:140px;right:140px;top:1290px;height:4px;background:var(--line)}
+.tl i{position:absolute;top:-10px;width:24px;height:24px;border-radius:50%;background:var(--line);margin-left:-12px}
+.tl b{position:absolute;left:0;top:0;height:4px;background:var(--acc)}
+</style></head><body>
+<div id="scenes"></div>
+<div class="tl" id="tl"><b id="tlb"></b></div>
+<div id="endw"></div>
+<script src="base.js"></script><script>
+const SC=[
+ ['09:00','Клієнт <em>записався</em>','booking',920,860,930,[.062,.914,.94,.969]],
+ ['11:30','Майстер працює за <em>чек-листом</em>','master',920,765,301,[.045,.49,.955,.768]],
+ ['15:00','Ви перевіряєте <em>якість</em>','review',920,734,147,[.045,.918,.33,.966]],
+ ['17:00','Клієнт отримує <em>чек</em>','receipt',680,null,0,[.043,.820,.957,.870]],
+];
+$('scenes').innerHTML=SC.map((s,i)=>`<div class="scene" id="d${i}"><div class="head"><div class="clock">${s[0]}</div><div class="title">${s[1]}</div></div>
+ <div class="shot" id="d${i}s" style="width:${s[3]}px;${s[4]?`height:${s[4]}px`:''}"><img style="margin-top:-${s[5]}px" src="${D}${s[2]}.webp"><div class="ring" id="d${i}r"></div></div></div>`).join('')
+ +PAY('d4').replace('<div class="label">ЗАРПЛАТА</div><div class="title">Відсоток майстру нараховується <em>сам</em></div>','<div class="clock">21:00</div><div class="title">Майстру вже <em>нараховано</em></div>');
+$('tl').innerHTML+=[0,1,2,3,4].map(i=>`<i id="dot${i}" style="left:${i*25}%"></i>`).join('');
+$('endw').outerHTML=endHTML('Весь день студії в одній системі');
+const L=2.6,S={};for(let i=0;i<5;i++)S['d'+i]=[i*L,(i+1)*L];S.end=[13,17];window.DURATION=17;
+function render(t){fades(t,S);
+ SC.forEach((s,i)=>{const a=i*L;enter($(`d${i}s`),t,a);frac($(`d${i}r`),$(`d${i}s`),...s[6],10,s[5]);$(`d${i}r`).style.opacity=prog(t,a+1,a+1.4);
+   rise(document.querySelector(`#d${i} .clock`),t,a,0.4,20)});
+ rise(document.querySelector('#d4 .clock'),t,4*L,0.4,20); payRender('d4',t,4*L-0.6);
+ const f=cl(t/(4*L)); $('tlb').style.width=(f*100)+'%';
+ for(let i=0;i<5;i++)$('dot'+i).style.background=t>=i*L?'var(--acc)':'var(--line)';
+ $('tl').style.opacity=1-cl((t-12.7)/0.35);
+ endRender(t,13);}
+window.render=render;render(0);
+</script></body></html>

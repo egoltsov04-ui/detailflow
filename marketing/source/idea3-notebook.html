@@ -1,0 +1,33 @@
+<!doctype html><html lang="uk"><head><meta charset="utf-8"><link rel="stylesheet" href="base.css"><style>
+.bulo{position:absolute;left:80px;right:80px;top:290px;height:250px;padding:28px 44px}
+.tag{font:700 36px Manrope;letter-spacing:.12em;color:var(--mut);margin-bottom:14px}
+.note{font:600 48px/1.5 Manrope;color:var(--t2)}
+.note s{color:var(--mut);text-decoration-thickness:4px}
+.stalo{position:absolute;left:80px;top:580px}
+.stalo .tag{color:var(--acc)}
+.vis{position:absolute;left:50%;top:640px;transform:translateX(-50%);overflow:hidden}
+.vis img{display:block;width:100%}
+.mini{position:absolute;left:80px;right:80px;top:1030px;padding:36px 56px;display:flex;justify-content:space-between;align-items:center;font:700 52px Manrope;color:var(--t2)}
+.mini b{font:800 84px Montserrat;color:var(--acc)}
+</style></head><body>
+<div class="scene" id="h"><div class="big">Блокнот чи <em>Detailflow</em>?</div></div>
+<div id="pairs"></div><div id="endw"></div>
+<script src="base.js"></script><script>
+const P=[
+ ['ЗАПИСИ',['<s>Сергій 14:00</s> → 15:30?','Audi, передзвонити ???'],`<div class="card shot vis" style="width:920px;height:523px"><img style="margin-top:-1287px" src="${D}booking.webp"></div>`],
+ ['ЗАРПЛАТА',['Вася 30%? чи 35%?','<s>4 200</s> 3 950 ₴'],`<div class="card shot vis" style="width:920px;height:360px"><img style="margin-top:-314px" src="${D}review.webp"></div><div class="card mini"><span>1 500 ₴ × 30%</span><b>450 ₴</b></div>`],
+ ['ОПЛАТА',['Чек від руки, <s>1 500</s>','Знижка була чи ні?'],`<div class="card shot vis" style="width:920px;height:578px"><img style="margin-top:-580px" src="${D}receipt.webp"></div>`],
+ ['СТУДІЯ ЗАРАЗ',['Хто на першому посту?','Скільки сьогодні в касі?'],`<div class="card shot vis" style="width:920px;height:620px"><img style="width:2384px;max-width:none;transform-origin:0 0;transform:translate(-22px,-120px) scale(.55)" src="${D}overview.webp"></div>`],
+];
+$('pairs').innerHTML=P.map((p,i)=>`<div class="scene" id="p${i}"><div class="head"><div class="title">${p[0][0]+p[0].slice(1).toLowerCase()}</div></div>
+ <div class="card bulo" id="b${i}"><div class="tag">БУЛО</div>${p[1].map(n=>`<div class="note">${n}</div>`).join('')}</div>
+ <div class="stalo" id="t${i}"><div class="tag">СТАЛО</div></div><div id="v${i}">${p[2]}</div></div>`).join('');
+$('endw').outerHTML=endHTML('Замість блокнота одна система');
+const L=2.8,S={h:[0,1.8]};P.forEach((p,i)=>S['p'+i]=[1.8+i*L,1.8+(i+1)*L]);S.end=[13,17];window.DURATION=17;
+function render(t){fades(t,S);
+ {const p=prog(t,0,0.6);document.querySelector('#h .big').style.transform=`translateY(-50%) scale(${0.85+0.15*p})`}
+ P.forEach((p,i)=>{const a=1.8+i*L;const pb=prog(t,a,a+0.5);$('b'+i).style.opacity=pb;$('b'+i).style.transform=`rotate(${-1.5*(1-pb)-0.6}deg) translateY(${(1-pb)*30}px)`;
+  rise($('t'+i),t,a+0.8,0.4,20);rise($('v'+i),t,a+0.9,0.6,80)});
+ endRender(t,13);}
+window.render=render;render(0);
+</script></body></html>

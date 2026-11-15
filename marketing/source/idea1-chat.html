@@ -1,0 +1,31 @@
+<!doctype html><html lang="uk"><head><meta charset="utf-8"><link rel="stylesheet" href="base.css"><style>
+.bar{position:absolute;left:80px;right:80px;top:84px;height:150px;display:flex;align-items:center;gap:32px;padding:0 40px}
+.av{width:88px;height:88px;border-radius:50%;background:var(--line);display:flex;align-items:center;justify-content:center;font:800 44px Montserrat;color:var(--t2)}
+.who b{display:block;font:700 48px Manrope}.who span{font:600 34px Manrope;color:var(--mut)}
+.msgs{position:absolute;left:80px;right:80px;top:290px;display:flex;flex-direction:column;gap:36px}
+.msg{max-width:780px;padding:30px 40px;border-radius:32px;font:600 50px/1.3 Manrope}
+.msg small{display:block;font:600 30px Manrope;color:var(--mut);margin-top:10px;text-align:right}
+.in{align-self:flex-start;background:var(--card);border:2px solid var(--line);border-bottom-left-radius:8px}
+.out{align-self:flex-end;background:var(--line);border-bottom-right-radius:8px}
+</style></head><body>
+<div class="scene" id="chat">
+ <div class="card bar"><div class="av">М</div><div class="who"><b>Майстер</b><span>онлайн</span></div></div>
+ <div class="msgs"><div class="msg in" id="m0">Скільки мені за тиждень?<small>22:40</small></div>
+ <div class="msg in" id="m1">А фото до роботи хто робив?<small>22:41</small></div>
+ <div class="msg in" id="m2">Клієнт каже, подряпина вже була<small>22:43</small></div>
+ <div class="msg out" id="m3">Зараз пошукаю…<small>22:58</small></div></div>
+</div>
+<div class="scene" id="know"><div class="big">Знайомо?</div></div>
+<div class="scene" id="mas"><div class="head"><div class="label">МАЙСТЕР</div><div class="title">Чек-лист і фото роботи в <em>замовленні</em></div></div>
+ <div class="shot" id="mass" style="width:920px;height:765px"><img style="margin-top:-301px" src="/home/user/detailflow/public/demo/master.webp"><div class="ring" id="masr"></div></div></div>
+<div id="payw"></div><div id="endw"></div>
+<script src="base.js"></script><script>
+$('payw').outerHTML=PAY('pay'); $('endw').outerHTML=endHTML('CRM для детейлінг-студій');
+const S={chat:[0,5.2],know:[5.2,6.6],mas:[6.6,9.8],pay:[9.8,13],end:[13,17]}; window.DURATION=17;
+function render(t){fades(t,S);
+ [0.3,1.3,2.3,3.4].forEach((a,i)=>{const p=prog(t,a,a+0.35);$('m'+i).style.opacity=p;$('m'+i).style.transform=`translateY(${(1-p)*40}px) scale(${0.92+0.08*p})`});
+ {const p=prog(t,5.2,5.8);document.querySelector('#know .big').style.transform=`translateY(-50%) scale(${0.85+0.15*p})`}
+ enter($('mass'),t,6.6);frac($('masr'),$('mass'),.045,.49,.955,.768,10,301);$('masr').style.opacity=prog(t,7.6,8.1);
+ payRender('pay',t,9.8); endRender(t,13);}
+window.render=render;render(0);
+</script></body></html>

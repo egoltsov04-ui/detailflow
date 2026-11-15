@@ -1,0 +1,28 @@
+@font-face{font-family:'Manrope';font-weight:400 800;src:url('/home/user/detailflow/public/fonts/manrope-cyrillic.woff2');unicode-range:U+0400-045F,U+0490-0491,U+2116}
+@font-face{font-family:'Manrope';font-weight:400 800;src:url('/home/user/detailflow/public/fonts/manrope-latin-ext.woff2');unicode-range:U+0100-02BA,U+20A0-20C4}
+@font-face{font-family:'Manrope';font-weight:400 800;src:url('/home/user/detailflow/public/fonts/manrope-latin.woff2');unicode-range:U+0000-00FF,U+2000-206F}
+@font-face{font-family:'Montserrat';font-weight:800;src:url('/home/user/detailflow/public/fonts/montserrat-cyrillic.woff2');unicode-range:U+0400-045F,U+0490-0491,U+2116}
+@font-face{font-family:'Montserrat';font-weight:800;src:url('/home/user/detailflow/public/fonts/montserrat-latin-ext.woff2');unicode-range:U+0100-02BA,U+20A0-20C4}
+@font-face{font-family:'Montserrat';font-weight:800;src:url('/home/user/detailflow/public/fonts/montserrat-latin.woff2');unicode-range:U+0000-00FF,U+2000-206F}
+:root{--bg:#171A22;--acc:#A7D65C;--w:#FFFFFF;--t2:#C7CAD1;--mut:#6D7280;--card:#22262F;--line:#2C303C}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1350px;background:var(--bg);overflow:hidden}
+body{font-family:Manrope,sans-serif;color:var(--w)}
+.scene{position:absolute;inset:0;opacity:0}
+.head{position:absolute;left:80px;right:80px;top:84px}
+.label{font:700 40px Manrope;letter-spacing:.12em;color:var(--mut);margin-bottom:20px}
+.title{font:800 72px/1.12 Montserrat;text-wrap:balance}
+em{font-style:normal;color:var(--acc)}
+.big{position:absolute;left:80px;right:80px;top:50%;transform:translateY(-50%);text-align:center;font:800 96px/1.12 Montserrat;text-wrap:balance}
+.shot{position:absolute;left:50%;top:400px;transform:translateX(-50%);background:var(--card);border:2px solid var(--line);border-radius:32px;overflow:hidden}
+.shot img{display:block;width:100%}
+.ring{position:absolute;border:4px solid var(--acc);border-radius:18px}
+.card{background:var(--card);border:2px solid var(--line);border-radius:32px}
+.calc{position:absolute;left:80px;right:80px;top:900px;padding:48px 56px;display:flex;justify-content:space-between;align-items:center;font:700 56px Manrope;color:var(--t2)}
+.calc b{font:800 96px Montserrat;color:var(--acc)}
+.logo{width:180px;height:180px;border-radius:50%;background:var(--acc);color:var(--bg);font:800 94px Manrope;display:flex;align-items:center;justify-content:center;letter-spacing:-.04em;margin:0 auto}
+.cta{text-align:center;position:absolute;left:80px;right:80px;top:220px}
+.brand{font:800 100px Montserrat;margin-top:44px}
+.sub{font:600 48px Manrope;color:var(--t2);margin-top:16px;text-wrap:balance}
+.pill{display:inline-block;margin-top:80px;background:var(--acc);color:var(--bg);border-radius:999px;padding:40px 56px;font:800 50px/1.25 Montserrat;text-wrap:balance;max-width:920px}
+.site{font:700 48px Manrope;margin-top:52px}
