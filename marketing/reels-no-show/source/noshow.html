@@ -1,5 +1,7 @@
 <!doctype html><html lang="uk"><head><meta charset="utf-8"><link rel="stylesheet" href="base.css"><style>
-.scr{position:absolute;left:110px;right:110px;top:150px;height:1100px;overflow:hidden;opacity:0}
+#stage{position:absolute;left:110px;top:150px;width:860px;height:1100px;transform-origin:50% 0}
+.scr{position:absolute;left:0;right:0;top:0;height:1100px;overflow:hidden;opacity:0;will-change:transform,opacity}
+.ch{position:relative}.ch .hl{position:absolute;inset:-2px;border-radius:18px;border:4px solid var(--acc);opacity:0}
 .subt{position:absolute;left:80px;right:80px;top:1320px;display:flex;justify-content:center}
 .subt div{background:rgba(23,26,34,.88);border-radius:28px;padding:28px 44px;font:800 64px/1.2 Montserrat;color:#fff;text-align:center;text-wrap:balance}
 .pad{padding:44px}
@@ -30,7 +32,8 @@
 .dfl{width:80px;height:80px;border-radius:50%;background:var(--acc);color:var(--bg);font:800 40px Manrope;display:flex;align-items:center;justify-content:center;letter-spacing:-.04em}
 .chead b{display:block;font:700 38px Manrope}.chead span{font:600 28px Manrope;color:var(--mut)}
 .feed{position:absolute;left:0;right:0;top:140px;bottom:0;padding:0 30px;overflow:hidden}
-.fin{position:absolute;left:30px;right:30px;bottom:30px;display:flex;flex-direction:column;gap:22px}
+.fin{position:absolute;left:30px;right:30px;bottom:30px;display:flex;flex-direction:column}
+.wrap{overflow:visible;display:flex;flex-direction:column}
 .bb{align-self:flex-start;max-width:690px;background:var(--line);border-radius:26px;border-bottom-left-radius:8px;padding:24px 30px;font:600 30px/1.4 Manrope;color:var(--t2)}
 .bb b{color:var(--w)}.bb a{color:var(--acc);text-decoration:none}
 .me{align-self:flex-end;background:var(--acc);color:var(--bg);border-radius:26px;border-bottom-right-radius:8px;padding:20px 30px;font:700 30px Manrope}
@@ -38,7 +41,7 @@
 .toast{margin-top:24px;padding:22px;border-radius:18px;border:2px solid var(--acc);color:var(--acc);font:700 32px Manrope;text-align:center}
 </style></head><body>
 
-<div class="card scr" id="k1"><div class="pad">
+<div id="stage"><div class="card scr" id="k1"><div class="pad">
  <div class="ey">ПОСТИ СТУДІЇ</div><div class="h2">Сьогодні</div>
  <div class="grid"><div></div><div class="th">Пост 1</div><div class="th">Пост 2</div><div class="th">Пост 3</div>
   <div class="tm">10:00</div><div class="blk">BMW X5<span>Полірування</span></div><div class="blk">Audi Q7<span>Хімчистка</span></div><div class="blk">Kia Sportage<span>Мийка</span></div>
@@ -51,7 +54,7 @@
  <div class="ey">02 / ДАТА І ЧАС</div><div class="h2">Коли вам зручно?</div>
  <div class="lab">Ваш візит</div><div class="chipr"><div class="ch on">Полірування кузова · 1 500 ₴</div></div>
  <div class="lab">Дата</div><div class="chipr"><div class="ch">Чт 19</div><div class="ch on">Пт 20</div><div class="ch">Сб 21</div><div class="ch">Пн 23</div></div>
- <div class="lab">Час</div><div class="chipr" id="times"><div class="ch">10:00</div><div class="ch">11:30</div><div class="ch" id="t14">14:00</div><div class="ch">15:30</div><div class="ch">17:00</div></div>
+ <div class="lab">Час</div><div class="chipr" id="times"><div class="ch">10:00</div><div class="ch">11:30</div><div class="ch" id="t14">14:00<i class="hl" id="t14h"></i></div><div class="ch">15:30</div><div class="ch">17:00</div></div>
  <div class="mut">Ви надсилаєте заявку. Підтвердження часу — від адміністратора студії.</div>
  <div class="btn" id="b2">Надіслати заявку<div class="tap" id="tp2"></div></div></div></div>
 
@@ -76,36 +79,52 @@
   <div class="bb" id="m4"><b>Нагадування: візит завтра</b><br><br><b>Detail Studio</b><br>Коли: пʼятниця, 20 листопада о 14:00<br>Послуга: Полірування кузова<br>Адреса: <a>вул. Прикладна, 1, Київ</a><br>Телефон: +380670000000</div>
  </div></div></div>
 
+</div>
 <div class="subt"><div id="sub"></div></div>
 <div id="endw"></div>
 <script src="base.js"></script><script>
+const F45=new URLSearchParams(location.search).get('f')==='45';
+if(F45){document.documentElement.style.height=document.body.style.height='1350px';
+ Object.assign($('stage').style,{top:'64px',transform:'scale(.84)'});document.querySelector('.subt').style.top='1050px';}
 $('endw').outerHTML=endHTML('CRM для детейлінг-студій');
 $('pl').innerHTML='Безкоштовний тест: напишіть <span style="white-space:nowrap"><em>«ТЕСТ»</em> у Direct</span>';
-const st=document.createElement('style');st.textContent='.cta{top:560px}.pill{background:none;color:var(--w);padding:0;font:800 64px/1.2 Montserrat;margin-top:96px}';document.head.appendChild(st);
+const st=document.createElement('style');st.textContent=`.cta{top:${F45?280:560}px}.pill{background:none;color:var(--w);padding:0;font:800 64px/1.2 Montserrat;margin-top:${F45?72:96}px}`;document.head.appendChild(st);
+// smoother easings
+const io=x=>{x=cl(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+const oq=x=>{x=cl(x);return 1-Math.pow(1-x,5)};
+const pr=(t,a,b,f=oq)=>f((t-a)/(b-a));
+const bump=(t,a,d)=>{const x=(t-a)/d;return x>0&&x<1?Math.sin(Math.PI*x):0};
+// chat messages: wrap each in an animated-height container so earlier messages glide up
+const MS=[0,1,2,3,4].map(i=>{const m=$('m'+i);const w=document.createElement('div');w.className='wrap';m.parentNode.insertBefore(w,m);w.appendChild(m);
+ w.style.alignItems=m.classList.contains('me')?'flex-end':m.classList.contains('sep')?'center':'flex-start';return [w,m]});
+const H=MS.map(([w,m])=>m.offsetHeight);
 const SUB=[[0,2,'<em>Клієнт не приїхав. Пост простоює</em>'],[2,5,'Клієнт записується сам'],[5,9,'Одна кнопка&nbsp;— і він у Telegram'],[9,13,'Підтвердження з адресою'],[13,17,'Напередодні&nbsp;— <em>нагадування</em>']];
-const K={k1:[0,2],k2:[2,5],k3:[5,6.9],k4:[9,10.9]};
-const chatWin=t=>(t>=6.9&&t<9)||(t>=10.9&&t<17);
+// screen windows: [id, in, out]
+const W=[['k1',-1,2.05],['k2',1.95,5.05],['k3',4.95,6.95],['chat',6.85,9.05],['k4',8.95,10.95],['chat',10.85,17.1]];
 window.DURATION=20;
-function vis(el,o,y=0){el.style.opacity=o;el.style.transform=`translateY(${y}px)`}
-function tap(el,t,a){const p=cl((t-a)/0.45);el.style.opacity=t>=a&&p<1?0.6*(1-p):0;el.style.transform=`scale(${0.3+1.8*p})`;el.style.left='calc(50% - 70px)';el.style.top='-30px'}
+function tap(el,btn,t,a){const p=cl((t-a)/0.6);el.style.opacity=t>=a&&p<1?0.55*(1-oq(p)):0;el.style.transform=`scale(${0.2+2.2*oq(p)})`;el.style.left='calc(50% - 70px)';el.style.top='-30px';
+ btn.style.transform=`scale(${1-0.035*bump(t,a-0.05,0.35)})`}
 function render(t){
- for(const [id,[a,b]] of Object.entries(K)){const o=Math.min(cl((t-a)/0.3),cl((b-t)/0.3));vis($(id),t>=a&&t<=b?o:0,(1-cl((t-a)/0.4))*40)}
- {let o=0;if(t>=6.9&&t<9)o=Math.min(cl((t-6.9)/0.3),cl((9-t)/0.3));if(t>=10.9&&t<17)o=Math.min(cl((t-10.9)/0.3),cl((17-t)/0.3));vis($('chat'),o)}
- // calendar zoom to empty slot
- {const z=prog(t,0.3,1.8);$('k1').firstElementChild.style.transform=`scale(${1+0.08*z})`;$('k1').firstElementChild.style.transformOrigin='55% 70%';
-  $('em').style.borderColor=`rgba(167,214,92,${0.35+0.65*(0.5+0.5*Math.sin(t*7))})`}
- // booking
- $('t14').classList.toggle('on',t>3.1); tap($('tp2'),t,4.3); $('b2').style.transform=`scale(${t>4.3&&t<4.55?0.97:1})`;
- tap($('tp3'),t,6.2); $('b3').style.transform=`scale(${t>6.2&&t<6.45?0.97:1})`;
- tap($('tp4'),t,9.9); $('b4').style.transform=`scale(${t>9.9&&t<10.15?0.97:1})`;
- $('to4').style.opacity=prog(t,10.2,10.5); $('st4').textContent=t>10.2?'Підтверджено':'Очікує підтвердження';
- // chat messages: show by time; earlier ones scroll off top naturally (bottom-anchored)
- const show=[[0,7.1],[1,7.7],[2,11.2],[3,14.0],[4,14.4]];
- show.forEach(([i,a])=>{const p=prog(t,a,a+0.35);$('m'+i).style.display=t>=a?'':'none';$('m'+i).style.opacity=p;$('m'+i).style.transform=`translateY(${(1-p)*30}px)`});
- // subtitles
- const s=SUB.find(x=>t>=x[0]&&t<x[1]);$('sub').parentElement.style.opacity=s?Math.min(cl((t-s[0])/0.25),cl((s[1]-t)/0.25)):0;if(s)$('sub').innerHTML=s[2];
+ const ids=['k1','k2','k3','k4','chat'];const o={},y={},sc={};ids.forEach(i=>{o[i]=0;y[i]=0;sc[i]=1});
+ W.forEach(([id,a,b])=>{if(t<a||t>b)return;const pi=a<0?1:pr(t,a,a+0.55),po=io((b-t)/0.45);const v=Math.min(pi,po);
+  if(v>o[id]){o[id]=v;y[id]=(1-pi)*50-(1-po)*30;sc[id]=0.975+0.025*pi}});
+ ids.forEach(i=>{$(i).style.opacity=o[i];$(i).style.transform=`translateY(${y[i]}px) scale(${sc[i]})`});
+ // calendar: slow push-in to the empty slot, soft pulse
+ {const z=io(cl((t-0.1)/1.9));const c=$('k1').firstElementChild;c.style.transformOrigin='55% 70%';c.style.transform=`scale(${1+0.07*z})`;
+  $('em').style.borderColor=`rgba(167,214,92,${0.3+0.7*(0.5+0.5*Math.sin(t*5))})`}
+ // booking: 14:00 highlight fades in, then button press
+ $('t14h').style.opacity=pr(t,3.0,3.45); $('t14').style.color=t>3.1?'var(--w)':'';
+ tap($('tp2'),$('b2'),t,4.3); tap($('tp3'),$('b3'),t,6.15); tap($('tp4'),$('b4'),t,9.85);
+ {const p=pr(t,10.15,10.6);$('to4').style.opacity=p;$('to4').style.transform=`translateY(${(1-p)*16}px)`;$('st4').textContent=t>10.2?'Підтверджено':'Очікує підтвердження'}
+ // chat: height grows smoothly, then bubble fades/rises in
+ const at=[7.1,7.7,11.2,14.0,14.35];
+ MS.forEach(([w,m],i)=>{const g=pr(t,at[i],at[i]+0.5,io),p=pr(t,at[i]+0.12,at[i]+0.6);
+  w.style.height=(H[i]*g)+'px';w.style.marginTop=(22*g)+'px';m.style.opacity=p;m.style.transform=`translateY(${(1-p)*24}px) scale(${0.96+0.04*p})`;m.style.transformOrigin=i===0?'100% 100%':'0 100%'});
+ // subtitles: crossfade with a small rise
+ const s=SUB.find(x=>t>=x[0]-0.001&&t<x[1]);const sb=$('sub').parentElement;
+ if(s){const pi=pr(t,s[0],s[0]+0.4),po=io((s[1]-t)/0.3);$('sub').innerHTML=s[2];sb.style.opacity=Math.min(pi,po);sb.style.transform=`translateY(${(1-pi)*20}px)`}else sb.style.opacity=0;
  // end
- $('end').style.opacity=cl((t-17)/0.35);endRender(t,17);
+ $('end').style.opacity=io((t-17)/0.5);endRender(t,17);
 }
 window.render=render;render(0);
 </script></body></html>
