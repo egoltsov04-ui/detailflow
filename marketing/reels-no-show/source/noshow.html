@@ -1,0 +1,111 @@
+<!doctype html><html lang="uk"><head><meta charset="utf-8"><link rel="stylesheet" href="base.css"><style>
+.scr{position:absolute;left:110px;right:110px;top:150px;height:1100px;overflow:hidden;opacity:0}
+.subt{position:absolute;left:80px;right:80px;top:1320px;display:flex;justify-content:center}
+.subt div{background:rgba(23,26,34,.88);border-radius:28px;padding:28px 44px;font:800 64px/1.2 Montserrat;color:#fff;text-align:center;text-wrap:balance}
+.pad{padding:44px}
+.ey{font:700 30px Manrope;letter-spacing:.12em;color:var(--acc)}
+.h2{font:800 54px/1.15 Montserrat;margin:14px 0 30px}
+.mut{color:var(--mut);font:600 32px/1.35 Manrope}
+.t2{color:var(--t2);font:600 34px/1.4 Manrope}
+/* calendar */
+.grid{display:grid;grid-template-columns:110px repeat(3,1fr);gap:14px;margin-top:20px}
+.grid .th{font:700 32px Manrope;color:var(--mut);text-align:center}
+.grid .tm{font:700 32px Manrope;color:var(--mut);padding-top:20px}
+.blk{height:170px;border-radius:18px;background:var(--line);border-left:6px solid var(--acc);padding:18px;font:700 30px/1.3 Manrope}
+.blk span{display:block;color:var(--mut);font-weight:600;font-size:26px}
+.empty{height:170px;border-radius:18px;border:3px dashed var(--mut);display:flex;align-items:center;justify-content:center;text-align:center;font:700 28px/1.3 Manrope;color:var(--mut)}
+/* booking */
+.chipr{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:30px}
+.ch{padding:18px 26px;border-radius:18px;border:2px solid var(--line);background:var(--bg);font:700 32px Manrope;color:var(--t2)}
+.ch.on{border-color:var(--acc);color:var(--w);box-shadow:inset 0 0 0 2px var(--acc)}
+.lab{font:700 30px Manrope;color:var(--mut);margin:10px 0 14px}
+.btn{position:relative;margin-top:36px;padding:30px;border-radius:22px;background:var(--acc);color:var(--bg);font:800 36px Manrope;text-align:center;overflow:hidden}
+.btn2{padding:26px;border-radius:22px;background:var(--line);color:var(--t2);font:700 32px Manrope;text-align:center;margin-top:16px}
+.tap{position:absolute;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.55);pointer-events:none;opacity:0}
+.ok{width:96px;height:96px;border-radius:50%;border:5px solid var(--acc);display:flex;align-items:center;justify-content:center;color:var(--acc);font:800 56px Montserrat}
+.det{margin:24px 0;padding:24px 28px;border-radius:18px;background:var(--bg)}
+.det b{display:block;font:800 36px Manrope}
+/* chat */
+.chead{display:flex;align-items:center;gap:22px;padding:28px 36px;border-bottom:2px solid var(--line)}
+.dfl{width:80px;height:80px;border-radius:50%;background:var(--acc);color:var(--bg);font:800 40px Manrope;display:flex;align-items:center;justify-content:center;letter-spacing:-.04em}
+.chead b{display:block;font:700 38px Manrope}.chead span{font:600 28px Manrope;color:var(--mut)}
+.feed{position:absolute;left:0;right:0;top:140px;bottom:0;padding:0 30px;overflow:hidden}
+.fin{position:absolute;left:30px;right:30px;bottom:30px;display:flex;flex-direction:column;gap:22px}
+.bb{align-self:flex-start;max-width:690px;background:var(--line);border-radius:26px;border-bottom-left-radius:8px;padding:24px 30px;font:600 30px/1.4 Manrope;color:var(--t2)}
+.bb b{color:var(--w)}.bb a{color:var(--acc);text-decoration:none}
+.me{align-self:flex-end;background:var(--acc);color:var(--bg);border-radius:26px;border-bottom-right-radius:8px;padding:20px 30px;font:700 30px Manrope}
+.sep{align-self:center;font:700 26px Manrope;color:var(--mut);background:var(--bg);padding:8px 22px;border-radius:999px}
+.toast{margin-top:24px;padding:22px;border-radius:18px;border:2px solid var(--acc);color:var(--acc);font:700 32px Manrope;text-align:center}
+</style></head><body>
+
+<div class="card scr" id="k1"><div class="pad">
+ <div class="ey">ПОСТИ СТУДІЇ</div><div class="h2">Сьогодні</div>
+ <div class="grid"><div></div><div class="th">Пост 1</div><div class="th">Пост 2</div><div class="th">Пост 3</div>
+  <div class="tm">10:00</div><div class="blk">BMW X5<span>Полірування</span></div><div class="blk">Audi Q7<span>Хімчистка</span></div><div class="blk">Kia Sportage<span>Мийка</span></div>
+  <div class="tm">12:00</div><div class="blk">Skoda Octavia<span>Кераміка</span></div><div class="blk">VW Tiguan<span>Мийка</span></div><div class="blk">Mazda CX-5<span>Плівка</span></div>
+  <div class="tm">14:00</div><div class="blk">Renault Duster<span>Хімчистка</span></div><div class="empty" id="em">Клієнт<br>не приїхав</div><div class="blk">Honda CR-V<span>Полірування</span></div>
+  <div class="tm">16:00</div><div class="blk">Ford Kuga<span>Мийка</span></div><div class="blk">Nissan Qashqai<span>Кераміка</span></div><div class="blk">Hyundai Tucson<span>Мийка</span></div>
+ </div></div></div>
+
+<div class="card scr" id="k2"><div class="pad">
+ <div class="ey">02 / ДАТА І ЧАС</div><div class="h2">Коли вам зручно?</div>
+ <div class="lab">Ваш візит</div><div class="chipr"><div class="ch on">Полірування кузова · 1 500 ₴</div></div>
+ <div class="lab">Дата</div><div class="chipr"><div class="ch">Чт 19</div><div class="ch on">Пт 20</div><div class="ch">Сб 21</div><div class="ch">Пн 23</div></div>
+ <div class="lab">Час</div><div class="chipr" id="times"><div class="ch">10:00</div><div class="ch">11:30</div><div class="ch" id="t14">14:00</div><div class="ch">15:30</div><div class="ch">17:00</div></div>
+ <div class="mut">Ви надсилаєте заявку. Підтвердження часу — від адміністратора студії.</div>
+ <div class="btn" id="b2">Надіслати заявку<div class="tap" id="tp2"></div></div></div></div>
+
+<div class="card scr" id="k3"><div class="pad">
+ <div class="ok">✓</div><div class="ey" style="margin-top:28px">ОЧІКУЄ ПІДТВЕРДЖЕННЯ</div><div class="h2">Дякуємо, Олена!</div>
+ <div class="t2">Студія отримала вашу заявку. Час буде остаточно заброньовано після підтвердження адміністратором.</div>
+ <div class="det"><b>20 листопада · 14:00</b><div class="t2">Полірування кузова<br>Toyota RAV4</div></div>
+ <div class="btn" id="b3">Отримувати нагадування в Telegram<div class="tap" id="tp3"></div></div><div class="btn2">Ще один запис</div></div></div>
+
+<div class="card scr" id="k4"><div class="pad">
+ <div class="ey">ОНЛАЙН-ЗАЯВКИ</div><div class="h2">Нова заявка</div>
+ <div class="det" style="margin-top:0"><b>14:00 · Toyota RAV4</b><div class="t2">Олена · Полірування кузова<br>пʼятниця, 20 листопада</div><div class="mut" style="margin-top:12px" id="st4">Очікує підтвердження</div></div>
+ <div class="btn" id="b4">Підтвердити запис<div class="tap" id="tp4"></div></div>
+ <div class="toast" id="to4">Запис підтверджено.</div></div></div>
+
+<div class="card scr" id="chat"><div class="chead"><div class="dfl">df</div><div><b>Detailflow</b><span>бот</span></div></div>
+ <div class="feed"><div class="fin" id="fin">
+  <div class="me" id="m0">/start</div>
+  <div class="bb" id="m1"><b>Підписку оформлено</b><br>Сюди прийде підтвердження запису до <b>Detail Studio</b> і нагадування перед візитом.<br><br>Відписатися: /stop</div>
+  <div class="bb" id="m2"><b>Запис підтверджено</b><br><br><b>Detail Studio</b><br>Коли: пʼятниця, 20 листопада о 14:00<br>Послуга: Полірування кузова<br>Адреса: <a>вул. Прикладна, 1, Київ</a><br>Телефон: +380670000000<br><br>Відписатися від повідомлень: /stop</div>
+  <div class="sep" id="m3">Четвер, 19 листопада</div>
+  <div class="bb" id="m4"><b>Нагадування: візит завтра</b><br><br><b>Detail Studio</b><br>Коли: пʼятниця, 20 листопада о 14:00<br>Послуга: Полірування кузова<br>Адреса: <a>вул. Прикладна, 1, Київ</a><br>Телефон: +380670000000</div>
+ </div></div></div>
+
+<div class="subt"><div id="sub"></div></div>
+<div id="endw"></div>
+<script src="base.js"></script><script>
+$('endw').outerHTML=endHTML('CRM для детейлінг-студій');
+$('pl').innerHTML='Безкоштовний тест: напишіть <span style="white-space:nowrap"><em>«ТЕСТ»</em> у Direct</span>';
+const st=document.createElement('style');st.textContent='.cta{top:560px}.pill{background:none;color:var(--w);padding:0;font:800 64px/1.2 Montserrat;margin-top:96px}';document.head.appendChild(st);
+const SUB=[[0,2,'<em>Клієнт не приїхав. Пост простоює</em>'],[2,5,'Клієнт записується сам'],[5,9,'Одна кнопка&nbsp;— і він у Telegram'],[9,13,'Підтвердження з адресою'],[13,17,'Напередодні&nbsp;— <em>нагадування</em>']];
+const K={k1:[0,2],k2:[2,5],k3:[5,6.9],k4:[9,10.9]};
+const chatWin=t=>(t>=6.9&&t<9)||(t>=10.9&&t<17);
+window.DURATION=20;
+function vis(el,o,y=0){el.style.opacity=o;el.style.transform=`translateY(${y}px)`}
+function tap(el,t,a){const p=cl((t-a)/0.45);el.style.opacity=t>=a&&p<1?0.6*(1-p):0;el.style.transform=`scale(${0.3+1.8*p})`;el.style.left='calc(50% - 70px)';el.style.top='-30px'}
+function render(t){
+ for(const [id,[a,b]] of Object.entries(K)){const o=Math.min(cl((t-a)/0.3),cl((b-t)/0.3));vis($(id),t>=a&&t<=b?o:0,(1-cl((t-a)/0.4))*40)}
+ {let o=0;if(t>=6.9&&t<9)o=Math.min(cl((t-6.9)/0.3),cl((9-t)/0.3));if(t>=10.9&&t<17)o=Math.min(cl((t-10.9)/0.3),cl((17-t)/0.3));vis($('chat'),o)}
+ // calendar zoom to empty slot
+ {const z=prog(t,0.3,1.8);$('k1').firstElementChild.style.transform=`scale(${1+0.08*z})`;$('k1').firstElementChild.style.transformOrigin='55% 70%';
+  $('em').style.borderColor=`rgba(167,214,92,${0.35+0.65*(0.5+0.5*Math.sin(t*7))})`}
+ // booking
+ $('t14').classList.toggle('on',t>3.1); tap($('tp2'),t,4.3); $('b2').style.transform=`scale(${t>4.3&&t<4.55?0.97:1})`;
+ tap($('tp3'),t,6.2); $('b3').style.transform=`scale(${t>6.2&&t<6.45?0.97:1})`;
+ tap($('tp4'),t,9.9); $('b4').style.transform=`scale(${t>9.9&&t<10.15?0.97:1})`;
+ $('to4').style.opacity=prog(t,10.2,10.5); $('st4').textContent=t>10.2?'Підтверджено':'Очікує підтвердження';
+ // chat messages: show by time; earlier ones scroll off top naturally (bottom-anchored)
+ const show=[[0,7.1],[1,7.7],[2,11.2],[3,14.0],[4,14.4]];
+ show.forEach(([i,a])=>{const p=prog(t,a,a+0.35);$('m'+i).style.display=t>=a?'':'none';$('m'+i).style.opacity=p;$('m'+i).style.transform=`translateY(${(1-p)*30}px)`});
+ // subtitles
+ const s=SUB.find(x=>t>=x[0]&&t<x[1]);$('sub').parentElement.style.opacity=s?Math.min(cl((t-s[0])/0.25),cl((s[1]-t)/0.25)):0;if(s)$('sub').innerHTML=s[2];
+ // end
+ $('end').style.opacity=cl((t-17)/0.35);endRender(t,17);
+}
+window.render=render;render(0);
+</script></body></html>
