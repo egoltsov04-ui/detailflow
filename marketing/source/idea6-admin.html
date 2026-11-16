@@ -1,0 +1,36 @@
+<!doctype html><html lang="uk"><head><meta charset="utf-8"><link rel="stylesheet" href="base.css"><style>
+.notif{position:absolute;left:80px;right:80px;top:620px;padding:36px 44px;display:flex;gap:32px;align-items:flex-start}
+.av{width:96px;height:96px;flex:none;border-radius:50%;background:var(--line);display:flex;align-items:center;justify-content:center;font:800 46px Montserrat;color:var(--t2)}
+.nb b{display:block;font:700 44px Manrope}.nb b span{font:600 34px Manrope;color:var(--mut);margin-left:16px}
+.nb p{font:600 50px/1.3 Manrope;color:var(--t2);margin-top:12px}
+.chip{position:absolute;padding:28px 40px;font:600 46px Manrope;color:var(--t2);white-space:nowrap}
+.sched{position:absolute;left:80px;right:80px;top:400px;padding:36px 40px}
+.sched h3{font:800 46px Montserrat;margin-bottom:20px}
+.sr{display:grid;grid-template-columns:140px 1fr;gap:24px;padding:24px 0;border-top:2px solid var(--line)}
+.sr .tm{font:800 46px Montserrat;color:var(--acc)}
+.sr b{display:block;font:700 44px Manrope}.sr span{font:600 36px Manrope;color:var(--mut)}
+</style></head><body>
+<div class="scene" id="s1"><div class="head"><div class="title">Ранок. Адміністратор <em>захворів</em></div></div>
+ <div class="card notif" id="nt"><div class="av">А</div><div class="nb"><b>Адміністратор<span>07:58</span></b><p>Сьогодні не вийду, захворів. Вибачте</p></div></div></div>
+<div class="scene" id="s2"><div class="head"><div class="title">Хто сьогодні <em>записаний?</em></div></div><div id="chips"></div></div>
+<div class="scene" id="s3"><div class="head"><div class="label">РОЗКЛАД</div><div class="title">Розклад не в голові, а в <em>системі</em></div></div>
+ <div class="card sched" id="sc"><h3>Сьогодні</h3><div id="rows"></div></div></div>
+<div class="scene" id="s4"><div class="head"><div class="label">ОГЛЯД</div><div class="title">Студія працює, навіть коли когось <em>немає</em></div></div>
+ <div class="shot" id="ovs" style="width:920px;height:780px;top:460px"><img id="ovi" style="width:2384px;max-width:none;transform-origin:0 0" src="/home/user/detailflow/public/demo/overview.webp"></div></div>
+<div id="endw"></div>
+<script src="base.js"></script><script>
+const CH=[['Хто на 10:00?',90,420],['Що обіцяли клієнту з BMW?',200,610],['Який майстер на поліровці?',80,800],['Де номер власника Audi?',260,990]];
+$('chips').innerHTML=CH.map((c,i)=>`<div class="card chip" id="c${i}" style="left:${c[1]}px;top:${c[2]}px">${c[0]}</div>`).join('');
+const R=[['10:00','BMW X5 · Іван К.','Полірування · майстер Андрій'],['11:30','Audi Q7 · Олена','Хімчистка · майстер Олег'],['14:00','Kia Sportage · Сергій','Кераміка · майстер Андрій'],['16:30','Toyota RAV4 · Марина','Мийка · майстер Олег']];
+$('rows').innerHTML=R.map((r,i)=>`<div class="sr" id="r${i}"><div class="tm">${r[0]}</div><div><b>${r[1]}</b><span>${r[2]}</span></div></div>`).join('');
+$('endw').outerHTML=endHTML('Студія не залежить від однієї людини');
+const S={s1:[0,3],s2:[3,6.5],s3:[6.5,10],s4:[10,13],end:[13,17]};window.DURATION=17;
+function render(t){fades(t,S);
+ {const p=prog(t,0.5,0.9);$('nt').style.opacity=p;$('nt').style.transform=`translateY(${(1-p)*-80}px)`}
+ CH.forEach((c,i)=>{const a=3.3+i*0.55,p=prog(t,a,a+0.4),rot=Math.sin(t*2+i*1.7)*3*(i%2?1:-1),dx=Math.sin(t*1.3+i)*16;
+  $('c'+i).style.opacity=p;$('c'+i).style.transform=`translate(${dx}px,${(1-p)*60}px) rotate(${rot}deg) scale(${0.85+0.15*p})`});
+ rise($('sc'),t,6.6,0.5,60);R.forEach((r,i)=>rise($('r'+i),t,7.1+i*0.3,0.4,30));
+ enter($('ovs'),t,10);{const z=prog(t,10.6,12.8);$('ovi').style.transform=`translate(${-40*z}px,${-90*z}px) scale(${0.386+0.234*z})`}
+ endRender(t,13);}
+window.render=render;render(0);
+</script></body></html>
