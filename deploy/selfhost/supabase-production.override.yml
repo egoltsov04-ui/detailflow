@@ -20,8 +20,12 @@ services:
   storage: {container_name: supabase-production-storage}
   imgproxy: {container_name: supabase-production-imgproxy}
   meta: {container_name: supabase-production-meta}
-  functions: {container_name: supabase-production-edge-functions}
+  # Not used by Detailflow (no edge functions, the app talks to the database through the API): kept off.
+  functions:
+    container_name: supabase-production-edge-functions
+    profiles: [unused]
   db: {container_name: supabase-production-db}
   supavisor:
     container_name: supabase-production-pooler
+    profiles: [unused]
     ports: !reset []
