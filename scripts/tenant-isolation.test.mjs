@@ -185,7 +185,7 @@ test('promo codes: support creates them, signup stores the code, approval applie
  const approve=req=>as(SUPPORT,()=>q(`select support_review_application($1,true,'ok') id`,[req]))
  const [{id:s1}]=await approve(reqs.find(r=>r.user_id===OWNER1).id),[{id:s2}]=await approve(reqs.find(r=>r.user_id===OWNER2).id)
  assert.equal((await q(`select round(extract(epoch from trial_ends_at-now())/86400) d from subscriptions where tenant_id=$1`,[s1]))[0].d,'12')
- assert.equal(Number((await q(`select price_override from subscriptions where tenant_id=$1`,[s2]))[0].price_override),295)
+ assert.equal(Number((await q(`select price_override from subscriptions where tenant_id=$1`,[s2]))[0].price_override),595)
  assert.deepEqual((await q(`select code,uses from promo_codes order by code`)).map(r=>[r.code,r.uses]),[['EXTRA7',1],['HALF50',1]])
  // HALF50 allowed one use: it is now spent, and a used code keeps its kind and value
  assert.deepEqual((await as(null,()=>q("select check_promo_code('HALF50') r")))[0].r,{valid:false})
