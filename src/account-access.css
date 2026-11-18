@@ -1,6 +1,6 @@
 .access-roles{grid-template-columns:repeat(2,minmax(190px,1fr))}
 .master-workspace{min-height:100vh;background:var(--color-bg);color:var(--color-text)}
-.master-workspace-header{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:18px 24px;border-bottom:1px solid var(--color-border);flex-wrap:wrap}
+.master-workspace-header{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:18px 24px;border-bottom:1px solid var(--color-border);flex-wrap:wrap;height:auto}
 .master-workspace .master-cabinet{margin:0 auto;width:100%;box-sizing:border-box}
 .master-workspace .master-order,.master-workspace .master-metrics>div,.master-workspace .master-earned{background:var(--color-surface);border-color:var(--color-border);color:var(--color-text)}
 .master-workspace .master-order small,.master-workspace .master-order p,.master-workspace .master-metrics span,.master-workspace .master-earned small{color:var(--color-text-secondary)}
