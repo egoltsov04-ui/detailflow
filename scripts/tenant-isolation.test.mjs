@@ -301,3 +301,19 @@ test('cancel reason and studio requisites: own studio only, length limited (migr
  assert.equal(await as(OWNER_B,`update tenants set legal_details='x' where id='${A}'`),0)
  await assert.rejects(as(OWNER,`update tenants set legal_details=repeat('x',601) where id='${A}'`))
 })
+
+test('a no-show stays no_show when its order is cancelled, a cancellation still cancels (migration 074)',async t=>{
+ const db=await schema();t.after(()=>db.close());await seed(db)
+ const q=async(s,p)=>(await db.query(s,p)).rows
+ const [missed,cancelled]=[id(85),id(86)]
+ for(const [appt,order] of [[missed,id(87)],[cancelled,id(88)]]){
+  await db.exec(`insert into appointments(id,tenant_id,client_id,starts_at,ends_at,status,source) values('${appt}','${A}','${id(41)}',now()+interval '1 day',now()+interval '25 hours','confirmed','admin');
+  insert into work_orders(id,tenant_id,client_id,appointment_id,title,total,status) values('${order}','${A}','${id(41)}','${appt}','Visit',500,'new');`)
+ }
+ await db.exec(`reset role;select set_config('request.jwt.claim.sub','${OWNER}',false);select set_config('request.jwt.claims','{"sub":"${OWNER}","role":"authenticated","aal":"aal1"}',false);set role authenticated;`)
+ await db.query(`update appointments set status='no_show',status_reason='Не відповідає на дзвінки' where id=$1`,[missed])
+ await db.query(`update appointments set status='cancelled' where id=$1`,[cancelled])
+ await db.exec('reset role')
+ assert.deepEqual((await q(`select a.status a,o.status o,a.status_reason r from appointments a join work_orders o on o.appointment_id=a.id where a.id=$1`,[missed]))[0],{a:'no_show',o:'cancelled',r:'Не відповідає на дзвінки'})
+ assert.deepEqual((await q(`select a.status a,o.status o from appointments a join work_orders o on o.appointment_id=a.id where a.id=$1`,[cancelled]))[0],{a:'cancelled',o:'cancelled'})
+})
