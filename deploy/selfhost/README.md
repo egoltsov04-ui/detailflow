@@ -28,7 +28,7 @@ Behind a TLS-inspecting proxy, build the API image with `docker build -f deploy/
 
 One Caddy for the whole server (`edge/`), the only container with public ports. App stacks start without their own Caddy.
 
-1. Supabase in `/srv/supabase-<stack>` (`setup.sh --ref self-hosted/v0.8.4`), with `supabase-staging.override.yml` copied in (for production replace `staging` with `production` and the port 8100 with 8101), in `.env`: `COMPOSE_FILE=docker-compose.yml:docker-compose.<stack>.yml`, public URLs, `chmod 600 .env`. No pooler or gateway ports outside; Studio: `ssh -L 8100:127.0.0.1:8100 deploy@<server>`, then `http://localhost:8100`.
+1. Supabase in `/srv/supabase-<stack>` (`setup.sh --ref self-hosted/v0.8.4`), with `supabase-staging.override.yml` copied in (for production replace `staging` with `production` and the port 8100 with 8101), in `.env`: `COMPOSE_FILE=docker-compose.yml:docker-compose.<stack>.yml`, public URLs, `chmod 600 .env`. No pooler or gateway ports outside; the pooler and edge functions are not used and stay off (`profiles: [unused]` in the override); Studio: `ssh -L 8100:127.0.0.1:8100 deploy@<server>`, then `http://localhost:8100`.
 2. Database and schedule as in steps 2-3 above, through `docker exec -i supabase-<stack>-db psql -U postgres`.
 3. App `.env`: `VITE_SUPABASE_URL=http://supabase-<stack>-envoy:8000` (inside Docker), `SUPABASE_NETWORK=supabase-<stack>_default`; then `docker compose -p detailflow-<stack> --env-file .env up -d --build api`.
 4. Frontend built with the public `https://api-<stack>.<domain>` (staging build also needs `DEPLOYMENT_ENV=staging`, `SUPABASE_SERVICE_ROLE_KEY`, `APP_URL` for the isolation check).
