@@ -284,3 +284,20 @@ test('support exports one studio: only its rows, only with 2FA and a fresh passw
  assert.ok(r.every(s=>s.rows.every(row=>!('tenant_id' in row)||row.tenant_id===A)),'no rows of another studio')
  assert.equal((await q(`select count(*) n from audit_logs where tenant_id=$1 and action='export'`,[A]))[0].n,1)
 })
+
+test('cancel reason and studio requisites: own studio only, length limited (migration 073)',async t=>{
+ const db=await schema();t.after(()=>db.close());await seed(db)
+ const appt=id(81)
+ await db.exec(`insert into appointments(id,tenant_id,client_id,starts_at,ends_at,status,source) values('${appt}','${A}','${id(41)}',now()+interval '1 day',now()+interval '25 hours','confirmed','admin')`)
+ async function as(user,sql){
+  await db.exec(`reset role;select set_config('request.jwt.claim.sub','${user}',false);select set_config('request.jwt.claims','{"sub":"${user}","role":"authenticated","aal":"aal1"}',false);set role authenticated;`)
+  try{return (await db.query(sql)).affectedRows}finally{await db.exec('reset role')}
+ }
+ assert.equal(await as(OWNER,`update appointments set status='cancelled',status_reason='Клієнт передумав' where id='${appt}'`),1)
+ assert.equal(await as(OWNER_B,`update appointments set status_reason='x' where id='${appt}'`),0)
+ assert.equal((await db.query(`select status_reason from appointments where id='${appt}'`)).rows[0].status_reason,'Клієнт передумав')
+ await assert.rejects(as(OWNER,`update appointments set status_reason=repeat('x',201) where id='${appt}'`))
+ assert.equal(await as(OWNER,`update tenants set legal_details='ФОП Тест, ІПН 1234567890' where id='${A}'`),1)
+ assert.equal(await as(OWNER_B,`update tenants set legal_details='x' where id='${A}'`),0)
+ await assert.rejects(as(OWNER,`update tenants set legal_details=repeat('x',601) where id='${A}'`))
+})

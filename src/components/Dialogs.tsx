@@ -2,16 +2,19 @@ import {Modal,Card} from './UI'
 import {t} from '../i18n/core'
 import { Component, ReactNode, useEffect, useState } from 'react'
 
-type Request={message:string;confirm:boolean;resolve:(answer:boolean)=>void}
+type Request={message:string;confirm:boolean;reasons?:string[];resolve:(answer:boolean,text?:string)=>void}
 let receiver:((request:Request)=>void)|null=null
 export function confirmAction(message:string):Promise<boolean>{return new Promise(resolve=>receiver?receiver({message,confirm:true,resolve}):resolve(false))}
+/** Confirmation with an optional reason: quick choices plus free text. Resolves to the reason ('' when none) or null when cancelled. */
+export function askReason(message:string,reasons:string[]):Promise<string|null>{return new Promise(resolve=>receiver?receiver({message,confirm:true,reasons,resolve:(ok,text)=>resolve(ok?(text||'').trim().slice(0,200):null)}):resolve(null))}
 export function showNotice(message:string):void{receiver?.({message,confirm:false,resolve:()=>{}})}
 
 export function Dialogs(){
  const [queue,setQueue]=useState<Request[]>([]),active=queue[0]
  useEffect(()=>{receiver=request=>setQueue(q=>[...q,request]);return()=>{receiver=null}},[])
- function close(answer:boolean){active.resolve(answer);setQueue(q=>q.slice(1))}
- return active?<div className="overlay app-confirm"><Modal className="modal"><h2>{active.confirm?t("Підтвердьте дію"):t("Повідомлення")}</h2><p>{t(active.message)}</p><div className="dialog-actions">{active.confirm&&<button className="text-btn modal-close-action" onClick={()=>close(false)}>{t("Скасувати")}</button>}<button className="primary" onClick={()=>close(true)}>{active.confirm?t("Підтвердити"):t("Зрозуміло")}</button></div></Modal></div>:null
+ const [reason,setReason]=useState('')
+ function close(answer:boolean){active.resolve(answer,reason);setReason('');setQueue(q=>q.slice(1))}
+ return active?<div className="overlay app-confirm"><Modal className="modal"><h2>{active.confirm?t("Підтвердьте дію"):t("Повідомлення")}</h2><p>{t(active.message)}</p>{active.reasons&&<><div className="ui-chips" role="group" aria-label={t('Причина')}>{active.reasons.map(r=><button type="button" key={r} aria-pressed={reason===t(r)} onClick={()=>setReason(t(r))}>{t(r)}</button>)}</div><label>{t('Причина (необов’язково)')}<textarea rows={2} maxLength={200} value={reason} onChange={e=>setReason(e.target.value)}/></label></>}<div className="dialog-actions">{active.confirm&&<button className="text-btn modal-close-action" onClick={()=>close(false)}>{t("Скасувати")}</button>}<button className="primary" onClick={()=>close(true)}>{active.confirm?t("Підтвердити"):t("Зрозуміло")}</button></div></Modal></div>:null
 }
 
 // Shared keyboard behavior for the existing modal forms, without changing their data flows.

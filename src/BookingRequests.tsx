@@ -1,21 +1,22 @@
 import {PageHeader,Card,FormField,Badge} from './components/UI'
 import {VehicleTag} from './components/VehicleTag'
 import {t,localeTag} from './i18n/core'
-import { confirmAction } from './components/Dialogs'
+import { askReason } from './components/Dialogs'
 import { useState } from 'react'
 import type { Booking, Status } from './data'
 
 const statusTone:Partial<Record<string,'neutral'|'success'|'warning'|'danger'>>={'Очікує підтвердження':'warning','Підтверджено':'success','В роботі':'success','Скасовано':'danger','Не прийшов':'danger'}
 const dayLabel=(date:string)=>/^\d{4}-\d{2}-\d{2}$/.test(date)?new Date(date+'T12:00:00').toLocaleDateString(localeTag(),{day:'2-digit',month:'2-digit',year:'numeric'}):date
-export default function BookingRequests({bookings,update,link}:{bookings:Booking[];update:(id:number|string,status:Status)=>Promise<string>;link:string}) {
+export default function BookingRequests({bookings,update,link}:{bookings:Booking[];update:(id:number|string,status:Status,reason?:string)=>Promise<string>;link:string}) {
   const [filter,setFilter]=useState('Очікує підтвердження'),[query,setQuery]=useState(''),[busy,setBusy]=useState<number|string|null>(null),[message,setMessage]=useState(''),[copied,setCopied]=useState('')
   const publicRows=bookings.filter(b=>b.source==='public')
   const rows=publicRows.filter(b=>(!filter||b.status===filter)&&[b.client,b.phone,b.email,b.car,b.service].join(' ').toLowerCase().includes(query.toLowerCase())).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time))
   async function act(booking:Booking,status:Status){
     if(busy!==null)return
-    if(status==='Скасовано'&&!await confirmAction('Відхилити заявку цього клієнта?'))return
+    const reason=status==='Скасовано'?await askReason('Відхилити заявку цього клієнта?',['Немає вільного часу','Не відповідає на дзвінки','Клієнт передумав','Інше']):''
+    if(reason===null)return
     setBusy(booking.id);setMessage('')
-    try{const error=await update(booking.id,status);setMessage(error||(status==='Підтверджено'?'Запис підтверджено.':'Заявку відхилено.'))}catch{setMessage(t("Не вдалося зберегти зміни. Спробуйте знову."))}finally{setBusy(null)}
+    try{const error=await update(booking.id,status,reason);setMessage(error||(status==='Підтверджено'?'Запис підтверджено.':'Заявку відхилено.'))}catch{setMessage(t("Не вдалося зберегти зміни. Спробуйте знову."))}finally{setBusy(null)}
   }
   async function copyLink(){if(!link)return;try{await navigator.clipboard.writeText(link);setCopied('Посилання скопійовано.')}catch{setCopied('Скопіюйте посилання з поля вручну.')}}
   return <section className="content"><PageHeader className="page-title"><div><h1>{t("Заявки клієнтів")}</h1></div></PageHeader>
