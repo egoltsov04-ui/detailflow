@@ -12,6 +12,7 @@ import './ux-polish.css'
 // Base components last among global styles, so they win ties with legacy rules
 import './styles/components.css'
 import { entryRoute } from './lib/entryRoute'
+import StagingBadge from './components/StagingBadge'
 
 document.documentElement.lang=getLocale()
 const LandingPage = lazy(() => import('./LandingPage'))
@@ -31,4 +32,4 @@ function SessionEntry(){
 }
 
 const Preview=import.meta.env.DEV?(window.location.pathname==='/__qa/booking'?lazy(()=>import('./dev/PublicBookingPreview')):window.location.pathname==='/__qa'?lazy(()=>import('./dev/ServicePreview')):null):null
-createRoot(document.getElementById('root')!).render(<StrictMode><ErrorBoundary><Suspense fallback={<main className="access-portal">{t("Завантаження Detailflow…")}</main>}>{Preview?<Preview/>:route==='site'?<SitePages path={window.location.pathname.replace(/\/$/,'') as never}/>:isLanding?<SessionEntry/>:<App/>}</Suspense><PwaControls/><IosInstallHint/><Dialogs/><ModalAccessibility/></ErrorBoundary></StrictMode>)
+createRoot(document.getElementById('root')!).render(<StrictMode><ErrorBoundary><Suspense fallback={<main className="access-portal">{t("Завантаження Detailflow…")}</main>}>{Preview?<Preview/>:route==='site'?<SitePages path={window.location.pathname.replace(/\/$/,'') as never}/>:isLanding?<SessionEntry/>:<App/>}</Suspense><StagingBadge/><PwaControls/><IosInstallHint/><Dialogs/><ModalAccessibility/></ErrorBoundary></StrictMode>)

@@ -4,6 +4,7 @@ import LanguageSwitcher from '../i18n/LanguageSwitcher'
 import {t} from '../i18n/core'
 import '../landing.css'
 import './site.css'
+import {appVersion} from '../lib/appVersion'
 
 const telegramName=(import.meta.env.VITE_BILLING_TELEGRAM||'detailflow').replace(/^https:\/\/t\.me\//,'').replace(/^@/,'')
 export const contacts={
@@ -66,7 +67,7 @@ export function SiteFooter(){
   <nav aria-label={t('Продукт')}><h2>{t('Продукт')}</h2><a href="/#features">{t('Можливості')}</a><a href="/#workflow">{t('Як це працює')}</a><a href="/#pricing">{t('Тарифи')}</a><a href="/#import">{t('Перенесення клієнтів')}</a></nav>
   <nav aria-label={t('Компанія')}><h2>{t('Компанія')}</h2><a href="/about">{t('Про нас')}</a><a href="/contacts">{t('Контакти')}</a><a href="/login">{t('Увійти')}</a></nav>
   <nav aria-label={t('Підтримка')}><h2>{t('Підтримка')}</h2><a href="/#questions">{t('Запитання')}</a><a href="/privacy">{t('Політика конфіденційності')}</a><a href="/terms">{t('Умови користування')}</a><a href="/refund">{t('Обмін і повернення')}</a></nav>
- </div><div className="lp-wrap site-footer-bottom"><span>© 2026 Detailflow. {t('Усі права захищені.')}</span><span>{t(contacts.owner)} · <a href={'mailto:'+contacts.email}>{contacts.email}</a></span></div></footer>
+ </div><div className="lp-wrap site-footer-bottom"><span>© 2026 Detailflow. {t('Усі права захищені.')} <small className="site-version">{t('Версія')} {appVersion}</small></span><span>{t(contacts.owner)} · <a href={'mailto:'+contacts.email}>{contacts.email}</a></span></div></footer>
 }
 
 export function SupportBubble(){

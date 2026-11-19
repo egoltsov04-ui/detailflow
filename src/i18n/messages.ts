@@ -2059,6 +2059,19 @@ Email не вказано|Email not provided
 Додайте пости в налаштуваннях студії.|Add bays in studio settings.
 Зайнятий пост не можна прибрати. Спочатку завершіть роботу або перенесіть замовлення на інший пост.|An occupied bay cannot be removed. Complete the work or move the order to another bay first.
 Не вдалося завантажити пости студії. Перевірте підключення та оновлення бази.|Could not load studio bays. Check the connection and database updates.
+STAGING — тестова версія|STAGING — test version
+Подивитися відео|Watch the video
+Відео: як працює Detailflow|Video: how Detailflow works
+Отримати консультацію|Get a consultation
+Як підключитися|How to get started
+Старт за кілька днів|Start in a few days
+Залишаєте заявку|Leave a request
+2 хвилини, без оплати.|2 minutes, no payment.
+Налаштовуємо вашу студію|We set up your studio
+Внесемо послуги, майстрів і перенесемо клієнтів.|We add your services and masters and move your clients.
+Запуск|Launch
+Покажемо команді, з чого почати. 5 днів безкоштовно.|We show your team where to start. 5 days free.
+Версія|Version
 `;
 
 export const messages:Record<string,string>=Object.fromEntries(rows.trim().split('\n').map(row=>{
