@@ -28,3 +28,11 @@ test('observed outcomes use the action date and stop at 90 days, without causal 
  const d=empty();d.outcomes=[{id:'x',kind:'return',target:'client',at:'2026-06-01T00:00Z',evidence:{}}];d.orders=[{id:'1',client_id:'client',value:100,at:'2026-05-30T00:00Z'},{id:'2',client_id:'client',value:200,at:'2026-06-20T00:00Z'},{id:'3',client_id:'client',value:500,at:'2026-10-01T00:00Z'}]
  const r=recommendationOutcomes(d)[0];assert.equal(r.visits,1);assert.equal(r.value,200);assert.equal(r.complete,true)
 })
+test('orders without a booking count as visits and no-shows in the team report, but never in capacity (migration 075)',()=>{
+ const d=empty();d.staff=[{id:'a',name:'A',active:true}]
+ d.appointments=[{id:'b1',staff_id:'a',start:'2026-10-04T07:00Z',end:'2026-10-04T08:00Z',status:'completed'}]
+ d.walk_ins=[{id:'w1',staff_id:'a',at:'2026-10-04T09:00Z',status:'no_show'},{id:'w2',staff_id:'a',at:'2026-10-04T10:00Z',status:'visit'},{id:'w3',staff_id:'a',at:'2026-10-04T11:00Z',status:'cancelled'},{id:'w4',staff_id:null,at:'2026-10-04T12:00Z',status:'no_show'}]
+ const report=operationsReport(d),[row]=report.rows
+ assert.deepEqual([row.appointments,row.no_shows,row.cancelled],[3,1,1]);assert.equal(Math.round(row.no_show_rate),33);assert.equal(report.unassigned,1)
+ assert.deepEqual(operationsReport({...d,walk_ins:undefined}).rows[0].no_show_rate,0)
+})

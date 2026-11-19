@@ -7,21 +7,24 @@ export type IntelligenceData={as_of:string;timezone:string;from:string;to:string
  shifts:{staff_id:string;start:string;end:string;breaks:{from:string;to:string}[]}[];
  sessions:{staff_id:string|null;start:string;end:string}[];
  services:{id:string;name:string;price:number;variants:{id:string;name:string;price:number}[]}[];
- outcomes:{id:string;kind:string;target:string;at:string;evidence:Record<string,unknown>}[]}
+ outcomes:{id:string;kind:string;target:string;at:string;evidence:Record<string,unknown>}[];
+ // Orders without a booking (studio_walk_in_visits): they count as visits and no-shows in the team report, not in capacity.
+ walk_ins?:{id:string;staff_id:string|null;at:string;status:'visit'|'no_show'|'cancelled'}[]}
 const day=86400000,min=60000,stamp=(v:string)=>Date.parse(v),clip=(v:number,lo:number,hi:number)=>Math.max(lo,Math.min(hi,v))
 const sum=(rows:Interval[])=>mergeIntervals(rows).reduce((n,r)=>n+r.end-r.start,0)
 const interval=(start:string,end:string,lo:number,hi:number):Interval=>({start:Math.max(stamp(start)/min,lo),end:Math.min(stamp(end)/min,hi)})
 export function operationsReport(data:IntelligenceData){
  const lo=studioDateTime(data.from,'00:00',data.timezone).getTime()/min,next=new Date(data.to+'T12:00Z');next.setUTCDate(next.getUTCDate()+1)
  const hi=Math.min(stamp(data.as_of)/min,studioDateTime(next.toISOString().slice(0,10),'00:00',data.timezone).getTime()/min)
+ const visits=[...data.appointments,...(data.walk_ins||[]).map(w=>({id:w.id,staff_id:w.staff_id,start:w.at,end:w.at,status:w.status}))]
  const rows=data.staff.map(s=>{
   const shifts=data.shifts.filter(r=>r.staff_id===s.id).flatMap(r=>dayCapacity([interval(r.start,r.end,lo,hi)],r.breaks.map(b=>interval(b.from,b.to,lo,hi))).free)
   const work=data.sessions.filter(r=>r.staff_id===s.id).map(r=>interval(r.start,r.end,lo,hi)),actual=dayCapacity(shifts,work)
-  const bookings=data.appointments.filter(a=>a.staff_id===s.id&&stamp(a.start)/min>=lo&&stamp(a.start)/min<hi)
+  const bookings=visits.filter(a=>a.staff_id===s.id&&stamp(a.start)/min>=lo&&stamp(a.start)/min<hi)
   const eligible=bookings.filter(a=>a.status!=='cancelled'&&a.status!=='pending'),missed=eligible.filter(a=>a.status==='no_show').length
   return {id:s.id,name:s.name,attendance:actual.total,worked:actual.used,outside_shift:Math.max(0,sum(work)-actual.used),utilization:actual.total?actual.used/actual.total*100:null,appointments:eligible.length,no_shows:missed,no_show_rate:eligible.length?100*missed/eligible.length:null,cancelled:bookings.filter(a=>a.status==='cancelled').length}
  })
- return {rows,unassigned:data.appointments.filter(a=>!a.staff_id&&stamp(a.start)/min>=lo&&stamp(a.start)/min<hi&&a.status==='no_show').length}
+ return {rows,unassigned:visits.filter(a=>!a.staff_id&&stamp(a.start)/min>=lo&&stamp(a.start)/min<hi&&a.status==='no_show').length}
 }
 export function futureCapacity(data:IntelligenceData){
  const now=stamp(data.as_of)/min,today=new Intl.DateTimeFormat('en-CA',{timeZone:data.timezone,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(data.as_of)),end=now+14*1440
