@@ -1,6 +1,6 @@
 import {t} from '../i18n/core'
 import {parseVehicle,type VehicleInfo} from '../lib/vehicle'
-import type {CarBrand} from '../lib/carBrands'
+import {carBrands,type CarBrand} from '../lib/carBrands'
 
 /** One-colour brand mark (loaded on demand from /brands) or the brand letters in a circle. */
 export function BrandMark({brand}:{brand:CarBrand|null}){
@@ -21,3 +21,6 @@ export function VehicleTag({label,make,model,plate,className='',as:Tag='span'}:{
   if(!v.name&&!v.plate)return null
   return <Tag className={'vehicle-tag '+className}><BrandMark brand={v.brand}/>{v.name&&<span className="vehicle-name">{v.name}</span>}<Plate text={v.plate} ua={v.uaPlate}/></Tag>
 }
+
+/** Brand suggestions for car fields (`list="car-brands"`), rendered once at the app root. */
+export function CarBrandOptions(){return <datalist id="car-brands">{carBrands.map(b=><option key={b.key} value={b.title}/>)}</datalist>}

@@ -2072,6 +2072,27 @@ STAGING — тестова версія|STAGING — test version
 Запуск|Launch
 Покажемо команді, з чого почати. 5 днів безкоштовно.|We show your team where to start. 5 days free.
 Версія|Version
+Причина|Reason
+Причина (необов’язково)|Reason (optional)
+Причина скасування|Cancellation reason
+Скасувати запис?|Cancel this booking?
+Позначити, що клієнт не прийшов?|Mark that the client did not come?
+Відхилити заявку цього клієнта?|Decline this client's request?
+Клієнт передумав|Client changed their mind
+Не відповідає на дзвінки|Does not answer calls
+Переніс на інший день|Moved to another day
+Запізнився, не встигли|Came late, no time left
+Немає вільного часу|No free time
+Показати чек|Show receipt
+Акт виконаних робіт|Work completion act
+Акт виконаних робіт № DF-|Work completion act No. DF-
+Замовник|Customer
+Роботи виконано в повному обсязі та в строк. Замовник претензій щодо обсягу, якості та строків не має.|The work has been completed in full and on time. The customer has no claims regarding scope, quality or timing.
+Реквізити для документів|Details for documents
+ФОП Прізвище І. П., ІПН або ЄДРПОУ, IBAN|Sole proprietor name, tax ID or EDRPOU, IBAN
+Друкуються в акті виконаних робіт. Необов’язково.|Printed on the work completion act. Optional.
+Клієнт не приїхав|Client did not come
+Скасувати запис|Cancel booking
 `;
 
 export const messages:Record<string,string>=Object.fromEntries(rows.trim().split('\n').map(row=>{
