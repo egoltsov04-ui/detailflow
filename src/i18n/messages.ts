@@ -1,5 +1,6 @@
 // Display strings only. Database status codes, option values and customer data stay unchanged.
 const rows=`
+Фото й відео додає майстер під час роботи|Photos and videos are added by the professional during the work
 Вивантаження даних|Data export
 Немає даних|No data
 Вивантажити дані студії|Export studio data
