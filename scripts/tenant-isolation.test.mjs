@@ -317,3 +317,27 @@ test('a no-show stays no_show when its order is cancelled, a cancellation still 
  assert.deepEqual((await q(`select a.status a,o.status o,a.status_reason r from appointments a join work_orders o on o.appointment_id=a.id where a.id=$1`,[missed]))[0],{a:'no_show',o:'cancelled',r:'Не відповідає на дзвінки'})
  assert.deepEqual((await q(`select a.status a,o.status o from appointments a join work_orders o on o.appointment_id=a.id where a.id=$1`,[cancelled]))[0],{a:'cancelled',o:'cancelled'})
 })
+
+test('cancel or no-show for any order whose work has not started, own studio only (migration 075)',async t=>{
+ const db=await schema();t.after(()=>db.close());await seed(db)
+ const q=async(s,p)=>(await db.query(s,p)).rows
+ const [walkIn,booked,appt]=[id(95),id(96),id(97)]
+ await db.exec(`insert into work_orders(id,tenant_id,client_id,title,total,status) values('${walkIn}','${A}','${id(41)}','Walk-in',500,'new');
+ insert into work_order_jobs(tenant_id,work_order_id,title,status,price) values('${A}','${walkIn}','Wash','new',500);
+ insert into appointments(id,tenant_id,client_id,starts_at,ends_at,status,source) values('${appt}','${A}','${id(41)}',now()+interval '1 day',now()+interval '25 hours','confirmed','admin');
+ insert into work_orders(id,tenant_id,client_id,appointment_id,title,total,status) values('${booked}','${A}','${id(41)}','${appt}','Booked',500,'new');`)
+ async function as(user,fn){await db.exec(`reset role;select set_config('request.jwt.claim.sub','${user}',false);select set_config('request.jwt.claims','{"sub":"${user}","role":"authenticated","aal":"aal1"}',false);set role authenticated;`);try{return await fn()}finally{await db.exec('reset role')}}
+ await assert.rejects(as(OWNER_B,()=>q(`select cancel_work_order($1,'no_show','x')`,[walkIn])),/не знайдено/)
+ await assert.rejects(as(MASTER,()=>q(`select cancel_work_order($1,'no_show','x')`,[walkIn])),/не знайдено/)
+ // the guard still blocks a plain status change
+ await assert.rejects(as(OWNER,()=>q(`update work_orders set status='cancelled' where id=$1`,[walkIn])),/Статус визначається/)
+ await as(OWNER,()=>q(`select cancel_work_order($1,'no_show','Не відповідає на дзвінки')`,[walkIn]))
+ assert.deepEqual((await q(`select status,cancel_kind k,cancel_reason r from work_orders where id=$1`,[walkIn]))[0],{status:'cancelled',k:'no_show',r:'Не відповідає на дзвінки'})
+ await as(OWNER,()=>q(`select cancel_work_order($1,'cancelled','Клієнт передумав')`,[booked]))
+ assert.deepEqual((await q(`select a.status a,a.status_reason r,o.status o,o.cancel_kind k from work_orders o join appointments a on a.id=o.appointment_id where o.id=$1`,[booked]))[0],{a:'cancelled',r:'Клієнт передумав',o:'cancelled',k:'cancelled'})
+ await db.exec(`set session_replication_role=replica;update work_order_jobs set status='in_progress' where id='${id(71)}';set session_replication_role=origin;`)
+ await assert.rejects(as(OWNER,()=>q(`select cancel_work_order($1,'no_show','')`,[id(51)])),/вже почали/)
+ const [{v}]=await as(ADMIN_FIN,()=>q(`select studio_walk_in_visits($1,current_date-1,current_date+1) v`,[A]))
+ assert.deepEqual(v.filter(x=>x.id===walkIn).map(x=>x.status),['no_show'])
+ await assert.rejects(as(ADMIN,()=>q(`select studio_walk_in_visits($1,current_date-1,current_date+1)`,[A])),/Access denied/)
+})

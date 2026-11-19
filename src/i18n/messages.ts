@@ -1,5 +1,8 @@
 // Display strings only. Database status codes, option values and customer data stay unchanged.
 const rows=`
+Скасувати замовлення|Cancel order
+Скасувати замовлення?|Cancel this order?
+Роботу вже почали. Скасувати можна лише замовлення, роботу за яким ще не починали|Work has already started. Only an order whose work has not started can be cancelled
 Фото й відео додає майстер під час роботи|Photos and videos are added by the professional during the work
 Вивантаження даних|Data export
 Немає даних|No data
