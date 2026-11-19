@@ -22,7 +22,7 @@ import { Plus, X } from 'lucide-react'
 
 export type WorkOrderStatus = 'new'|'assigned'|'in_progress'|'waiting'|'review'|'ready'|'issued'|'cancelled'
 export type ChecklistItem = {id:string;title:string;done:boolean}
-export type WorkOrder = {postId?:string|null;startedAt?:string|null;plannedMinutes?:number|null;catalogServices?:{service_id:string;variant_id:string;expected_price:number}[];appointmentId?:string|null;id:string|number;clientId:string|number;clientName:string;staffId:string|number|null;staffName:string;title:string;vehicle:string;serviceSummary:string;status:WorkOrderStatus;total:number;deposit:number;dueAt:string;notes:string;createdAt:string;statusChangedAt:string;checklist:ChecklistItem[];compensationPercent:number|null;compensationFixed:number|null;submittedForReviewAt:string;reviewNote:string}
+export type WorkOrder = {cancelReason?:string;postId?:string|null;startedAt?:string|null;plannedMinutes?:number|null;catalogServices?:{service_id:string;variant_id:string;expected_price:number}[];appointmentId?:string|null;id:string|number;clientId:string|number;clientName:string;staffId:string|number|null;staffName:string;title:string;vehicle:string;serviceSummary:string;status:WorkOrderStatus;total:number;deposit:number;dueAt:string;notes:string;createdAt:string;statusChangedAt:string;checklist:ChecklistItem[];compensationPercent:number|null;compensationFixed:number|null;submittedForReviewAt:string;reviewNote:string}
 type Person={id:string|number;name:string;car?:string}
 export type WorkOrderPayment = {requestId:string;amount:number;method:'Картка'|'Готівка'|'Переказ';date:string;note:string}
 
