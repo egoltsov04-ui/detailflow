@@ -53,7 +53,7 @@ export default function SupportStudios({previewStore,initialStudio=''}:{initialS
 }
 
 // Deletes the whole studio: the database checks support rights, a fresh password with 2FA and the exact name.
-function DeleteStudio({studio,demo,busy,setBusy,secure,done,fail}:{studio:Studio;demo:boolean;busy:boolean;setBusy:(v:boolean)=>void;secure:(fn:()=>Promise<void>)=>void;done:(text:string)=>void;fail:(text:string)=>void}){
+function DeleteStudio({studio,demo,busy,setBusy,secure,done,fail}:{studio:Studio;demo:boolean;busy:boolean;setBusy:(v:boolean)=>void;secure:(fn:()=>Promise<void>,strict?:boolean)=>void;done:(text:string)=>void;fail:(text:string)=>void}){
  const [preview,setPreview]=useState<{orders:number;clients:number;photos:number;accounts:number;support:boolean}|null>(null),[name,setName]=useState('')
  useEffect(()=>{if(demo||!supabase)return;let live=true;void supabase.rpc('support_studio_deletion_preview',{studio:studio.id}).then(({data,error})=>{if(!live)return;if(error)fail(error.message);else setPreview(data)});return()=>{live=false}},[studio.id,demo])
  async function remove(){setBusy(true);fail('');try{
@@ -65,7 +65,7 @@ function DeleteStudio({studio,demo,busy,setBusy,secure,done,fail}:{studio:Studio
  if(demo)return <p>{t('Видалення перевіряється з підключеною базою')}</p>
  if(!preview)return <p role="status">{t('Завантажуємо студії…')}</p>
  if(preview.support)return <p>{t('Службову студію підтримки видалити не можна')}</p>
- return <form className="support-delete-studio" onSubmit={e=>{e.preventDefault();secure(remove)}}><h3>{t('Буде видалено назавжди')}</h3>
+ return <form className="support-delete-studio" onSubmit={e=>{e.preventDefault();secure(remove,true)}}><h3>{t('Буде видалено назавжди')}</h3>
   <ul><li>{t('Замовлень')}: <b>{preview.orders}</b></li><li>{t('Клієнтів')}: <b>{preview.clients}</b></li><li>{t('Фото')}: <b>{preview.photos}</b></li><li>{t('Акаунтів співробітників без інших студій')}: <b>{preview.accounts}</b></li></ul>
   <p>{t('Усі дані студії, її фото та ці акаунти буде видалено без можливості відновлення в застосунку. У зашифрованих резервних копіях дані зберігаються до 90 днів.')}</p>
   <FormField>{t('Введіть назву студії для підтвердження')}<input required value={name} onChange={e=>setName(e.target.value)} placeholder={studio.name} autoComplete="off"/></FormField>
@@ -73,7 +73,7 @@ function DeleteStudio({studio,demo,busy,setBusy,secure,done,fail}:{studio:Studio
 }
 
 // Downloads every table of the studio as one spreadsheet: one sheet per table, columns as in the database.
-function ExportStudio({studio,demo,busy,setBusy,secure,done,fail}:{studio:Studio;demo:boolean;busy:boolean;setBusy:(v:boolean)=>void;secure:(fn:()=>Promise<void>)=>void;done:(text:string)=>void;fail:(text:string)=>void}){
+function ExportStudio({studio,demo,busy,setBusy,secure,done,fail}:{studio:Studio;demo:boolean;busy:boolean;setBusy:(v:boolean)=>void;secure:(fn:()=>Promise<void>,strict?:boolean)=>void;done:(text:string)=>void;fail:(text:string)=>void}){
  async function download(){setBusy(true);fail('');try{
   if(!supabase)throw new Error(t('Немає з’єднання'))
   const r=await supabase.rpc('support_export_studio',{studio:studio.id});if(r.error)throw r.error
@@ -84,5 +84,5 @@ function ExportStudio({studio,demo,busy,setBusy,secure,done,fail}:{studio:Studio
   done(t('Файл із даними студії завантажено'))
  }catch(e){fail((e as Error).message)}finally{setBusy(false)}}
  if(demo)return <p>{t('Вивантаження перевіряється з підключеною базою')}</p>
- return <div className="support-export-studio"><p>{t('Усі дані студії одним файлом Excel: клієнти, авто, записи, замовлення, оплати, фінанси, склад, команда. Фото не входять. Вивантаження записується в журнал студії.')}</p><button className="primary" disabled={busy} onClick={()=>secure(download)}>{t('Вивантажити дані студії')}</button></div>
+ return <div className="support-export-studio"><p>{t('Усі дані студії одним файлом Excel: клієнти, авто, записи, замовлення, оплати, фінанси, склад, команда. Фото не входять. Вивантаження записується в журнал студії.')}</p><button className="primary" disabled={busy} onClick={()=>secure(download,true)}>{t('Вивантажити дані студії')}</button></div>
 }
