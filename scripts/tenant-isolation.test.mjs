@@ -239,6 +239,7 @@ test('support deletes a whole studio; other studios, guards and the support stud
  insert into tenants(id,name,slug,is_internal) values('${SERVICE}','Detailflow Support','support-x',true);insert into tenant_memberships(tenant_id,user_id,role) values('${SERVICE}','${SUPPORT}','super_admin');
  update work_order_jobs set attachments='[{"path":"x"}]' where id='${id(71)}';update work_orders set approved_at=now() where id='${id(51)}';
  insert into storage.objects(bucket_id,name) values('job-photos','${A}/job/photo.jpg'),('job-photos','${B}/job/photo.jpg');
+ insert into studio_posts(id,studio_id,name,position) values('${id(98)}','${A}','Post 1',1);update work_orders set post_id='${id(98)}',deposit=500 where id='${id(51)}';
  insert into payments(id,studio_id,amount,method,paid_on,months_added,period_from,period_to,created_by) values(gen_random_uuid(),'${A}',590,'transfer','2026-11-01',1,'2026-11-01','2026-12-01','${SUPPORT}');set session_replication_role=origin;`)
  const claims=(user,aal)=>JSON.stringify({sub:user,role:'authenticated',aal,amr:[{method:'password',timestamp:Math.floor(Date.now()/1000)}]})
  async function as(user,fn,aal='aal2'){await db.exec(`reset role;select set_config('request.jwt.claim.sub','${user}',false);select set_config('request.jwt.claims','${claims(user,aal)}',false);set role authenticated;`);try{return await fn()}finally{await db.exec('reset role')}}
