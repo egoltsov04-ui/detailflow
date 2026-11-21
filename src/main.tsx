@@ -13,6 +13,8 @@ import './ux-polish.css'
 import './styles/components.css'
 import { entryRoute } from './lib/entryRoute'
 import StagingBadge from './components/StagingBadge'
+import {captureUtm} from './lib/utm'
+captureUtm()
 import {CarBrandOptions} from './components/VehicleTag'
 
 document.documentElement.lang=getLocale()

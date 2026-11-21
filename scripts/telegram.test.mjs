@@ -37,12 +37,14 @@ test('Telegram queue: staff get a short text, clients their booking; blocked cha
  env(t,base)
  const starts=new Date(Date.now()+3*3600000).toISOString(),finish=[],unbound=[],sent=[]
  let jobs=[],status='confirmed',member=true,sendError=null
- const rows={telegram_chats:{chat_id:77,locale:'uk'},tenant_memberships:()=>member?{role:'owner'}:null,appointments:()=>({status,starts_at:starts,appointment_services:[{service_name:'Мийка'}],tenants:{name:'Shine & Co',timezone:'Europe/Kyiv',phone:'380501112233',address:'Київ, вул. Хрещатик, 1'}})}
+ const rows={telegram_chats:{chat_id:77,locale:'uk'},tenant_memberships:()=>member?{role:'owner'}:null,studio_access_requests:{studio_name:'Shine <&> Co',selected_plan:'studio',utm:{source:'instagram',campaign:'reels'}},appointments:()=>({status,starts_at:starts,appointment_services:[{service_name:'Мийка'}],tenants:{name:'Shine & Co',timezone:'Europe/Kyiv',phone:'380501112233',address:'Київ, вул. Хрещатик, 1'}})}
  const db={rpc:async(name,args)=>{if(name==='claim_notifications')return {data:jobs};if(name==='finish_notification'){finish.push(args);return {data:true}};if(name==='telegram_unbind'){unbound.push(args.chat_input);return {data:1}};return {data:null}},
   from(table){const chain={select(){return chain},eq(){return chain},maybeSingle:async()=>({data:typeof rows[table]==='function'?rows[table]():rows[table]})};return chain}}
  const send=async(chat,text)=>{if(sendError)throw sendError;sent.push([chat,text])}
  jobs=[{id:'1',claim_token:'c',tenant_id:'s',kind:'work_assigned',recipient_user_id:'u',payload:{}}]
  assert.deepEqual(await lib.deliverTelegramQueue(db,send),{configured:true,sent:1});assert.equal(sent[0][0],77);assert.match(sent[0][1],/^<b>Призначено нову роботу<\/b>\nДеталі в застосунку: https:\/\/app\.example\.com\/app/)
+ jobs=[{id:'9',claim_token:'c',tenant_id:'s',kind:'studio_application',recipient_user_id:'u',payload:{request_id:'r'}}];await lib.deliverTelegramQueue(db,send);assert.match(sent.at(-1)[1],/^<b>Нова заявка на підключення<\/b>\nShine &lt;&amp;&gt; Co · studio\nДжерело: instagram \/ reels\nhttps?:\/\/.+\/admin$/);sent.pop()
+ jobs=[{id:'1',claim_token:'c',tenant_id:'s',kind:'work_assigned',recipient_user_id:'u',payload:{}}]
  member=false;await lib.deliverTelegramQueue(db,send);assert.equal(finish.at(-1).status_input,'cancelled');assert.equal(sent.length,1)
  jobs=[{id:'2',claim_token:'c',tenant_id:'s',kind:'booking_confirmed',recipient_user_id:null,payload:{appointment_id:'a'}}]
  await lib.deliverTelegramQueue(db,send);assert.match(sent.at(-1)[1],/^<b>Запис підтверджено<\/b>\n\n<b>Shine &amp; Co<\/b>\nКоли: .+\nПослуга: Мийка\nАдреса: <a href="https:\/\/www\.google\.com\/maps\/search\/\?api=1&amp;query=.+">Київ, вул\. Хрещатик, 1<\/a>\nТелефон: \+380501112233\n\nВідписатися від повідомлень: \/stop$/)

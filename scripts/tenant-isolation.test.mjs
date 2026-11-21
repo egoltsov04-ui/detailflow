@@ -341,3 +341,26 @@ test('cancel or no-show for any order whose work has not started, own studio onl
  assert.deepEqual(v.filter(x=>x.id===walkIn).map(x=>x.status),['no_show'])
  await assert.rejects(as(ADMIN,()=>q(`select studio_walk_in_visits($1,current_date-1,current_date+1)`,[A])),/Access denied/)
 })
+
+test('UTM marks reach the application, support signs in once, deleting still asks for the password, Telegram on new applications (migration 076)',async t=>{
+ const db=await schema();t.after(()=>db.close());await seed(db)
+ const q=async(s,p)=>(await db.query(s,p)).rows
+ const SUPPORT=id(93),SERVICE=id(94),NEW_OWNER=id(95)
+ await db.exec(`set session_replication_role=replica;insert into auth.users(id,email,email_confirmed_at) values('${SUPPORT}','s2@x.test',now());insert into profiles(id,full_name) values('${SUPPORT}','Support');
+ insert into tenants(id,name,slug,is_internal) values('${SERVICE}','Detailflow Support','support-y',true);insert into tenant_memberships(tenant_id,user_id,role) values('${SERVICE}','${SUPPORT}','super_admin');
+ insert into telegram_chats(chat_id,user_id) values(555,'${SUPPORT}');set session_replication_role=origin;`)
+ // Signup: known marks only, cut to 100 characters
+ await db.query(`insert into auth.users(id,email,raw_user_meta_data) values($1,'new@x.test',$2)`,[NEW_OWNER,JSON.stringify({requested_role:'owner',studio_name:'Utm Studio',selected_plan:'pro',utm:{source:'instagram',campaign:'x'.repeat(150),evil:'drop',medium:7}})])
+ const [app]=await q(`select id,selected_plan,utm from studio_access_requests where user_id=$1`,[NEW_OWNER])
+ assert.equal(app.selected_plan,'pro');assert.deepEqual(app.utm,{source:'instagram',campaign:'x'.repeat(100)})
+ assert.deepEqual(await q(`select kind,recipient_user_id u,tenant_id s,payload->>'request_id' r from notification_jobs where channel='telegram' and kind='studio_application'`),[{kind:'studio_application',u:SUPPORT,s:SERVICE,r:app.id}])
+ const claims=(age)=>JSON.stringify({sub:SUPPORT,role:'authenticated',aal:'aal2',amr:[{method:'password',timestamp:Math.floor(Date.now()/1000)-age}]})
+ async function as(age,fn){await db.exec(`reset role;select set_config('request.jwt.claim.sub','${SUPPORT}',false);select set_config('request.jwt.claims','${claims(age)}',false);set role authenticated;`);try{return await fn()}finally{await db.exec('reset role')}}
+ // An hour after the password: reading and ordinary changes work, deleting a studio asks for the password again
+ await as(3600,()=>q(`select support_contact_application($1,'Called')`,[app.id]))
+ await assert.rejects(as(3600,()=>q(`select support_delete_studio('${A}','A')`)),/Підтвердіть пароль/)
+ // After 8 hours support has to sign in again
+ await assert.rejects(as(9*3600,()=>q(`select support_contact_application($1,'Again')`,[app.id])),/Потрібні права/)
+ // Support can create its Telegram link
+ assert.match((await as(0,()=>q(`select create_my_telegram_link() t`)))[0].t,/^[a-f0-9]{32}$/)
+})

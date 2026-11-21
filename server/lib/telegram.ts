@@ -45,7 +45,11 @@ export async function deliverTelegramQueue(db:SupabaseClient,send=sendTelegram){
     const membership=await db.from('tenant_memberships').select('role').eq('user_id',job.recipient_user_id).eq('tenant_id',job.tenant_id).eq('active',true).maybeSingle();if(membership.error)throw membership.error
     let active=!!membership.data
     if(membership.data?.role==='master'){const member=await db.from('staff_profiles').select('id').eq('user_id',job.recipient_user_id).eq('tenant_id',job.tenant_id).eq('active',true).maybeSingle();if(member.error)throw member.error;active=!!member.data}
-    if(active&&link.data){const i=link.data.locale==='en'?1:0;chat=Number(link.data.chat_id);text=`<b>${(staffTitles[job.kind]||['Detailflow','Detailflow'])[i]}</b>\n${['Деталі в застосунку:','Details in the app:'][i]} ${appUrl('/app')}`}
+    if(active&&link.data){const i=link.data.locale==='en'?1:0;chat=Number(link.data.chat_id);text=`<b>${(staffTitles[job.kind]||['Detailflow','Detailflow'])[i]}</b>\n${['Деталі в застосунку:','Details in the app:'][i]} ${appUrl('/app')}`
+     // Support: the new application in one message, with where the studio came from.
+     if(job.kind==='studio_application'){const r=await db.from('studio_access_requests').select('studio_name,selected_plan,utm').eq('id',job.payload?.request_id).maybeSingle();if(r.error)throw r.error
+      const source=[r.data?.utm?.source,r.data?.utm?.campaign].filter(Boolean).join(' / ')
+      text=[`<b>${['Нова заявка на підключення','New studio application'][i]}</b>`,r.data?`${escapeHtml(r.data.studio_name)} · ${escapeHtml(r.data.selected_plan)}`:'',source?`${['Джерело','Source'][i]}: ${escapeHtml(source)}`:'',appUrl('/admin')].filter(Boolean).join('\n')}}
    }else{
     const link=await db.from('telegram_chats').select('chat_id').eq('appointment_id',job.payload?.appointment_id).maybeSingle();if(link.error)throw link.error
     const found=await db.from('appointments').select('status,starts_at,appointment_services(service_name),tenants(name,timezone,phone,address)').eq('id',job.payload?.appointment_id).eq('tenant_id',job.tenant_id).maybeSingle();if(found.error)throw found.error
