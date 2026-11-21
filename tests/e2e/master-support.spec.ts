@@ -12,10 +12,9 @@ for(const status of ['assigned','in_progress','waiting','review','approved'])tes
  await noOverflow(page);await page.screenshot({path:info.outputPath('stage.png'),fullPage:true})
 })
 test('return notification opens work and daily view avoids history',async({page})=>{await mockService(page,'master',{status:'waiting',reason:'Повторіть перевірку'});await page.goto('/app');await expect(page.getByRole('button',{name:'Відкрити замовлення',exact:true})).toHaveCount(0);await page.getByRole('button',{name:'Сповіщення',exact:true}).click();await page.locator('.master-return-notification').click();await expect(page.locator('.master-return')).toContainText('Повторіть перевірку')})
-test('support summary, table, payment and password confirmation',async({page},info)=>{
+test('support summary, table and payment without a second password',async({page},info)=>{
  const calls=await mockService(page,'super_admin');await page.goto('/admin');await expect(page.getByRole('heading',{name:'Стан платформи',exact:true})).toBeVisible();await expect(page.getByText('1 970 ₴',{exact:true})).toBeVisible()
- await page.getByRole('button',{name:'Студії та підписки',exact:true}).click();await expect(page.locator('.ui-table')).toBeVisible();await page.getByRole('button',{name:'Нова студія без підписки',exact:true}).click();await page.getByRole('button',{name:'Додати оплачений період',exact:true}).click();await page.getByLabel('Сума, ₴',{exact:true}).fill('690');await page.getByRole('button',{name:'Зберегти оплату та продовжити'}).click();await expect(page.getByRole('heading',{name:'Підтвердіть зміну доступу'})).toBeVisible();expect(calls.some(c=>c.name==='support_add_payment')).toBe(false)
- await page.getByLabel('Пароль',{exact:true}).fill('Test-password');await page.getByRole('button',{name:'Підтвердити',exact:true}).click();await page.getByLabel('Код автентифікації').fill('123456');await page.getByRole('button',{name:'Підтвердити',exact:true}).click();await expect(page.getByText('Оплату збережено, доступ продовжено',{exact:true})).toBeVisible();expect(calls.filter(c=>c.name==='support_add_payment')).toHaveLength(1);await noOverflow(page);await page.screenshot({path:info.outputPath('support.png'),fullPage:true})
+ await page.getByRole('button',{name:'Студії та підписки',exact:true}).click();await expect(page.locator('.ui-table')).toBeVisible();await page.getByRole('button',{name:'Нова студія без підписки',exact:true}).click();await page.getByRole('button',{name:'Додати оплачений період',exact:true}).click();await page.getByLabel('Сума, ₴',{exact:true}).fill('690');await page.getByRole('button',{name:'Зберегти оплату та продовжити'}).click();await expect(page.getByText('Оплату збережено, доступ продовжено',{exact:true})).toBeVisible();expect(calls.filter(c=>c.name==='support_add_payment')).toHaveLength(1);await noOverflow(page);await page.screenshot({path:info.outputPath('support.png'),fullPage:true})
 })
 test('support requires TOTP before loading studios',async({page})=>{const calls=await mockService(page,'super_admin',{aal:'aal1'});await page.goto('/admin');await expect(page.getByRole('heading',{name:'Захищений вхід підтримки'})).toBeVisible();expect(calls.some(c=>c.name==='support_studios_page'||c.name==='support_platform_summary')).toBe(false);await noOverflow(page)})
 test('support workspace tabs, status badges and studio table stay styled and readable',async({page},info)=>{
@@ -33,7 +32,9 @@ test('support workspace tabs, status badges and studio table stay styled and rea
 })
 test('support TOTP setup keeps the QR visible until the first code is verified',async({page})=>{
  await mockService(page,'super_admin',{aal:'aal1',totpSetup:true})
- await page.goto('/admin');await page.getByRole('textbox',{name:'Пароль',exact:true}).fill('Test-password');await page.getByRole('button',{name:'Підтвердити',exact:true}).click()
+ await page.goto('/admin')
+ // The password was just entered on the login page: straight to the code
+ await expect(page.getByRole('textbox',{name:'Пароль',exact:true})).toHaveCount(0)
  const qr=page.getByRole('img',{name:'QR-код двофакторного входу'});await expect(qr).toBeVisible();await expect(page.getByLabel('Код автентифікації')).toBeVisible()
  await page.waitForTimeout(11000);await expect(qr).toBeVisible();await expect(page.getByLabel('Код автентифікації')).toBeVisible()
 })

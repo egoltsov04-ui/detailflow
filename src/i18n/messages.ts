@@ -176,7 +176,7 @@ Excel або CSV з прикладами та поясненнями колон�
 Завантаження файлу|File upload
 Підтвердіть зміну доступу|Confirm access change
 Захищений вхід підтримки|Secure support sign-in
-Для підтримки потрібні пароль і код із застосунку автентифікації. Сесія діє 30 хвилин, блокування після 15 хвилин бездіяльності.|Support requires a password and authenticator code. Sessions last 30 minutes and lock after 15 minutes of inactivity.
+Для підтримки потрібні пароль і код із застосунку автентифікації. Вхід діє 8 годин, блокування після 30 хвилин бездіяльності. Видалення та вивантаження даних студії потребують повторного підтвердження.|Support requires a password and an authenticator code. Sign-in lasts 8 hours and locks after 30 minutes of inactivity. Deleting or exporting a studio asks for confirmation again.
 Додайте цей QR-код у застосунок автентифікації.|Add this QR code to your authenticator app.
 QR-код двофакторного входу|Two-factor authentication QR code
 Ключ для ручного введення|Manual setup key
@@ -2097,6 +2097,7 @@ STAGING — тестова версія|STAGING — test version
 Друкуються в акті виконаних робіт. Необов’язково.|Printed on the work completion act. Optional.
 Клієнт не приїхав|Client did not come
 Скасувати запис|Cancel booking
+5 днів безкоштовно, тариф можна змінити пізніше.|5 days free, you can change the plan later.
 `;
 
 export const messages:Record<string,string>=Object.fromEntries(rows.trim().split('\n').map(row=>{
