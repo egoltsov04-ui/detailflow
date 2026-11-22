@@ -69,7 +69,7 @@ function DeleteStudio({studio,demo,busy,setBusy,secure,done,fail}:{studio:Studio
   <ul><li>{t('Замовлень')}: <b>{preview.orders}</b></li><li>{t('Клієнтів')}: <b>{preview.clients}</b></li><li>{t('Фото')}: <b>{preview.photos}</b></li><li>{t('Акаунтів співробітників без інших студій')}: <b>{preview.accounts}</b></li></ul>
   <p>{t('Усі дані студії, її фото та ці акаунти буде видалено без можливості відновлення в застосунку. У зашифрованих резервних копіях дані зберігаються до 90 днів.')}</p>
   <FormField>{t('Введіть назву студії для підтвердження')}<input required value={name} onChange={e=>setName(e.target.value)} placeholder={studio.name} autoComplete="off"/></FormField>
-  <button className="danger-btn" disabled={busy||name.trim()!==studio.name}>{t('Видалити студію назавжди')}</button></form>
+  <button className="danger-btn" disabled={busy||name.trim()!==studio.name.trim()}>{t('Видалити студію назавжди')}</button></form>
 }
 
 // Downloads every table of the studio as one spreadsheet: one sheet per table, columns as in the database.
