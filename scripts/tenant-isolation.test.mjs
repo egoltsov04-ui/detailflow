@@ -365,3 +365,17 @@ test('UTM marks reach the application, support signs in once, deleting still ask
  // Support can create its Telegram link
  assert.match((await as(0,()=>q(`select create_my_telegram_link() t`)))[0].t,/^[a-f0-9]{32}$/)
 })
+
+test('a studio whose name ends with a space can be deleted; new applications store the name trimmed (migration 078)',async t=>{
+ const db=await schema();t.after(()=>db.close());await seed(db)
+ const q=async(s,p)=>(await db.query(s,p)).rows
+ const SUPPORT=id(99),SERVICE=id(100),SPACED=id(101),APPLICANT=id(102)
+ await db.exec(`set session_replication_role=replica;insert into auth.users(id,email,email_confirmed_at) values('${SUPPORT}','s@x.test',now());insert into profiles(id,full_name) values('${SUPPORT}','Support');
+ insert into tenants(id,name,slug,is_internal) values('${SERVICE}','Detailflow Support','support-z',true),('${SPACED}','Spaced ','spaced',false);insert into tenant_memberships(tenant_id,user_id,role) values('${SERVICE}','${SUPPORT}','super_admin');set session_replication_role=origin;`)
+ const claims=JSON.stringify({sub:SUPPORT,role:'authenticated',aal:'aal2',amr:[{method:'password',timestamp:Math.floor(Date.now()/1000)}]})
+ await db.exec(`reset role;select set_config('request.jwt.claim.sub','${SUPPORT}',false);select set_config('request.jwt.claims','${claims}',false);set role authenticated;`)
+ try{assert.equal((await q(`select support_delete_studio($1,'Spaced') r`,[SPACED]))[0].r.name,'Spaced ')}finally{await db.exec('reset role')}
+ assert.equal((await q(`select count(*) n from tenants where id=$1`,[SPACED]))[0].n,0)
+ await db.query(`insert into auth.users(id,email,email_confirmed_at,raw_user_meta_data) values($1,'new@x.test',now(),$2)`,[APPLICANT,JSON.stringify({requested_role:'owner',studio_name:'  New Studio  ',selected_plan:'solo'})])
+ assert.equal((await q(`select studio_name from studio_access_requests where user_id=$1`,[APPLICANT]))[0].studio_name,'New Studio')
+})
