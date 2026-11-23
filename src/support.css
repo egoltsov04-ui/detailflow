@@ -7,3 +7,6 @@
 @media(max-width:600px){.support-summary-grid{grid-template-columns:1fr}.support-workspace{padding:16px!important}.support-workspace h1{font-size:25px}.support-sort{flex-wrap:wrap}.support-security{padding:16px!important}.support-subscription-modal .ui-tabs button{flex:1 1 100%}}
 .support-delete-studio ul{display:grid;gap:var(--space-1);margin:0 0 var(--space-3);padding-left:var(--space-4)}
 .support-delete-studio>button{min-height:var(--touch-target)}
+/* Telegram in the support header: inline, without the profile-menu frame; on a phone it takes its own row under the title. */
+.support-workspace>header .telegram-controls{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-2);padding:0;border:0}
+@media(max-width:767px){.support-workspace>header .telegram-controls{order:3;flex:1 1 100%}}
